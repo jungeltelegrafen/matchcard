@@ -3,6 +3,11 @@ export const config = {
 }
 
 export default async function middleware(request) {
+  // Auth is disabled until Azure env vars are configured
+  if (!process.env.AZURE_CLIENT_ID) {
+    return new Response(null, { status: 200 })
+  }
+
   const url = new URL(request.url)
 
   const session = getCookie(request, '__session')
