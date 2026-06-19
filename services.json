@@ -1,0 +1,83 @@
+[
+  {
+    "name": "Inventory Sync",
+    "description": "Keep stock levels accurate across all channels in real time. Never oversell or miss a restock alert.",
+    "category": "Automation",
+    "icon": "📦",
+    "repo": "jungeltelegrafen/inventory-sync",
+    "url": "",
+    "status": "live"
+  },
+  {
+    "name": "AI Product Descriptions",
+    "description": "Generate compelling, SEO-ready product copy at scale. One click, on-brand, every time.",
+    "category": "AI",
+    "icon": "✍️",
+    "repo": "jungeltelegrafen/ai-product-descriptions",
+    "url": "",
+    "status": "live"
+  },
+  {
+    "name": "Price Monitor",
+    "description": "Track competitor pricing live and get smart suggestions to stay competitive without sacrificing margin.",
+    "category": "Intelligence",
+    "icon": "💸",
+    "repo": "jungeltelegrafen/price-monitor",
+    "url": "",
+    "status": "live"
+  },
+  {
+    "name": "Listing Optimizer",
+    "description": "Audit and improve your listings with AI-powered recommendations for titles, images, and keywords.",
+    "category": "AI",
+    "icon": "🚀",
+    "repo": "jungeltelegrafen/listing-optimizer",
+    "url": "",
+    "status": "live"
+  },
+  {
+    "name": "Order Automation",
+    "description": "Route, tag, and process incoming orders automatically — reducing manual steps and handling time.",
+    "category": "Automation",
+    "icon": "🔄",
+    "repo": "jungeltelegrafen/order-automation",
+    "url": "",
+    "status": "live"
+  },
+  {
+    "name": "Review Manager",
+    "description": "Monitor and respond to customer reviews with AI-drafted replies. Protect and grow your reputation.",
+    "category": "AI",
+    "icon": "🌟",
+    "repo": "jungeltelegrafen/review-manager",
+    "url": "",
+    "status": "live"
+  },
+  {
+    "name": "Analytics Dashboard",
+    "description": "A single view of revenue, conversion, and traffic across all your marketplace storefronts.",
+    "category": "Intelligence",
+    "icon": "📊",
+    "repo": "jungeltelegrafen/analytics-dashboard",
+    "url": "",
+    "status": "live"
+  },
+  {
+    "name": "Bulk Importer",
+    "description": "Upload thousands of SKUs in minutes with smart field mapping and automatic validation.",
+    "category": "Automation",
+    "icon": "📥",
+    "repo": "jungeltelegrafen/bulk-importer",
+    "url": "",
+    "status": "live"
+  },
+  {
+    "name": "Campaign Builder",
+    "description": "Design and schedule promotional campaigns with audience targeting and performance tracking built in.",
+    "category": "Intelligence",
+    "icon": "📣",
+    "repo": "jungeltelegrafen/campaign-builder",
+    "url": "",
+    "status": "live"
+  }
+]

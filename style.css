@@ -137,9 +137,15 @@ main {
   flex: 1;
 }
 
+.card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 6px;
+}
+
 .tag {
   display: inline-block;
-  margin-top: 6px;
   padding: 4px 12px;
   font-size: 0.72rem;
   font-weight: 600;
@@ -148,7 +154,44 @@ main {
   background: var(--accent-soft);
   color: var(--accent);
   border-radius: var(--radius-tag);
-  align-self: flex-start;
+}
+
+.card-link {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--accent);
+  text-decoration: none;
+  opacity: 0.8;
+  transition: opacity 0.15s;
+}
+.card-link:hover { opacity: 1; }
+
+/* ── Skeleton loader ── */
+.skeleton {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  height: 180px;
+  position: relative;
+  overflow: hidden;
+}
+.skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(201,123,75,0.08) 50%, transparent 100%);
+  animation: shimmer 1.4s infinite;
+}
+@keyframes shimmer {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.error {
+  grid-column: 1 / -1;
+  text-align: center;
+  color: var(--text-secondary);
+  padding: 40px 0;
 }
 
 /* ── Footer ── */

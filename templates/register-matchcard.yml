@@ -1,0 +1,54 @@
+# Copy this file to .github/workflows/register-matchcard.yml in your service repo.
+# Requires a repo/org secret named MATCHCARD_TOKEN:
+#   → a GitHub PAT with repo scope on jungeltelegrafen/matchcard-landing
+#
+# Also add a matchcard.json file at the root of your repo (see templates/matchcard.json).
+
+name: Register with Matchcard
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - matchcard.json
+
+jobs:
+  register:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout service repo
+        uses: actions/checkout@v4
+
+      - name: Checkout matchcard-landing
+        uses: actions/checkout@v4
+        with:
+          repository: jungeltelegrafen/matchcard-landing
+          token: ${{ secrets.MATCHCARD_TOKEN }}
+          path: matchcard-landing
+
+      - name: Upsert services.json
+        run: |
+          node -e "
+            const fs = require('fs');
+            const manifest = JSON.parse(fs.readFileSync('matchcard.json', 'utf8'));
+            const registry = JSON.parse(fs.readFileSync('matchcard-landing/services.json', 'utf8'));
+            const entry = { ...manifest, repo: '${{ github.repository }}', status: 'live' };
+            const idx = registry.findIndex(s => s.repo === entry.repo);
+            if (idx >= 0) registry[idx] = entry;
+            else registry.push(entry);
+            fs.writeFileSync('matchcard-landing/services.json', JSON.stringify(registry, null, 2) + '\n');
+          "
+
+      - name: Open PR on matchcard-landing
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.MATCHCARD_TOKEN }}
+          path: matchcard-landing
+          commit-message: "register: ${{ github.repository }}"
+          title: "Register: ${{ github.repository }}"
+          body: |
+            Auto-submitted by `${{ github.repository }}` on push to `main`.
+
+            Review the `services.json` change and merge to publish this tool to the marketplace.
+          branch: register/${{ github.event.repository.name }}
+          delete-branch: true
