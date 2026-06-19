@@ -81,15 +81,6 @@
     "status": "live"
   },
   {
-    "name": "My Service Name",
-    "description": "One sentence: what does this tool do and who is it for?",
-    "category": "Automation",
-    "icon": "🔧",
-    "url": "",
-    "repo": "jungeltelegrafen/matchcard-service-template",
-    "status": "live"
-  },
-  {
     "name": "CV Generator",
     "description": "Upload your existing CV or LinkedIn export and get a polished PDF and Word document in seconds.",
     "category": "Documents",

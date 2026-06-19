@@ -40,17 +40,20 @@
       try {
         const res = await fetch('./services.json');
         const services = await res.json();
-        grid.innerHTML = services.map(s => `
-          <div class="card">
+        grid.innerHTML = services.map(s => {
+          const inner = `
             <div class="card-icon">${s.icon}</div>
             <h2>${s.name}</h2>
             <p>${s.description}</p>
             <div class="card-footer">
               <span class="tag">${s.category}</span>
-              ${s.url ? `<a class="card-link" href="${s.url}" target="_blank" rel="noopener">Open →</a>` : ''}
+              ${s.url ? `<span class="card-link">Open →</span>` : '<span class="card-coming-soon">Coming soon</span>'}
             </div>
-          </div>
-        `).join('');
+          `;
+          return s.url
+            ? `<a class="card" href="${s.url}" target="_blank" rel="noopener">${inner}</a>`
+            : `<div class="card card-inactive">${inner}</div>`;
+        }).join('');
       } catch (e) {
         grid.innerHTML = '<p class="error">Could not load services.</p>';
       }
