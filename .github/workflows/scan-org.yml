@@ -1,0 +1,85 @@
+name: Scan org for new services
+
+on:
+  schedule:
+    - cron: '0 * * * *'   # every hour
+  workflow_dispatch:        # manual trigger from the Actions tab
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Scan jungeltelegrafen org for matchcard.json files
+        id: scan
+        env:
+          GH_TOKEN: ${{ secrets.MATCHCARD_TOKEN }}
+        run: |
+          node -e "
+            const { execSync } = require('child_process');
+
+            const org = 'jungeltelegrafen';
+            let page = 1;
+            let allRepos = [];
+
+            while (true) {
+              const result = execSync(
+                \`gh api orgs/\${org}/repos --paginate -q '.[].full_name' --jq '.[]'\`,
+                { env: { ...process.env } }
+              ).toString().trim().split('\n').filter(Boolean);
+              allRepos = allRepos.concat(result);
+              break; // --paginate handles it in one call
+            }
+
+            const repos = execSync(
+              \`gh api orgs/\${org}/repos --paginate --jq '.[].full_name'\`,
+              { env: { ...process.env } }
+            ).toString().trim().split('\n').filter(Boolean);
+
+            const current = JSON.parse(require('fs').readFileSync('services.json', 'utf8'));
+            const updated = [...current];
+            let changed = false;
+
+            for (const repo of repos) {
+              try {
+                const raw = execSync(
+                  \`gh api repos/\${repo}/contents/matchcard.json --jq '.content' 2>/dev/null\`,
+                  { env: { ...process.env } }
+                ).toString().trim();
+                if (!raw) continue;
+                const manifest = JSON.parse(Buffer.from(raw, 'base64').toString());
+                const entry = { ...manifest, repo, status: 'live' };
+                const idx = updated.findIndex(s => s.repo === repo);
+                const existing = idx >= 0 ? JSON.stringify(updated[idx]) : null;
+                if (existing !== JSON.stringify(entry)) {
+                  if (idx >= 0) updated[idx] = entry;
+                  else updated.push(entry);
+                  changed = true;
+                  console.log('Found change in:', repo);
+                }
+              } catch (e) {
+                // repo has no matchcard.json — skip
+              }
+            }
+
+            if (changed) {
+              require('fs').writeFileSync('services.json', JSON.stringify(updated, null, 2) + '\n');
+              console.log('services.json updated');
+            } else {
+              console.log('No changes found');
+            }
+          "
+
+      - name: Open PR if services.json changed
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.MATCHCARD_TOKEN }}
+          commit-message: "scan: update services from org"
+          title: "Marketplace update: new or changed services detected"
+          body: |
+            The hourly org scan found changes to one or more `matchcard.json` files.
+
+            Review the `services.json` diff and merge to publish to the marketplace.
+          branch: scan/services-update
+          delete-branch: true
