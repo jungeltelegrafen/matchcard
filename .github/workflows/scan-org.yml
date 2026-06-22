@@ -49,7 +49,7 @@ jobs:
                 ).toString().trim();
                 if (!raw) continue;
                 const manifest = JSON.parse(Buffer.from(raw, 'base64').toString());
-                const entry = { ...manifest, repo, status: 'live' };
+                const entry = { ...manifest, repo };
                 const idx = updated.findIndex(s => s.repo === repo);
                 const existing = idx >= 0 ? JSON.stringify(updated[idx]) : null;
                 if (existing !== JSON.stringify(entry)) {

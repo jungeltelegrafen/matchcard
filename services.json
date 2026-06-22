@@ -1,5 +1,14 @@
 [
   {
+    "name": "Behovsavklarer",
+    "description": "Strukturer klientens behov til en ren oppdragsbeskrivelse klar for eksport.",
+    "category": "Automation",
+    "icon": "📋",
+    "url": "https://jungeltelegrafen.github.io/behovsavklarer/",
+    "repo": "jungeltelegrafen/behovsavklarer",
+    "status": "sandbox"
+  },
+  {
     "name": "CV Generator",
     "description": "Upload your existing CV or LinkedIn export and get a polished PDF and Word document in seconds.",
     "category": "Documents",
