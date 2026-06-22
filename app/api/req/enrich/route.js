@@ -17,32 +17,23 @@ export async function GET() {
   return Response.json({ ok: true, configured }, { headers: CORS })
 }
 
-// ── Shared AI criteria ─────────────────────────────────────────────────────
-//
-// SEARCH QUERY (Tavily): "[selskap] IT-avdeling ansatte teknologi Norge"
-//   → targets company IT org size, structure, and tech stack from public sources
-//
-// AI SYSTEM RULES:
-//   - Only state facts findable in public sources (website, LinkedIn, press, annual reports)
-//   - Focus: company overview + IT org (size/structure/tech) + employer branding for tech candidates
-//   - Never assume what the IT dept "likely" works with based on industry logic
-//   - Omit any claim that cannot be confirmed from search results — do NOT guess
-//   - Write in third person, neutral and concise Norwegian
-//   - If little info is available: say so honestly rather than filling gaps with speculation
-//
-const SYSTEM = `Du hjelper norske IT-rekrutterere med å forstå kunder bedre — basert kun på offentlig tilgjengelig informasjon.
+// ── AI system prompt ──────────────────────────────────────────────────────────
+// Full criteria documented in CRITERIA.md next to this file.
+const SYSTEM = `Du hjelper norske IT-rekrutterere med å presentere kunder som arbeidsgivere for tech-kandidater.
 
-Skriv 3–5 faktabaserte setninger på norsk om selskapet. Fokuser på:
-1. Hvem de er: bransje, størrelse, markedsposisjon
-2. IT-avdelingen: størrelse, struktur og teknologier — KUN det som er dokumentert fra pålitelige kilder
-3. Employer branding: hvordan fremstiller selskapet seg som arbeidsgiver for tech-kandidater?
+Skriv NØYAKTIG to avsnitt på norsk. Ingen titler, headers, markdown eller avsnittoverskrifter av noe slag.
 
-Strenge regler:
-- Baser deg utelukkende på tekst du faktisk finner via søk eller i kildematerialet
-- Gjør ALDRI antagelser om IT-avdelingen basert på bransjekunnskap ("de bruker trolig…", "selskaper av denne typen…")
-- Utelat informasjon du ikke finner — det er bedre å si lite enn å spekulere
-- Hvis du finner lite: si det ærlig i én setning ("Begrenset offentlig informasjon tilgjengelig om IT-avdelingen.")
-- Skriv som om du presenterer selskapet til en kvalifisert tech-kandidat som vurderer å søke`
+Avsnitt 1 — Selskapet: Størrelse, bransje, markedsposisjon og annen relevant kontekst om hvem de er.
+
+Avsnitt 2 — Som arbeidsgiver: Hva som er kjent om arbeidsmiljø, fagkultur og hvordan selskapet fremstår for tech-kandidater. Trekk frem ekte, positive aspekter basert på hva selskapet faktisk kommuniserer om seg selv. Skriv det som en naturlig, faktabasert presentasjon — ikke en oppramsing av punkter.
+
+Absolutte regler:
+- Ingen titler, seksjonsnavn, overskrifter eller labels foran avsnittene ("Selskapet:", "IT-avdeling:", osv.)
+- Ikke nevn spesifikke teknologier, tech stack eller systemvalg — det hører hjemme i egne felt i skjemaet
+- Baser deg utelukkende på bekreftet offentlig informasjon (nettside, LinkedIn, pressemeldinger, årsrapporter)
+- Gjør ALDRI antagelser om hva IT-avdelingen jobber med hvis det ikke er eksplisitt dokumentert
+- Spekuler ikke — utelat heller informasjon du ikke finner
+- Hvis lite finnes: skriv ett kortfattet avsnitt med det du vet, og ikke fyll inn med gjetning`
 
 async function synthesize(rawContext, companyName) {
   const message = await client.messages.create({
@@ -51,7 +42,7 @@ async function synthesize(rawContext, companyName) {
     system: SYSTEM,
     messages: [{
       role: 'user',
-      content: `Selskap: "${companyName}"\n\nKildemateriale fra søk:\n${rawContext}\n\nSkriv en faktabasert kundebeskrivelse basert utelukkende på det ovenfor.`,
+      content: `Selskap: "${companyName}"\n\nKildemateriale fra søk:\n${rawContext}\n\nSkriv to faktabaserte avsnitt basert utelukkende på det ovenfor. Ingen titler eller labels.`,
     }],
   })
   return message.content[0]?.text?.trim()
@@ -66,7 +57,7 @@ export async function POST(request) {
   const { query } = body
   if (!query?.trim()) return Response.json({ error: 'No query' }, { status: 400, headers: CORS })
 
-  const searchQuery = `"${query}" IT-avdeling ansatte teknologi Norge`
+  const searchQuery = `"${query}" ansatte arbeidsmiljø kultur arbeidsgiver Norge`
 
   // ── Option 1: Tavily → Claude synthesis ──────────────────────────────────
   if (process.env.TAVILY_API_KEY) {
@@ -107,7 +98,7 @@ export async function POST(request) {
   try {
     const messages = [{
       role: 'user',
-      content: `Søk etter "${query}" og finn offentlig tilgjengelig informasjon om:\n- Selskapets størrelse, bransje og markedsposisjon\n- IT-avdelingen: størrelse, struktur, kjente teknologier (kun dokumentert)\n- Employer branding mot tech-kandidater\n\nBaser deg kun på det du faktisk finner. Ikke spekuler.`,
+      content: `Søk etter "${query}" og finn offentlig informasjon om selskapet: størrelse, bransje, markedsposisjon, og hva de kommuniserer om arbeidsmiljø og kultur som tech-arbeidsgiver. Ikke nevn tech stack.`,
     }]
     const tools = [{ type: 'web_search_20250305', name: 'web_search' }]
 
@@ -143,8 +134,7 @@ export async function POST(request) {
     if (text) return Response.json({ summary: text }, { headers: CORS })
   } catch { /* web_search tool not available — fall through */ }
 
-  // ── Option 3: Claude knowledge fallback (no search) ──────────────────────
-  // Note: explicitly tells Claude to only use confirmed knowledge, not speculate.
+  // ── Option 3: Claude knowledge fallback ──────────────────────────────────
   try {
     const message = await client.messages.create({
       model: 'claude-haiku-4-5-20251001',
@@ -152,7 +142,7 @@ export async function POST(request) {
       system: SYSTEM,
       messages: [{
         role: 'user',
-        content: `Selskap: "${query}" (Norge)\n\nDu har ikke tilgang til live søkeresultater. Del kun det du med sikkerhet vet om dette selskapet fra treningsdata — ikke spekuler. Hvis du vet lite, si det kortfattet og ærlig.`,
+        content: `Selskap: "${query}" (Norge). Du har ikke live søkeresultater. Del kun det du med sikkerhet vet fra treningsdata — ikke spekuler. Ingen titler eller labels.`,
       }],
     })
     const summary = message.content[0]?.text?.trim()
