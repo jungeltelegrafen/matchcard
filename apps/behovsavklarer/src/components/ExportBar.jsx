@@ -134,7 +134,7 @@ export default function ExportBar({ brief, apiAvailable, anonymizing, onAnonymiz
               onChange={e => setInclude(e.target.checked)}
               className="accent-accent w-3.5 h-3.5"
             />
-            <span className="text-xs font-medium text-tx">Eksporter klientbeskrivelse</span>
+            <span className="text-xs font-medium text-tx">Eksporter kundebeskrivelse</span>
           </label>
 
           {apiAvailable && (
