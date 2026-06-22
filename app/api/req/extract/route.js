@@ -41,6 +41,7 @@ const FILL_SCHEMA = `{
   "fintAHa": [],
   "personligeEgenskaper": "",
   "webUrl": "",
+  "tilbudsformat": "",
   "sellingPoints": "",
   "prosessenVidere": "",
   "andreLeverandorer": "",
