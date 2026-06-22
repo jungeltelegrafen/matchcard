@@ -207,10 +207,24 @@ export default function App() {
     >
       {/* Header */}
       <div className="no-print relative flex items-center justify-center px-6 py-4 border-b border-border bg-card">
+
+        {/* Back to marketplace */}
+        <a
+          href="/"
+          className="absolute left-5 flex items-center gap-1.5 group transition-colors"
+          title="Tilbake til matchcard"
+        >
+          <span className="text-base text-tx-muted group-hover:text-primary transition-all group-hover:-translate-x-0.5 inline-block">←</span>
+          <span className="text-[15px] font-bold text-accent tracking-tight group-hover:text-accent/70 transition-colors">matchcard</span>
+        </a>
+
+        {/* Centered title */}
         <div className="flex flex-col items-center gap-1">
           <h1 className="text-[22px] font-bold text-primary tracking-tight">Behovsavklarer</h1>
           <div className="h-0.5 w-10 rounded-full bg-accent/60" />
         </div>
+
+        {/* Right: status + reset */}
         <div className="absolute right-5 flex items-center gap-3">
           {(extracting || anonymizing) && (
             <span className="text-xs text-accent animate-pulse">
