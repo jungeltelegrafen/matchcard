@@ -104,16 +104,6 @@ export default function FeedbackModal({ onClose, apiBase, briefRole }) {
             <p className="text-xs text-tx-muted max-w-xs">
               Den er mottatt og vil bli gjennomgått.
             </p>
-            {result?.github_issue_url && (
-              <a
-                href={result.github_issue_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-1 text-xs text-accent hover:underline"
-              >
-                Sak #{result.github_issue_number} åpnet på GitHub →
-              </a>
-            )}
             <button
               onClick={onClose}
               className="mt-4 rounded-lg border border-border bg-white px-5 py-2 text-xs font-semibold text-tx hover:bg-bg transition-colors"
