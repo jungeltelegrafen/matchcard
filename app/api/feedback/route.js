@@ -31,7 +31,7 @@ export async function POST(request) {
   let github_issue_url = null
 
   // ── GitHub Issue ────────────────────────────────────────────────────────────
-  const token = process.env.GITHUB_FEEDBACK_TOKEN
+  const token = process.env.gh_issues_read_write_jungeltel_matchcard
   if (token) {
     const title = `${meta.emoji} ${message.trim().slice(0, 72)}${message.trim().length > 72 ? '…' : ''}`
     const issueBody = buildIssueBody({ type, meta, message, name, briefRole, page })
