@@ -6,6 +6,7 @@ import LeftColumn from './components/LeftColumn'
 import CenterColumn from './components/CenterColumn'
 import RightColumn from './components/RightColumn'
 import ExportBar from './components/ExportBar'
+import FeedbackModal from './components/FeedbackModal'
 
 const STORAGE_KEY = 'behovsavklarer-v1'
 const isLocalhost = window.location.hostname === 'localhost' ||
@@ -22,6 +23,7 @@ export default function App() {
   })
 
   const [touched, setTouched]             = useState(new Set())
+  const [feedbackOpen, setFeedbackOpen]   = useState(false)
   const [sourceFiles, setSourceFiles]     = useState([]) // [{name, text}]
   const [pastedText, setPastedText]       = useState('')
   const [parsing, setParsing]             = useState(false)
@@ -225,13 +227,21 @@ export default function App() {
           <div className="h-0.5 w-10 rounded-full bg-accent/60" />
         </div>
 
-        {/* Right: status + reset */}
-        <div className="absolute right-5 flex items-center gap-3">
+        {/* Right: status + actions */}
+        <div className="absolute right-5 flex items-center gap-2">
           {(extracting || anonymizing) && (
             <span className="text-xs text-accent animate-pulse">
               {anonymizing ? 'Anonymiserer…' : 'Analyserer…'}
             </span>
           )}
+          <button
+            onClick={() => setFeedbackOpen(true)}
+            className="rounded-lg border border-border bg-white hover:bg-bg
+              px-3 py-1.5 text-xs font-semibold text-tx-muted hover:text-tx transition-colors"
+            title="Send tilbakemelding"
+          >
+            💬
+          </button>
           <button
             onClick={handleClear}
             className="rounded-lg border border-border bg-white hover:bg-bg
@@ -273,6 +283,15 @@ export default function App() {
         anonymizing={anonymizing}
         onAnonymize={handleAnonymize}
       />
+
+      {/* Feedback modal */}
+      {feedbackOpen && (
+        <FeedbackModal
+          onClose={() => setFeedbackOpen(false)}
+          apiBase={API_BASE}
+          briefRole={brief.rolle || ''}
+        />
+      )}
     </div>
   )
 }
