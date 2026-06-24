@@ -242,18 +242,20 @@ function AppInner() {
           )}
 
           {/* Language toggle */}
-          <div className="flex rounded-lg border border-border overflow-hidden text-[11px] font-bold">
+          <div className="flex rounded-lg border border-border overflow-hidden">
             <button
               onClick={() => lang !== 'no' && handleToggle()}
-              className={`px-2.5 py-1.5 transition-colors ${lang === 'no' ? 'bg-primary text-white' : 'text-tx-muted hover:text-tx bg-white'}`}
+              className={`px-2 py-1 text-base transition-colors ${lang === 'no' ? 'bg-primary/10' : 'opacity-40 hover:opacity-70 bg-white'}`}
+              title="Norsk"
             >
-              NO
+              🇳🇴
             </button>
             <button
               onClick={() => lang !== 'en' && handleToggle()}
-              className={`px-2.5 py-1.5 transition-colors ${lang === 'en' ? 'bg-primary text-white' : 'text-tx-muted hover:text-tx bg-white'}`}
+              className={`px-2 py-1 text-base transition-colors ${lang === 'en' ? 'bg-primary/10' : 'opacity-40 hover:opacity-70 bg-white'}`}
+              title="English"
             >
-              EN
+              🇬🇧
             </button>
           </div>
 
