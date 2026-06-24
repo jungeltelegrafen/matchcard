@@ -13,13 +13,12 @@ const PLACEHOLDERS = {
 }
 
 export default function FeedbackModal({ onClose, apiBase, briefRole }) {
-  const [type,     setType]    = useState('general')
-  const [subject,  setSubject] = useState('Behovsavklarer')
-  const [message,  setMessage] = useState('')
-  const [name,     setName]    = useState('')
-  const [showName, setShowName]= useState(false)
-  const [status,   setStatus]  = useState('idle') // idle | sending | done | error
-  const [result,   setResult]  = useState(null)
+  const [type,    setType]   = useState('general')
+  const [subject, setSubject]= useState('Behovsavklarer')
+  const [message, setMessage]= useState('')
+  const [name,    setName]   = useState('')
+  const [status,  setStatus] = useState('idle') // idle | sending | done | error
+  const [result,  setResult] = useState(null)
   const textareaRef = useRef(null)
 
   useEffect(() => {
@@ -66,7 +65,7 @@ export default function FeedbackModal({ onClose, apiBase, briefRole }) {
     if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') handleSubmit(e)
   }
 
-  const canSubmit = message.trim().length > 0 && status === 'idle'
+  const canSubmit = message.trim().length > 0 && name.trim().length > 0 && status === 'idle'
 
   return (
     <div
@@ -171,26 +170,22 @@ export default function FeedbackModal({ onClose, apiBase, briefRole }) {
               <p className="mt-1 text-right text-[10px] text-tx-muted/50">⌘ + Enter for å sende</p>
             </div>
 
-            {/* Optional name */}
-            {showName ? (
+            {/* Name — required */}
+            <div>
+              <label className="block text-[10px] font-semibold uppercase tracking-widest text-tx-muted mb-1.5">
+                Navn
+              </label>
               <input
                 type="text"
                 value={name}
                 onChange={e => setName(e.target.value)}
-                placeholder="Navn (valgfri)"
+                placeholder="Ditt navn"
+                required
                 className="w-full rounded-xl border border-border bg-bg/60 px-3.5 py-2.5
                   text-sm text-primary placeholder:text-tx-muted/60
                   focus:outline-none focus:ring-1 focus:ring-accent/40 focus:border-accent/50 transition-colors"
               />
-            ) : (
-              <button
-                type="button"
-                onClick={() => setShowName(true)}
-                className="text-[11px] text-tx-muted/70 hover:text-tx-muted transition-colors"
-              >
-                + Legg til navn
-              </button>
-            )}
+            </div>
 
             {/* Submit row */}
             <div className="flex items-center justify-between pt-1">
