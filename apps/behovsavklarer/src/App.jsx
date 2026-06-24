@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
-import { EMPTY_BRIEF } from './data'
+import { EMPTY_BRIEF, makeEmptyBrief } from './data'
 import { parseFile } from './lib/parseFile'
+import { LanguageProvider, useT, useLang } from './i18n'
 import SourcePanel from './components/SourcePanel'
 import LeftColumn from './components/LeftColumn'
 import CenterColumn from './components/CenterColumn'
@@ -13,18 +14,29 @@ const isLocalhost = window.location.hostname === 'localhost' ||
                     window.location.hostname.startsWith('127.')
 const API_BASE = isLocalhost ? '' : 'https://matchcard.no'
 
-export default function App() {
+function AppInner() {
+  const t = useT()
+  const { lang, toggle } = useLang()
+
   // ── State ───────────────────────────────────────────────────────────────
   const [brief, setBrief] = useState(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY)
-      return saved ? { ...EMPTY_BRIEF, ...JSON.parse(saved) } : EMPTY_BRIEF
-    } catch { return EMPTY_BRIEF }
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        const base = makeEmptyBrief()
+        const merged = { ...base, ...parsed }
+        // Back-fill tilbudsformat for existing sessions that have it empty
+        if (!merged.tilbudsformat) merged.tilbudsformat = base.tilbudsformat
+        return merged
+      }
+      return makeEmptyBrief()
+    } catch { return makeEmptyBrief() }
   })
 
   const [touched, setTouched]             = useState(new Set())
   const [feedbackOpen, setFeedbackOpen]   = useState(false)
-  const [sourceFiles, setSourceFiles]     = useState([]) // [{name, text}]
+  const [sourceFiles, setSourceFiles]     = useState([])
   const [pastedText, setPastedText]       = useState('')
   const [parsing, setParsing]             = useState(false)
   const [extracting, setExtracting]       = useState(false)
@@ -33,7 +45,6 @@ export default function App() {
   const [enrichAvailable, setEnrichAvail] = useState(false)
   const [pendingFill, setPending]         = useState(null)
 
-  // Combined source text from all files + pasted text
   const combinedSource = useMemo(() => [
     ...sourceFiles.map((f, i) => `[Dokument ${i + 1}: ${f.name}]\n${f.text}`),
     pastedText,
@@ -54,14 +65,14 @@ export default function App() {
         .then(d => { if (d.ok && d.configured) setEnrichAvail(true) }).catch(() => {})
     }
     check()
-    const t = setInterval(check, 5000)
-    return () => clearInterval(t)
+    const timer = setInterval(check, 5000)
+    return () => clearInterval(timer)
   }, [])
 
   // ── Field setters ─────────────────────────────────────────────────────────
   function setField(key, value) {
     setBrief(b => ({ ...b, [key]: value }))
-    setTouched(t => new Set([...t, key]))
+    setTouched(s => new Set([...s, key]))
   }
 
   // ── File handlers ─────────────────────────────────────────────────────────
@@ -79,7 +90,7 @@ export default function App() {
     setSourceFiles(prev => prev.filter((_, i) => i !== index))
   }
 
-  // ── AI: fill fields from all sources ─────────────────────────────────────
+  // ── AI handlers ───────────────────────────────────────────────────────────
   async function handleExtract() {
     if (!combinedSource.trim() || !apiAvailable) return
     setExtracting(true)
@@ -89,36 +100,25 @@ export default function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: combinedSource, mode: 'fill' }),
       })
-      const data = await res.json()
-      applyExtraction(data)
-    } catch (e) {
-      console.error('Extract error:', e)
-    } finally {
-      setExtracting(false)
-    }
+      applyExtraction(await res.json())
+    } catch (e) { console.error('Extract error:', e) }
+    finally { setExtracting(false) }
   }
 
-  // ── AI: distil kjernen from current brief ─────────────────────────────────
   async function handleDistill() {
     if (!apiAvailable) return
     setExtracting(true)
     try {
-      const text = buildSummaryText(brief)
       const res = await fetch(`${API_BASE}/api/req/extract`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text, mode: 'distill' }),
+        body: JSON.stringify({ text: buildSummaryText(brief), mode: 'distill' }),
       })
-      const data = await res.json()
-      applyExtraction(data)
-    } catch (e) {
-      console.error('Distill error:', e)
-    } finally {
-      setExtracting(false)
-    }
+      applyExtraction(await res.json())
+    } catch (e) { console.error('Distill error:', e) }
+    finally { setExtracting(false) }
   }
 
-  // ── AI: anonymise — strip client references across all fields ─────────────
   async function handleAnonymize() {
     if (!apiAvailable) return
     setAnonymizing(true)
@@ -131,14 +131,10 @@ export default function App() {
       const data = await res.json()
       if (data.error) throw new Error(data.error)
       setBrief(b => ({ ...b, ...data }))
-    } catch (e) {
-      console.error('Anonymize error:', e)
-    } finally {
-      setAnonymizing(false)
-    }
+    } catch (e) { console.error('Anonymize error:', e) }
+    finally { setAnonymizing(false) }
   }
 
-  // ── AI: enrich client description from web ───────────────────────────────
   async function handleEnrich(query) {
     const res = await fetch(`${API_BASE}/api/req/enrich`, {
       method: 'POST',
@@ -187,8 +183,8 @@ export default function App() {
   }
 
   function handleClear() {
-    if (!confirm('Nullstille hele skjemaet?')) return
-    setBrief(EMPTY_BRIEF)
+    if (!confirm(t.confirmReset)) return
+    setBrief(makeEmptyBrief())
     setTouched(new Set())
     setPending(null)
     setSourceFiles([])
@@ -223,7 +219,7 @@ export default function App() {
 
         {/* Centered title */}
         <div className="flex flex-col items-center gap-1">
-          <h1 className="text-[22px] font-bold text-primary tracking-tight">Behovsavklarer</h1>
+          <h1 className="text-[22px] font-bold text-primary tracking-tight">{t.appTitle}</h1>
           <div className="h-0.5 w-10 rounded-full bg-accent/60" />
         </div>
 
@@ -231,22 +227,39 @@ export default function App() {
         <div className="absolute right-5 flex items-center gap-2">
           {(extracting || anonymizing) && (
             <span className="text-xs text-accent animate-pulse">
-              {anonymizing ? 'Anonymiserer…' : 'Analyserer…'}
+              {anonymizing ? t.anonymising : t.analysing}
             </span>
           )}
+
+          {/* Language toggle */}
+          <div className="flex rounded-lg border border-border overflow-hidden text-[11px] font-bold">
+            <button
+              onClick={() => lang !== 'no' && toggle()}
+              className={`px-2.5 py-1.5 transition-colors ${lang === 'no' ? 'bg-primary text-white' : 'text-tx-muted hover:text-tx bg-white'}`}
+            >
+              NO
+            </button>
+            <button
+              onClick={() => lang !== 'en' && toggle()}
+              className={`px-2.5 py-1.5 transition-colors ${lang === 'en' ? 'bg-primary text-white' : 'text-tx-muted hover:text-tx bg-white'}`}
+            >
+              EN
+            </button>
+          </div>
+
           <button
             onClick={() => setFeedbackOpen(true)}
             className="rounded-lg border border-border bg-white hover:bg-bg
               px-3 py-1.5 text-xs font-semibold text-tx-muted hover:text-tx transition-colors"
           >
-            💬 Produkttilbakemelding
+            💬 {t.feedbackBtn}
           </button>
           <button
             onClick={handleClear}
             className="rounded-lg border border-border bg-white hover:bg-bg
               px-3 py-1.5 text-xs font-semibold text-tx transition-colors"
           >
-            Nullstill
+            {t.reset}
           </button>
         </div>
       </div>
@@ -278,6 +291,7 @@ export default function App() {
       {/* Export bar */}
       <ExportBar
         brief={brief}
+        lang={lang}
         apiAvailable={apiAvailable}
         anonymizing={anonymizing}
         onAnonymize={handleAnonymize}
@@ -292,6 +306,14 @@ export default function App() {
         />
       )}
     </div>
+  )
+}
+
+export default function App() {
+  return (
+    <LanguageProvider>
+      <AppInner />
+    </LanguageProvider>
   )
 }
 

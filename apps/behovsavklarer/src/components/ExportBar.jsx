@@ -4,6 +4,7 @@ import { exportWord } from '../lib/exportWord'
 import { exportPdf } from '../lib/exportPdf'
 import { copyWordpress } from '../lib/exportWordpress'
 import { copyLinkedin } from '../lib/exportLinkedin'
+import { useT } from '../i18n'
 
 // ── Completion scoring ─────────────────────────────────────────────────────
 function textGrade(v, short = 40, long = 180) {
@@ -17,7 +18,6 @@ function textGrade(v, short = 40, long = 180) {
 function computeScore(b) {
   const has = v => Boolean(v?.trim?.() || (Array.isArray(v) && v.filter(Boolean).length > 0))
 
-  // Left sidebar (25%) — binary
   const leftFields = [
     b.rolle, b.antallKonsulenter, b.stillingsprosent,
     b.oppstartsdato, b.varighet, b.arbeidslokasjon,
@@ -26,7 +26,6 @@ function computeScore(b) {
   ]
   const leftScore = leftFields.filter(has).length / leftFields.length
 
-  // Center (50%) — gradated
   const maHa = (b.maHa || []).filter(Boolean).length
   const centerScores = [
     textGrade(b.kjernenIBehovet, 20, 80),
@@ -42,7 +41,6 @@ function computeScore(b) {
   ]
   const centerScore = centerScores.reduce((a, c) => a + c, 0) / centerScores.length
 
-  // Right sidebar (25%) — binary (tilbudsformat defaults so counts immediately)
   const rightFields = [
     b.prosessenVidere, b.andreLeverandorer, b.andreKandidater,
     b.annet, b.generelleNotater, b.tilbudsformat,
@@ -53,7 +51,8 @@ function computeScore(b) {
 }
 
 // ── Component ──────────────────────────────────────────────────────────────
-export default function ExportBar({ brief, apiAvailable, anonymizing, onAnonymize }) {
+export default function ExportBar({ brief, lang, apiAvailable, anonymizing, onAnonymize }) {
+  const t = useT()
   const [copied,    setCopied]    = useState(false)
   const [emlDone,   setEmlDone]   = useState(false)
   const [wpCopied,  setWpCopied]  = useState(false)
@@ -62,7 +61,7 @@ export default function ExportBar({ brief, apiAvailable, anonymizing, onAnonymiz
   const [pdfBusy,   setPdfBusy]   = useState(false)
   const [includeClient, setInclude] = useState(false)
 
-  const opts = { includeClient }
+  const opts = { includeClient, lang }
   const score = computeScore(brief)
   const pct   = Math.round(score * 100)
 
@@ -87,9 +86,11 @@ export default function ExportBar({ brief, apiAvailable, anonymizing, onAnonymiz
     setWpCopied(true); setTimeout(() => setWpCopied(false), 2000)
   }
   async function handleLinkedin() {
-    await copyLinkedin(brief)
+    await copyLinkedin(brief, opts)
     setLiCopied(true); setTimeout(() => setLiCopied(false), 2000)
   }
+
+  const progLabel = pct < 30 ? t.prog0 : pct < 60 ? t.prog1 : pct < 85 ? t.prog2 : t.prog3
 
   return (
     <div className="no-print flex-shrink-0 border-t border-border bg-card/90 backdrop-blur-sm">
@@ -99,7 +100,7 @@ export default function ExportBar({ brief, apiAvailable, anonymizing, onAnonymiz
         <div
           className="flex-1 h-4 rounded-full overflow-hidden"
           style={{ background: '#EDE3D8' }}
-          title={`${pct}% av skjemaet er fylt ut`}
+          title={`${pct}%`}
         >
           <div
             className="h-full rounded-full transition-all duration-700 ease-out"
@@ -114,9 +115,7 @@ export default function ExportBar({ brief, apiAvailable, anonymizing, onAnonymiz
         <span className="text-[11px] font-semibold tabular-nums" style={{ color: pct >= 80 ? '#99BC85' : pct >= 40 ? '#7DAACB' : '#D9CFC7', minWidth: '3ch' }}>
           {pct}%
         </span>
-        <span className="text-[10px] text-tx/60 whitespace-nowrap">
-          {pct < 30 ? 'Kom i gang' : pct < 60 ? 'Godt i gang' : pct < 85 ? 'Nesten ferdig' : 'Klar til eksport'}
-        </span>
+        <span className="text-[10px] text-tx/60 whitespace-nowrap">{progLabel}</span>
       </div>
 
       {/* ── Controls + export buttons ─────────────────────────────────────── */}
@@ -134,7 +133,7 @@ export default function ExportBar({ brief, apiAvailable, anonymizing, onAnonymiz
               onChange={e => setInclude(e.target.checked)}
               className="accent-accent w-3.5 h-3.5"
             />
-            <span className="text-xs font-medium text-tx">Eksporter kundebeskrivelse</span>
+            <span className="text-xs font-medium text-tx">{t.exportClient}</span>
           </label>
 
           {apiAvailable && (
@@ -144,9 +143,8 @@ export default function ExportBar({ brief, apiAvailable, anonymizing, onAnonymiz
               className="rounded-lg px-3 py-1.5 text-xs font-medium text-tx-muted
                 bg-[#EDE3D8] hover:bg-[#E3D7C8] border border-border/60
                 disabled:opacity-40 transition-colors"
-              title="Fjern klientnavn fra alle felter via AI"
             >
-              {anonymizing ? 'Anonymiserer…' : '🔒 Anonymiser ✦'}
+              {anonymizing ? t.anonymising2 : t.anonymise}
             </button>
           )}
         </div>
@@ -155,30 +153,26 @@ export default function ExportBar({ brief, apiAvailable, anonymizing, onAnonymiz
         <div className="flex items-center gap-2">
           <button onClick={handleCopyEmail}
             className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-semibold
-              text-tx hover:bg-bg hover:text-primary transition-colors"
-            title="Kopier som ren tekst">
-            {copied ? '✓ Kopiert' : '⎘ Kopier'}
+              text-tx hover:bg-bg hover:text-primary transition-colors">
+            {copied ? t.copied : t.copy}
           </button>
           <button onClick={handleDownloadEml}
             className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-semibold
-              text-tx hover:bg-bg hover:text-primary transition-colors"
-            title="Last ned som e-postfil">
-            {emlDone ? '✓ Lastet ned' : '📧 Epost .eml'}
+              text-tx hover:bg-bg hover:text-primary transition-colors">
+            {emlDone ? t.downloaded : t.emailBtn}
           </button>
 
           <div className="h-5 w-px bg-border" />
 
           <button onClick={handleWordpress}
             className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-semibold
-              text-tx hover:bg-bg hover:text-primary transition-colors"
-            title="Kopier HTML for WordPress">
-            {wpCopied ? '✓ Kopiert' : '🌐 WordPress'}
+              text-tx hover:bg-bg hover:text-primary transition-colors">
+            {wpCopied ? t.copied : '🌐 WordPress'}
           </button>
           <button onClick={handleLinkedin}
             className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-semibold
-              text-tx hover:bg-bg hover:text-primary transition-colors"
-            title="Kopier LinkedIn-innlegg">
-            {liCopied ? '✓ Kopiert' : '💼 LinkedIn'}
+              text-tx hover:bg-bg hover:text-primary transition-colors">
+            {liCopied ? t.copied : '💼 LinkedIn'}
           </button>
 
           <div className="h-5 w-px bg-border" />
@@ -186,17 +180,17 @@ export default function ExportBar({ brief, apiAvailable, anonymizing, onAnonymiz
           <button onClick={handleWord} disabled={wordBusy}
             className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-semibold
               text-tx-muted hover:bg-bg hover:text-tx disabled:opacity-50 transition-colors">
-            📄 {wordBusy ? 'Genererer…' : 'Word'}
+            {wordBusy ? t.generating : t.wordBtn}
           </button>
           <button onClick={handlePdf} disabled={pdfBusy}
             className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-semibold
               text-tx-muted hover:bg-bg hover:text-tx disabled:opacity-50 transition-colors">
-            📑 {pdfBusy ? 'Genererer…' : 'PDF'}
+            {pdfBusy ? t.generating : t.pdfBtn}
           </button>
           <button onClick={() => window.print()}
             className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold
               text-white hover:bg-primary/80 transition-colors">
-            🖨️ Print
+            {t.printBtn}
           </button>
         </div>
       </div>

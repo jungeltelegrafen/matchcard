@@ -1,6 +1,9 @@
 import InlineField from './InlineField'
+import { useT } from '../i18n'
 
 export default function RightColumn({ brief, setField, pendingFill, onAccept, onReject }) {
+  const t = useT()
+
   function f(key, extra = {}) {
     return {
       value: brief[key],
@@ -17,52 +20,52 @@ export default function RightColumn({ brief, setField, pendingFill, onAccept, on
       <div className="space-y-6">
 
         <InlineField
-          label="Web-URL (oppdragsannonse) — Valgfri"
-          placeholder="https://…"
+          label={t.webUrl}
+          placeholder={t.webUrlPlaceholder}
           {...f('webUrl')}
         />
 
         <section className="space-y-3">
           <h3 className="text-[10px] font-semibold uppercase tracking-widest text-tx">
-            Samarbeidsstruktur kunde ↔ NC
+            {t.samarbeidsstruktur}
           </h3>
           <InlineField
-            label="Tilbudsformat overfor kunden"
+            label={t.tilbudsformat}
             type="textarea" rows={2}
-            placeholder="E-postformat med praktisk info + spisset CV, evt. med kompetanseskjema"
+            placeholder={t.tilbudsformatPlaceholder}
             {...f('tilbudsformat')}
           />
           <InlineField
-            label="Prosessen videre?"
+            label={t.prosessenVidere}
             type="textarea" rows={3}
-            placeholder="Intervjurunder, tidslinje, beslutningstaker…"
+            placeholder={t.prosessenVidereP}
             {...f('prosessenVidere', { optional: true })}
           />
           <InlineField
-            label="Andre leverandører?"
+            label={t.andreLeverandorer}
             type="textarea" rows={3}
-            placeholder="Eksklusivt til NC, eller deler kunden behovet?"
+            placeholder={t.andreLeverandorerP}
             {...f('andreLeverandorer', { optional: true })}
           />
           <InlineField
-            label="Andre kandidater?"
+            label={t.andreKandidater}
             type="textarea" rows={3}
-            placeholder="Er andre konsulenter allerede vurdert?"
+            placeholder={t.andreKandidaterP}
             {...f('andreKandidater', { optional: true })}
           />
         </section>
 
         <InlineField
-          label="Annet / Andre behov"
+          label={t.annet}
           type="textarea" rows={3}
-          placeholder="Tilgrensende behov, planlagte utvidelser…"
+          placeholder={t.annetP}
           {...f('annet', { optional: true })}
         />
 
         <InlineField
-          label="Generelle notater"
+          label={t.generelleNotater}
           type="textarea" rows={4}
-          placeholder="Intern notis, kontekst fra møte, oppfølgingspunkter…"
+          placeholder={t.generelleNotaterP}
           {...f('generelleNotater', { optional: true })}
         />
 

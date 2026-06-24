@@ -2,6 +2,16 @@ import {
   Document, Packer, Paragraph, TextRun, HeadingLevel,
   BorderStyle, ShadingType,
 } from 'docx'
+import no from '../i18n/no'
+import en from '../i18n/en'
+
+function s(lang) { return lang === 'en' ? en : no }
+
+function d(iso) {
+  if (!iso) return ''
+  const [y, m, day] = iso.split('-')
+  return day ? `${day}.${m}.${y}` : iso
+}
 
 function heading1(text) {
   return new Paragraph({
@@ -46,26 +56,25 @@ function logisticsRow(label, value) {
 }
 
 export async function exportWord(brief, opts = {}) {
-  const { includeClient = false } = opts
+  const { includeClient = false, lang = 'no' } = opts
+  const t = s(lang)
   const children = []
 
-  // Title
   children.push(
     new Paragraph({
       spacing: { after: 80 },
-      children: [new TextRun({ text: 'Oppdragsbeskrivelse', bold: true, size: 36, color: '1A1A2E' })],
+      children: [new TextRun({ text: t.docTitle, bold: true, size: 36, color: '1A1A2E' })],
     }),
     new Paragraph({
       spacing: { after: 320 },
       border: { bottom: { style: BorderStyle.SINGLE, size: 1, color: 'E8DDD0' } },
-      children: [new TextRun({ text: `Rolle: ${brief.rolle || '—'}`, size: 22, color: '7A6F65' })],
+      children: [new TextRun({ text: `${t.docRole}: ${brief.rolle || '—'}`, size: 22, color: '7A6F65' })],
     }),
   )
 
-  // Kjernen i behovet
   if (brief.kjernenIBehovet) {
     children.push(
-      heading1('Kjernen i behovet'),
+      heading1(t.secKjerne),
       new Paragraph({
         spacing: { after: 240 },
         shading: { type: ShadingType.SOLID, color: 'FDF3EB' },
@@ -74,70 +83,60 @@ export async function exportWord(brief, opts = {}) {
     )
   }
 
-  // Essensiell logistikk
   const logisticsRows = [
-    ['Rolle',              brief.rolle],
-    ['Antall konsulenter', brief.antallKonsulenter],
-    ['Stillingsprosent',   brief.stillingsprosent],
-    ['Oppstartsdato',      d(brief.oppstartsdato)],
-    ['Varighet',           brief.varighet],
-    ['Lokasjon',           [brief.onsiteRemote, brief.hybridDetaljer, brief.arbeidslokasjon].filter(Boolean).join(' — ')],
-    ['Senioritet',         brief.senioritet],
-    ['Språkkrav',          brief.spraakkrav],
-    ['Budsjett / timepris',brief.budsjett],
-    ['Leveransefrist CVer til kunden', d(brief.leveransefristCver)],
-    ['Søknadsfrist kandidater',        d(brief.soknadsfrist)],
+    [t.docRole,       brief.rolle],
+    [t.secAntall,     brief.antallKonsulenter],
+    [t.secStilling,   brief.stillingsprosent],
+    [t.secOppstart,   d(brief.oppstartsdato)],
+    [t.secVarighet,   brief.varighet],
+    [t.secLokasjon,   [brief.onsiteRemote, brief.hybridDetaljer, brief.arbeidslokasjon].filter(Boolean).join(' — ')],
+    [t.secSenioritet, brief.senioritet],
+    [t.secSpraak,     brief.spraakkrav],
+    [t.secBudsjett,   brief.budsjett],
+    [t.secLeveranse,  d(brief.leveransefristCver)],
+    [t.secSoknad,     d(brief.soknadsfrist)],
   ].filter(([, v]) => v)
 
-  if (logisticsRows.length) {
-    logisticsRows.forEach(([label, value]) => children.push(logisticsRow(label, value)))
-  }
+  logisticsRows.forEach(([label, value]) => children.push(logisticsRow(label, value)))
 
-  // Bakgrunn
-  if (brief.hvaUtlosteBehovet) {
-    children.push(heading2('Bakgrunn for behovet'), body(brief.hvaUtlosteBehovet))
-  }
+  if (brief.hvaUtlosteBehovet)               { children.push(heading2(t.secBakgrunn),   body(brief.hvaUtlosteBehovet)) }
+  if (includeClient && brief.kundebeskrivelse){ children.push(heading2(t.secOmKunden),   body(brief.kundebeskrivelse)) }
+  if (brief.prosjektbeskrivelse)             { children.push(heading2(t.secProsjekt),    body(brief.prosjektbeskrivelse)) }
+  if (brief.teambeskrivelse)                 { children.push(heading2(t.secTeam),        body(brief.teambeskrivelse)) }
+  if (brief.arbeidsoppgaver)                 { children.push(heading2(t.secOppgaver),    body(brief.arbeidsoppgaver)) }
 
-  if (includeClient && brief.kundebeskrivelse) { children.push(heading2('Om kunden'), body(brief.kundebeskrivelse)) }
-  if (brief.prosjektbeskrivelse) { children.push(heading2('Prosjektbeskrivelse'), body(brief.prosjektbeskrivelse)) }
-  if (brief.teambeskrivelse)     { children.push(heading2('Teambeskrivelse'),     body(brief.teambeskrivelse)) }
-  if (brief.arbeidsoppgaver)     { children.push(heading2('Arbeidsoppgaver'),     body(brief.arbeidsoppgaver)) }
-
-  // Kompetansekrav
-  const maHa   = brief.maHa?.filter(Boolean)   || []
+  const maHa    = brief.maHa?.filter(Boolean)   || []
   const fintAHa = brief.fintAHa?.filter(Boolean) || []
   if (maHa.length || fintAHa.length) {
-    children.push(heading2('Kompetansekrav'))
+    children.push(heading2(t.secKompetanse))
     if (maHa.length) {
-      children.push(body('Må ha', { bold: true, color: '1A1A2E' }))
+      children.push(body(t.secMaaHa, { bold: true, color: '1A1A2E' }))
       maHa.forEach(k => children.push(bullet(k, true)))
     }
     if (fintAHa.length) {
-      children.push(body('Fint å ha', { bold: true, color: '7A6F65' }))
+      children.push(body(t.secFintAaHa, { bold: true, color: '7A6F65' }))
       fintAHa.forEach(k => children.push(bullet(k)))
     }
   }
 
-  if (brief.personligeEgenskaper) { children.push(heading2('Personlige egenskaper'), body(brief.personligeEgenskaper)) }
-  if (brief.sellingPoints)        { children.push(heading2('Selling points'),        body(brief.sellingPoints)) }
+  if (brief.personligeEgenskaper) { children.push(heading2(t.secPersonlig), body(brief.personligeEgenskaper)) }
+  if (brief.sellingPoints)        { children.push(heading2(t.secSelling),   body(brief.sellingPoints)) }
 
   if (brief.prosessenVidere || brief.andreLeverandorer || brief.andreKandidater) {
-    children.push(heading2('Samarbeidsstruktur kunde ↔ NC'))
-    if (brief.prosessenVidere)   { children.push(body('Prosessen videre:', { bold: true }), body(brief.prosessenVidere)) }
-    if (brief.andreLeverandorer) { children.push(body('Andre leverandører:', { bold: true }), body(brief.andreLeverandorer)) }
-    if (brief.andreKandidater)   { children.push(body('Andre kandidater:', { bold: true }), body(brief.andreKandidater)) }
+    children.push(heading2(t.secSamarbeid))
+    if (brief.prosessenVidere)   { children.push(body(t.secProsessen, { bold: true }), body(brief.prosessenVidere)) }
+    if (brief.andreLeverandorer) { children.push(body(t.secAndreLev,  { bold: true }), body(brief.andreLeverandorer)) }
+    if (brief.andreKandidater)   { children.push(body(t.secAndreKand, { bold: true }), body(brief.andreKandidater)) }
   }
 
-  if (brief.annet)            { children.push(heading2('Annet'), body(brief.annet)) }
-  if (brief.generelleNotater) { children.push(heading2('Generelle notater'), body(brief.generelleNotater)) }
+  if (brief.annet)            { children.push(heading2(t.secAnnet),   body(brief.annet)) }
+  if (brief.generelleNotater) { children.push(heading2(t.secNotater), body(brief.generelleNotater)) }
 
   const doc = new Document({
     sections: [{ children: children.filter(Boolean) }],
     styles: {
       default: {
-        document: {
-          run: { font: 'Calibri', size: 20, color: '2D2D2D' },
-        },
+        document: { run: { font: 'Calibri', size: 20, color: '2D2D2D' } },
       },
     },
   })
@@ -145,7 +144,7 @@ export async function exportWord(brief, opts = {}) {
   const blob = await Packer.toBlob(doc)
   const a = document.createElement('a')
   a.href = URL.createObjectURL(blob)
-  a.download = `oppdragsbeskrivelse-${slug(brief.rolle || 'ny')}.docx`
+  a.download = `${slugify(t.docTitle)}-${slug(brief.rolle || 'ny')}.docx`
   a.click()
   URL.revokeObjectURL(a.href)
 }
@@ -154,8 +153,6 @@ function slug(s) {
   return s.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '').slice(0, 40)
 }
 
-function d(iso) {
-  if (!iso) return ''
-  const [y, m, day] = iso.split('-')
-  return day ? `${day}.${m}.${y}` : iso
+function slugify(s) {
+  return s.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '').slice(0, 30)
 }

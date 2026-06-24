@@ -1,25 +1,27 @@
 import { useState, useEffect, useRef } from 'react'
-
-const TYPES = [
-  { key: 'bug',     emoji: '🐛', label: 'Noe funker ikke' },
-  { key: 'feature', emoji: '💡', label: 'Jeg ønsker meg…' },
-  { key: 'general', emoji: '💬', label: 'Generelt' },
-]
-
-const PLACEHOLDERS = {
-  bug:     'Beskriv hva som skjer og hva du forventet skulle skje…',
-  feature: 'Beskriv hva du savner eller hva som hadde gjort verktøyet bedre…',
-  general: 'Del dine tanker om produktet…',
-}
+import { useT } from '../i18n'
 
 export default function FeedbackModal({ onClose, apiBase, briefRole }) {
+  const t = useT()
   const [type,    setType]   = useState('general')
   const [subject, setSubject]= useState('Behovsavklarer')
   const [message, setMessage]= useState('')
   const [name,    setName]   = useState('')
-  const [status,  setStatus] = useState('idle') // idle | sending | done | error
+  const [status,  setStatus] = useState('idle')
   const [result,  setResult] = useState(null)
   const textareaRef = useRef(null)
+
+  const TYPES = [
+    { key: 'bug',     emoji: '🐛', label: t.feedbackBug },
+    { key: 'feature', emoji: '💡', label: t.feedbackFeature },
+    { key: 'general', emoji: '💬', label: t.feedbackGeneral },
+  ]
+
+  const PLACEHOLDERS = {
+    bug:     t.feedbackPlaceholderBug,
+    feature: t.feedbackPlaceholderFeature,
+    general: t.feedbackPlaceholderGeneral,
+  }
 
   useEffect(() => {
     setTimeout(() => textareaRef.current?.focus(), 50)
@@ -37,7 +39,7 @@ export default function FeedbackModal({ onClose, apiBase, briefRole }) {
 
   async function handleSubmit(e) {
     e.preventDefault()
-    if (!message.trim() || status === 'sending') return
+    if (!message.trim() || !name.trim() || status === 'sending') return
     setStatus('sending')
     try {
       const res = await fetch(`${apiBase}/api/feedback`, {
@@ -47,7 +49,7 @@ export default function FeedbackModal({ onClose, apiBase, briefRole }) {
           type,
           subject: subject.trim() || 'Behovsavklarer',
           message: message.trim(),
-          name: name.trim() || undefined,
+          name: name.trim(),
           briefRole: briefRole || undefined,
           page: '/behovsavklarer',
         }),
@@ -76,60 +78,54 @@ export default function FeedbackModal({ onClose, apiBase, briefRole }) {
         className="relative w-full max-w-xl mx-4 rounded-2xl border border-border bg-card shadow-2xl"
         role="dialog"
         aria-modal="true"
-        aria-label="Produkttilbakemelding"
+        aria-label={t.feedbackTitle}
       >
         {/* Header */}
         <div className="flex items-start justify-between px-6 pt-6 pb-1">
           <div>
-            <h2 className="text-[17px] font-semibold text-primary">Produkttilbakemelding</h2>
-            <p className="text-[11px] text-tx-muted mt-0.5">
-              Hjelp oss forbedre verktøyet — alt er nyttig
-            </p>
+            <h2 className="text-[17px] font-semibold text-primary">{t.feedbackTitle}</h2>
+            <p className="text-[11px] text-tx-muted mt-0.5">{t.feedbackSubtitle}</p>
           </div>
           <button
             onClick={onClose}
             className="text-tx-muted hover:text-primary transition-colors text-xl leading-none mt-0.5"
-            aria-label="Lukk"
+            aria-label={t.feedbackLukk}
           >
             ×
           </button>
         </div>
 
         {status === 'done' ? (
-          /* ── Success ─────────────────────────────────────────────────────── */
           <div className="px-6 pb-8 pt-4 flex flex-col items-center gap-3 text-center">
             <div className="text-4xl">✓</div>
-            <p className="text-sm font-semibold text-primary">Takk for tilbakemeldingen!</p>
-            <p className="text-xs text-tx-muted max-w-xs">
-              Den er mottatt og vil bli gjennomgått.
-            </p>
+            <p className="text-sm font-semibold text-primary">{t.feedbackTakk}</p>
+            <p className="text-xs text-tx-muted max-w-xs">{t.feedbackMottatt}</p>
             <button
               onClick={onClose}
               className="mt-4 rounded-lg border border-border bg-white px-5 py-2 text-xs font-semibold text-tx hover:bg-bg transition-colors"
             >
-              Lukk
+              {t.feedbackLukk}
             </button>
           </div>
         ) : (
-          /* ── Form ────────────────────────────────────────────────────────── */
           <form onSubmit={handleSubmit} className="px-6 pb-6 pt-4 space-y-4">
 
             {/* Type selector */}
             <div className="flex gap-2">
-              {TYPES.map(t => (
+              {TYPES.map(ty => (
                 <button
-                  key={t.key}
+                  key={ty.key}
                   type="button"
-                  onClick={() => { setType(t.key); textareaRef.current?.focus() }}
+                  onClick={() => { setType(ty.key); textareaRef.current?.focus() }}
                   className={[
                     'flex-1 flex flex-col items-center gap-1.5 rounded-xl border py-3 px-2 text-center transition-all',
-                    type === t.key
+                    type === ty.key
                       ? 'border-accent/60 bg-accent/8 text-primary shadow-sm'
                       : 'border-border bg-bg/40 text-tx-muted hover:border-border/80 hover:bg-bg',
                   ].join(' ')}
                 >
-                  <span className="text-xl leading-none">{t.emoji}</span>
-                  <span className="text-[11px] font-semibold leading-tight">{t.label}</span>
+                  <span className="text-xl leading-none">{ty.emoji}</span>
+                  <span className="text-[11px] font-semibold leading-tight">{ty.label}</span>
                 </button>
               ))}
             </div>
@@ -137,13 +133,13 @@ export default function FeedbackModal({ onClose, apiBase, briefRole }) {
             {/* Subject */}
             <div>
               <label className="block text-[10px] font-semibold uppercase tracking-widest text-tx-muted mb-1.5">
-                Gjelder
+                {t.feedbackGjelder}
               </label>
               <input
                 type="text"
                 value={subject}
                 onChange={e => setSubject(e.target.value)}
-                placeholder="Hvilken funksjon eller del av produktet?"
+                placeholder={t.feedbackGjelderP}
                 className="w-full rounded-xl border border-border bg-bg/60 px-3.5 py-2.5
                   text-sm text-primary placeholder:text-tx-muted/60
                   focus:outline-none focus:ring-1 focus:ring-accent/40 focus:border-accent/50 transition-colors"
@@ -153,7 +149,7 @@ export default function FeedbackModal({ onClose, apiBase, briefRole }) {
             {/* Message */}
             <div>
               <label className="block text-[10px] font-semibold uppercase tracking-widest text-tx-muted mb-1.5">
-                Melding
+                {t.feedbackMelding}
               </label>
               <textarea
                 ref={textareaRef}
@@ -164,22 +160,21 @@ export default function FeedbackModal({ onClose, apiBase, briefRole }) {
                 rows={5}
                 className="w-full resize-none rounded-xl border border-border bg-bg/60 px-3.5 py-2.5
                   text-sm text-primary placeholder:text-tx-muted/60
-                  focus:outline-none focus:ring-1 focus:ring-accent/40 focus:border-accent/50
-                  transition-colors"
+                  focus:outline-none focus:ring-1 focus:ring-accent/40 focus:border-accent/50 transition-colors"
               />
-              <p className="mt-1 text-right text-[10px] text-tx-muted/50">⌘ + Enter for å sende</p>
+              <p className="mt-1 text-right text-[10px] text-tx-muted/50">{t.feedbackCmdEnter}</p>
             </div>
 
             {/* Name — required */}
             <div>
               <label className="block text-[10px] font-semibold uppercase tracking-widest text-tx-muted mb-1.5">
-                Navn
+                {t.feedbackNavn}
               </label>
               <input
                 type="text"
                 value={name}
                 onChange={e => setName(e.target.value)}
-                placeholder="Ditt navn"
+                placeholder={t.feedbackNavnP}
                 required
                 className="w-full rounded-xl border border-border bg-bg/60 px-3.5 py-2.5
                   text-sm text-primary placeholder:text-tx-muted/60
@@ -190,7 +185,7 @@ export default function FeedbackModal({ onClose, apiBase, briefRole }) {
             {/* Submit row */}
             <div className="flex items-center justify-between pt-1">
               {status === 'error' ? (
-                <p className="text-[11px] text-red-400">Noe gikk galt — prøv igjen</p>
+                <p className="text-[11px] text-red-400">{t.feedbackFeil}</p>
               ) : (
                 <span />
               )}
@@ -200,7 +195,7 @@ export default function FeedbackModal({ onClose, apiBase, briefRole }) {
                 className="rounded-lg bg-accent px-5 py-2 text-sm font-semibold text-white
                   hover:bg-accent/80 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
-                {status === 'sending' ? 'Sender…' : 'Send produkttilbakemelding'}
+                {status === 'sending' ? t.feedbackSending : t.feedbackSend}
               </button>
             </div>
 

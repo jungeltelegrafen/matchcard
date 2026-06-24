@@ -1,10 +1,22 @@
 import jsPDF from 'jspdf'
+import no from '../i18n/no'
+import en from '../i18n/en'
+
+function s(lang) { return lang === 'en' ? en : no }
+
+function d(iso) {
+  if (!iso) return ''
+  const [y, m, day] = iso.split('-')
+  return day ? `${day}.${m}.${y}` : iso
+}
 
 export function exportPdf(brief, opts = {}) {
-  const { includeClient = false } = opts
+  const { includeClient = false, lang = 'no' } = opts
+  const t = s(lang)
+
   const doc = new jsPDF({ unit: 'mm', format: 'a4' })
   const ml = 18
-  const pw = 174 // 210 - 2*18
+  const pw = 174
   let y = 22
 
   function newPage() { doc.addPage(); y = 22 }
@@ -52,33 +64,33 @@ export function exportPdf(brief, opts = {}) {
 
   // ── Title ─────────────────────────────────────────────────────────────────
   setStyle(18, 'bold', 26, 26, 46)
-  doc.text('Oppdragsbeskrivelse', ml, y); y += 7
+  doc.text(t.docTitle, ml, y); y += 7
   if (brief.rolle) {
     setStyle(10, 'normal', 122, 111, 101)
-    doc.text('Rolle: ' + brief.rolle, ml, y); y += 5
+    doc.text(`${t.docRole}: ${brief.rolle}`, ml, y); y += 5
   }
   divider()
 
   // ── Kjernen ────────────────────────────────────────────────────────────────
   if (brief.kjernenIBehovet) {
-    section('Kjernen i behovet')
+    section(t.secKjerne)
     para(brief.kjernenIBehovet, 11, 'bolditalic', 201, 123, 75)
     gap(); divider()
   }
 
   // ── Logistikk ──────────────────────────────────────────────────────────────
   const logRows = [
-    ['Rolle',              brief.rolle],
-    ['Antall konsulenter', brief.antallKonsulenter],
-    ['Stillingsprosent',   brief.stillingsprosent],
-    ['Oppstartsdato',      d(brief.oppstartsdato)],
-    ['Varighet',           brief.varighet],
-    ['Lokasjon',           [brief.onsiteRemote, brief.hybridDetaljer, brief.arbeidslokasjon].filter(Boolean).join(' — ')],
-    ['Senioritet',         brief.senioritet],
-    ['Språkkrav',          brief.spraakkrav],
-    ['Budsjett / timepris',brief.budsjett],
-    ['Leveransefrist CVer til kunden', d(brief.leveransefristCver)],
-    ['Søknadsfrist kandidater',        d(brief.soknadsfrist)],
+    [t.docRole,       brief.rolle],
+    [t.secAntall,     brief.antallKonsulenter],
+    [t.secStilling,   brief.stillingsprosent],
+    [t.secOppstart,   d(brief.oppstartsdato)],
+    [t.secVarighet,   brief.varighet],
+    [t.secLokasjon,   [brief.onsiteRemote, brief.hybridDetaljer, brief.arbeidslokasjon].filter(Boolean).join(' — ')],
+    [t.secSenioritet, brief.senioritet],
+    [t.secSpraak,     brief.spraakkrav],
+    [t.secBudsjett,   brief.budsjett],
+    [t.secLeveranse,  d(brief.leveransefristCver)],
+    [t.secSoknad,     d(brief.soknadsfrist)],
   ].filter(([, v]) => v)
 
   if (logRows.length) {
@@ -88,56 +100,50 @@ export function exportPdf(brief, opts = {}) {
 
   // ── Tekstseksjoner ─────────────────────────────────────────────────────────
   ;[
-    ['Bakgrunn for behovet', brief.hvaUtlosteBehovet],
-    ['Om kunden',            includeClient ? brief.kundebeskrivelse : null],
-    ['Prosjektbeskrivelse',  brief.prosjektbeskrivelse],
-    ['Teambeskrivelse',      brief.teambeskrivelse],
-    ['Arbeidsoppgaver',      brief.arbeidsoppgaver],
+    [t.secBakgrunn,  brief.hvaUtlosteBehovet],
+    [t.secOmKunden,  includeClient ? brief.kundebeskrivelse : null],
+    [t.secProsjekt,  brief.prosjektbeskrivelse],
+    [t.secTeam,      brief.teambeskrivelse],
+    [t.secOppgaver,  brief.arbeidsoppgaver],
   ].forEach(([label, val]) => {
     if (!val) return
     section(label); para(val); gap()
   })
 
   // ── Kompetansekrav ─────────────────────────────────────────────────────────
-  const maHa   = brief.maHa?.filter(Boolean)   || []
+  const maHa    = brief.maHa?.filter(Boolean)   || []
   const fintAHa = brief.fintAHa?.filter(Boolean) || []
   if (maHa.length || fintAHa.length) {
-    section('Kompetansekrav')
+    section(t.secKompetanse)
     if (maHa.length) {
-      para('Må ha', 9, 'bold', 45, 45, 45)
+      para(t.secMaaHa, 9, 'bold', 45, 45, 45)
       maHa.forEach(k => para('• ' + k))
     }
     if (fintAHa.length) {
       gap(2)
-      para('Fint å ha', 9, 'bold', 45, 45, 45)
+      para(t.secFintAaHa, 9, 'bold', 45, 45, 45)
       fintAHa.forEach(k => para('• ' + k))
     }
     gap()
   }
 
-  if (brief.personligeEgenskaper) { section('Personlige egenskaper'); para(brief.personligeEgenskaper); gap() }
-  if (brief.sellingPoints)        { section('Selling points');        para(brief.sellingPoints); gap() }
+  if (brief.personligeEgenskaper) { section(t.secPersonlig); para(brief.personligeEgenskaper); gap() }
+  if (brief.sellingPoints)        { section(t.secSelling);   para(brief.sellingPoints); gap() }
 
   if (brief.prosessenVidere || brief.andreLeverandorer || brief.andreKandidater) {
-    section('Samarbeidsstruktur')
-    if (brief.prosessenVidere)   { para('Prosessen videre:', 9, 'bold'); para(brief.prosessenVidere) }
-    if (brief.andreLeverandorer) { para('Andre leverandører:', 9, 'bold'); para(brief.andreLeverandorer) }
-    if (brief.andreKandidater)   { para('Andre kandidater:', 9, 'bold'); para(brief.andreKandidater) }
+    section(t.secSamarbeid)
+    if (brief.prosessenVidere)   { para(t.secProsessen, 9, 'bold'); para(brief.prosessenVidere) }
+    if (brief.andreLeverandorer) { para(t.secAndreLev,  9, 'bold'); para(brief.andreLeverandorer) }
+    if (brief.andreKandidater)   { para(t.secAndreKand, 9, 'bold'); para(brief.andreKandidater) }
     gap()
   }
 
-  if (brief.annet)            { section('Annet');   para(brief.annet);   gap() }
-  if (brief.generelleNotater) { section('Notater'); para(brief.generelleNotater) }
+  if (brief.annet)            { section(t.secAnnet);   para(brief.annet);   gap() }
+  if (brief.generelleNotater) { section(t.secNotater); para(brief.generelleNotater) }
 
-  doc.save(`oppdragsbeskrivelse-${slug(brief.rolle || 'ny')}.pdf`)
+  doc.save(`${slug(t.docTitle)}-${slug(brief.rolle || 'ny')}.pdf`)
 }
 
 function slug(s) {
-  return s.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '').slice(0, 40)
-}
-
-function d(iso) {
-  if (!iso) return ''
-  const [y, m, day] = iso.split('-')
-  return day ? `${day}.${m}.${y}` : iso
+  return s.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '').slice(0, 30)
 }

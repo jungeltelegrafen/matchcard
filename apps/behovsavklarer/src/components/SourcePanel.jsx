@@ -1,9 +1,11 @@
 import { useRef, useState, useEffect } from 'react'
+import { useT } from '../i18n'
 
 export default function SourcePanel({
   sourceFiles, pastedText, parsing, extracting, apiAvailable, isLocalhost,
   onFileAdd, onFileRemove, onPasteChange, onExtract, onDistill,
 }) {
+  const t = useT()
   const inputRef = useRef()
   const [expanded, setExpanded] = useState(false)
   const hasSource = sourceFiles.length > 0 || pastedText.trim()
@@ -31,6 +33,8 @@ export default function SourcePanel({
     }
   }
 
+  const totalChars = [...sourceFiles.map(f => f.text), pastedText].filter(Boolean).join('').length
+
   return (
     <div className="no-print border-b border-border bg-card/50">
       <div className="mx-6 my-3 space-y-2">
@@ -53,9 +57,7 @@ export default function SourcePanel({
           />
           <span className="text-xl select-none">{parsing ? '⏳' : '📂'}</span>
           <span className="text-sm font-semibold text-tx text-center">
-            {parsing
-              ? 'Leser fil…'
-              : 'Du kan inkludere flere dokumenter — slipp PDF, DOCX, EML eller TXT her, eller klikk for å velge'}
+            {parsing ? t.dropZoneParsing : t.dropZoneIdle}
           </span>
         </div>
 
@@ -71,7 +73,7 @@ export default function SourcePanel({
                 <button
                   onClick={() => onFileRemove(i)}
                   className="ml-0.5 text-tx-muted hover:text-tx transition-colors leading-none"
-                  title="Fjern"
+                  title={t.removeFile}
                 >
                   ×
                 </button>
@@ -86,16 +88,15 @@ export default function SourcePanel({
             onClick={() => setExpanded(e => !e)}
             className="absolute top-2 right-2.5 z-10 text-[22px] font-black text-primary
               hover:text-accent transition-colors select-none leading-none"
-            title={expanded ? 'Minimer' : 'Utvid'}
+            title={expanded ? t.minimiseTip : t.expandTip}
           >
             {expanded ? '⤡' : '⤢'}
           </button>
 
-          {/* Custom centred placeholder — shown only when empty */}
           {!pastedText && (
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none px-10">
               <span className="text-[15px] font-semibold text-tx text-center leading-snug">
-                …eller lim inn tekst / e-post direkte her
+                {t.pastePrompt}
               </span>
             </div>
           )}
@@ -110,39 +111,36 @@ export default function SourcePanel({
           />
         </div>
 
-        {/* AI buttons — always visible when API is available */}
+        {/* AI buttons */}
         {(apiAvailable || isLocalhost) && (
           <div className="flex items-center gap-3">
             {apiAvailable ? (
               <>
-                {/* Grayed out unless there's source content to parse */}
                 <button
                   onClick={onExtract}
                   disabled={extracting || !hasSource}
-                  title={!hasSource ? 'Last opp eller lim inn kildemateriell først' : ''}
+                  title={!hasSource ? t.fillSourceTip : ''}
                   className="rounded-lg bg-primary px-4 py-1.5 text-xs font-semibold text-white
                     hover:bg-primary/80 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                 >
-                  {extracting ? 'Fyller ut…' : 'Fyll ut fra kilde ✦'}
+                  {extracting ? t.btnFilling : t.btnFill}
                 </button>
-                {/* Always active — works from current brief fields */}
                 <button
                   onClick={onDistill}
                   disabled={extracting}
                   className="rounded-lg border border-border px-4 py-1.5 text-xs font-semibold text-tx
                     hover:bg-bg hover:text-primary disabled:opacity-40 transition-colors"
                 >
-                  Destillér kjernen ✦
+                  {t.btnDistil}
                 </button>
               </>
             ) : (
               <span className="text-xs text-tx/60 italic">
-                Kobler til AI… start matchcard-landing med <code className="font-mono">npm run dev</code>
+                {t.connectingAi} <code className="font-mono">npm run dev</code>
               </span>
             )}
             <span className="ml-auto text-xs text-tx/50">
-              {[...sourceFiles.map(f => f.text), pastedText]
-                .filter(Boolean).join('').length.toLocaleString()} tegn
+              {t.charCount(totalChars)}
             </span>
           </div>
         )}
