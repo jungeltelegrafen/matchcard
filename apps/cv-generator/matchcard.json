@@ -1,0 +1,13 @@
+{
+  "name": "CV Generator",
+  "description": "Generate, refine and export a professional CV with AI agents, chat and dual PDF/DOCX output.",
+  "category": "Automation",
+  "icon": "📄",
+  "url": "https://matchcard.no/cv-generator",
+  "status": "live",
+  "auth": {
+    "required": false,
+    "provider": "microsoft",
+    "allowedDomains": []
+  }
+}

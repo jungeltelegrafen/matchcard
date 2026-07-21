@@ -5,7 +5,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "build:behovsavklarer": "cd apps/behovsavklarer && npm ci && npm run build && rm -rf ../../public/behovsavklarer && cp -r dist ../../public/behovsavklarer"
+    "build:behovsavklarer": "cd apps/behovsavklarer && npm ci && npm run build && rm -rf ../../public/behovsavklarer && cp -r dist ../../public/behovsavklarer",
+    "build:cv-generator": "cd apps/cv-generator && npm ci && npm run build && rm -rf ../../public/cv-generator && cp -r dist ../../public/cv-generator"
   },
   "devDependencies": {
     "autoprefixer": "^10.5.0",

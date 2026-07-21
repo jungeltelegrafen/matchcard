@@ -1,31 +1,33 @@
-import { Paragraph, TextRun, BorderStyle } from 'docx'
+import { Paragraph, TextRun } from 'docx'
 import { theme } from '../../theme'
+import { getL } from '../../utils/labels'
+import { hex, sectionHeading, twoColPara } from './buildUtils'
 
-function hex(c) { return c.replace('#', '') }
-
-function sectionHeading(label) {
-  return new Paragraph({
-    children: [new TextRun({ text: label.toUpperCase(), bold: true, size: 22, color: hex(theme.colors.primary) })],
-    border: { bottom: { style: BorderStyle.SINGLE, size: 4, color: hex(theme.colors.accent) } },
-    spacing: { before: 240, after: 100 },
-  })
-}
-
-export function buildEducation(items) {
+export function buildEducation(items, lang = 'en') {
   if (!items?.length) return []
+  const lb = getL(lang)
+
   return [
-    sectionHeading('Education'),
-    ...items.flatMap(item => [
-      new Paragraph({
-        children: [
-          new TextRun({ text: `${item.degree}${item.field ? ' — ' + item.field : ''}`, bold: true }),
-          new TextRun({ text: `  ${item.startDate} – ${item.endDate}`, color: hex(theme.colors.muted), size: 18 }),
-        ],
-      }),
-      new Paragraph({
-        children: [new TextRun({ text: item.institution, color: hex(theme.colors.muted) })],
-        spacing: { after: 80 },
-      }),
-    ]),
+    sectionHeading(lb.education),
+    ...items.flatMap((item, idx) => {
+      const degreeRuns = [
+        item.degree ? new TextRun({ text: item.degree, bold: true, size: 20, font: 'Calibri', color: hex(theme.colors.text) }) : null,
+        item.field  ? new TextRun({ text: ` — ${item.field}`, size: 20, font: 'Calibri', color: hex(theme.colors.muted) }) : null,
+      ].filter(Boolean)
+
+      const dateStr = [item.startDate, item.endDate].filter(Boolean).join(' – ')
+
+      return [
+        twoColPara(
+          degreeRuns.length ? degreeRuns : [new TextRun({ text: '' })],
+          dateStr,
+          { spacingBefore: idx === 0 ? 0 : 120 },
+        ),
+        item.institution ? new Paragraph({
+          children: [new TextRun({ text: item.institution, size: 18, color: hex(theme.colors.muted), font: 'Calibri' })],
+          spacing: { after: 60 },
+        }) : null,
+      ].filter(Boolean)
+    }),
   ]
 }

@@ -1,46 +1,106 @@
-// The shape of all CV data flowing through the app.
-// Both the form and the renderers (PDF + DOCX) consume this structure.
-
 export const emptyCvData = {
+  cvType: 'technical',   // 'technical' | 'management'
+
   personal: {
     firstName: '',
     lastName: '',
-    title: '',          // e.g. "Senior Consultant"
-    email: '',
-    phone: '',
+    title: '',
     location: '',
+    educationSummary: '',
+    itExperienceSince: '',
+    phone: '',
+    email: '',
     linkedin: '',
-    summary: '',        // short professional bio
+    availableFrom: '',
+    workPreference: '',
+    showContactInfo: true,
+    birthYear: '',
+    summary: '',
   },
+
   experience: [
     // {
     //   company: '',
     //   role: '',
-    //   startDate: '',  // e.g. "Jan 2021"
-    //   endDate: '',    // e.g. "Present"
-    //   location: '',
-    //   bullets: [''],  // list of achievements / responsibilities
-    // }
-  ],
-  education: [
-    // {
-    //   institution: '',
-    //   degree: '',
-    //   field: '',
     //   startDate: '',
     //   endDate: '',
+    //   location: '',
+    //   description: '',    // project description
+    //   bullets: [''],      // tasks and responsibilities
+    //   technologies: '',   // technical CV: technologies used
+    //   methodologies: '',  // management CV: methodologies/tech/competences
+    //   result: '',         // management CV: result
     // }
   ],
+
+  education: [
+    // { institution: '', degree: '', field: '', startDate: '', endDate: '' }
+  ],
+
   skills: [
-    // {
-    //   category: '',   // e.g. "Languages", "Tools", "Frameworks"
-    //   items: [''],
-    // }
+    // { category: '', items: [] }
   ],
+
   languages: [
-    // { language: '', proficiency: '' }  // e.g. "Norwegian", "Native"
+    // { language: '', proficiency: '' }
   ],
+
   certifications: [
     // { name: '', issuer: '', year: '' }
   ],
+
+  courses: [
+    // { name: '', institution: '', year: '' }
+  ],
+
+  positions: {
+    enabled: false,
+    useProjectFormat: false,
+    items: [
+      // {
+      //   company: '',
+      //   startDate: '',
+      //   endDate: '',
+      //   title: '',       // job title / role
+      //   description: '', // brief description
+      //   bullets: [''],        // used in project format
+      //   technologies: '',     // used in project format
+      //   methodologies: '',    // methods and competences used (project format)
+      // }
+    ],
+  },
+
+  videoProfile: {
+    enabled: false,
+    title: 'Professional Introduction',
+    description: '',
+    videoUrl: '',
+    thumbnailUrl: '',
+    duration: '',
+  },
+
+  projectVideoProfile: {
+    enabled: false,
+    projectName: '',
+    title: '',
+    description: '',
+    videoUrl: '',
+    thumbnailUrl: '',
+    duration: '',
+  },
+
+  competences: {
+    enabled: false,
+    projectLabel: '',
+    items: [
+      // {
+      //   requirement: '',   // competence name
+      //   level: '',         // 1–5 (5 = expert)
+      //   lastUsed: '',      // year, e.g. "2025"
+      //   yearsRelevant: '', // total years
+      //   projects: '',      // comma-separated project names
+      //   detail: '',        // evidence paragraph
+      // }
+    ],
+  },
 }

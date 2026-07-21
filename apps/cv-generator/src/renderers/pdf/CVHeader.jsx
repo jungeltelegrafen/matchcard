@@ -1,5 +1,8 @@
 import { View, Text, Image, StyleSheet } from '@react-pdf/renderer'
 import { theme } from '../../theme'
+import { getL } from '../../utils/labels'
+
+const LABEL_W = 72   // pt — label column width
 
 const styles = StyleSheet.create({
   header: {
@@ -21,11 +24,24 @@ const styles = StyleSheet.create({
     fontSize: theme.fonts.sizes.title,
     color: theme.colors.accent,
     marginTop: 4,
+    marginBottom: 5,
   },
-  contact: {
-    fontSize: theme.fonts.sizes.small,
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    marginBottom: 2,
+  },
+  infoLabel: {
+    width: LABEL_W,
+    fontSize: 7,
+    fontFamily: theme.fonts.heading,
     color: theme.colors.muted,
-    marginTop: 2,
+    flexShrink: 0,
+  },
+  infoValue: {
+    flex: 1,
+    fontSize: 7,
+    color: theme.colors.muted,
   },
   logo: {
     width: 80,
@@ -34,20 +50,37 @@ const styles = StyleSheet.create({
   },
 })
 
-export default function CVHeader({ personal }) {
+function InfoRow({ label, value }) {
+  if (!value) return null
+  return (
+    <View style={styles.infoRow}>
+      <Text style={styles.infoLabel}>{label}</Text>
+      <Text style={styles.infoValue}>{value}</Text>
+    </View>
+  )
+}
+
+export default function CVHeader({ personal, lang = 'en' }) {
+  const lb = getL(lang)
+  const showContact = personal.showContactInfo !== false
+
   return (
     <View style={styles.header}>
       <View style={styles.left}>
-        <Text style={styles.name}>{personal.firstName} {personal.lastName}</Text>
-        <Text style={styles.jobTitle}>{personal.title}</Text>
-        <Text style={styles.contact}>
-          {[personal.email, personal.phone, personal.location].filter(Boolean).join('  ·  ')}
+        <Text style={styles.name}>
+          {[personal.firstName, personal.lastName].filter(Boolean).join(' ')}
         </Text>
-        {personal.linkedin && (
-          <Text style={styles.contact}>{personal.linkedin}</Text>
-        )}
+        {personal.title ? <Text style={styles.jobTitle}>{personal.title}</Text> : null}
+
+        <InfoRow label={lb.address}          value={personal.location} />
+        <InfoRow label={lb.educationSummary} value={personal.educationSummary} />
+        <InfoRow label={lb.itSince}          value={personal.itExperienceSince} />
+        {showContact && <InfoRow label={lb.phone}   value={personal.phone} />}
+        {showContact && <InfoRow label={lb.email}   value={personal.email} />}
+        {showContact && <InfoRow label={lb.linkedin} value={personal.linkedin} />}
+        <InfoRow label={lb.availableFrom}    value={personal.availableFrom} />
+        <InfoRow label={lb.workPreference}   value={personal.workPreference} />
       </View>
-      {/* TODO: replace logo-placeholder.png with actual logo from branding */}
       <Image style={styles.logo} src={theme.logoPath} />
     </View>
   )
