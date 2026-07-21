@@ -13,9 +13,9 @@
     "description": "Upload your existing CV or LinkedIn export and get a polished PDF and Word document in seconds.",
     "category": "Documents",
     "icon": "📄",
-    "url": "https://jungeltelegrafen.github.io/cv-generator/",
-    "repo": "jungeltelegrafen/cv-generator",
-    "status": "sandbox"
+    "url": "https://matchcard.no/cv-generator",
+    "repo": "jungeltelegrafen/matchcard",
+    "status": "live"
   },
   {
     "name": "Suggestion: ReqMatcher",
