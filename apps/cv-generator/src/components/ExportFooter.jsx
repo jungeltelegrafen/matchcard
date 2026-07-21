@@ -70,6 +70,8 @@ export default function ExportFooter({ cv, filename, lang, onPreview }) {
   const [exporting,    setExporting]    = useState(false)
   const [emailMenuOpen, setEmailMenuOpen] = useState(false)
   const [exportStatus,  setExportStatus]  = useState('')
+  const [shareUrl,      setShareUrl]      = useState('')
+  const [sharing,       setSharing]       = useState(false)
 
   const pct   = Math.round(computeCvScore(cv) * 100)
   const label = scoreLabel(pct)
@@ -109,6 +111,29 @@ export default function ExportFooter({ cv, filename, lang, onPreview }) {
 
   function handleEmail(attachFormat) {
     run('Preparing email…', exportCv => downloadEmail(exportCv, filename, attachFormat, lang))
+  }
+
+  async function handleShare() {
+    setSharing(true)
+    setShareUrl('')
+    try {
+      const exportCv = await getOutputCv()
+      const res = await fetch('/api/cv/share', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cv: exportCv, lang, filename }),
+      })
+      if (!res.ok) throw new Error('Share failed')
+      const { url } = await res.json()
+      setShareUrl(url)
+      navigator.clipboard.writeText(url).catch(() => {})
+    } catch (err) {
+      console.error(err)
+      setExportStatus('Share failed')
+      setTimeout(() => setExportStatus(''), 3000)
+    } finally {
+      setSharing(false)
+    }
   }
 
   return (
@@ -158,6 +183,22 @@ export default function ExportFooter({ cv, filename, lang, onPreview }) {
                 <button onClick={() => handleEmail('pdf')}>Attach PDF</button>
                 <button onClick={() => handleEmail('docx')}>Attach Word</button>
                 <button onClick={() => handleEmail('both')}>Attach Both</button>
+              </div>
+            )}
+          </div>
+
+          <div className="export-share-wrap">
+            <button
+              className="export-btn export-btn--share"
+              onClick={shareUrl ? () => { navigator.clipboard.writeText(shareUrl) } : handleShare}
+              disabled={sharing || exporting}
+            >
+              {sharing ? '…' : shareUrl ? '⎘ Copy link' : '⤷ Share'}
+            </button>
+            {shareUrl && (
+              <div className="share-url-toast">
+                <span className="share-url-text">{shareUrl}</span>
+                <a href={shareUrl} target="_blank" rel="noopener noreferrer" className="share-url-open">Open ↗</a>
               </div>
             )}
           </div>

@@ -3138,3 +3138,49 @@ textarea.cv-field {
   transition: background 0.1s;
 }
 .email-menu button:hover { background: var(--bg); }
+
+.export-btn--share {
+  background: rgba(255,255,255,0.12);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.2);
+}
+
+.export-share-wrap {
+  position: relative;
+}
+
+.share-url-toast {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  right: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+  padding: 10px 14px;
+  min-width: 260px;
+  max-width: 360px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.share-url-text {
+  font-size: 0.72rem;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.share-url-open {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--accent);
+  text-decoration: none;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.share-url-open:hover { text-decoration: underline; }

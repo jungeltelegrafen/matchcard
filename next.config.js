@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: { serverComponentsExternalPackages: ['@anthropic-ai/sdk'] },
+  experimental: { serverComponentsExternalPackages: ['@anthropic-ai/sdk', 'pg'] },
   async rewrites() {
     return [
       // Serve the Vite SPA at /behovsavklarer (no trailing slash)
