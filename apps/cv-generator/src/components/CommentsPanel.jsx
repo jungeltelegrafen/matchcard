@@ -27,16 +27,8 @@ export default function CommentsPanel({ lang, chatComments = [], onChatCommentsC
     ...STATIC_COMMENTS.filter(c => staticResolved.has(c.id)),
   ]
 
-  function resolveItem(item) {
-    item.source === 'agent' || item.source === undefined
-      ? resolveStatic(item.id)
-      : resolveChat(item.id)
-  }
-  function unresolveItem(item) {
-    item.source === 'agent' || item.source === undefined
-      ? unresolveStatic(item.id)
-      : unresolveChat(item.id)
-  }
+  function resolveItem(item)   { resolveChat(item.id) }
+  function unresolveItem(item) { unresolveChat(item.id) }
 
   const isEmpty = allOpen.length === 0 && allResolved.length === 0
 

@@ -1023,44 +1023,16 @@ html {
 }
 
 .comment-bubble {
-  position: relative;
   background: #FFFBF0;
   border: 1px solid #F0C060;
   border-radius: 8px;
-  border-top-left-radius: 2px;
   padding: 10px 12px;
-  margin-left: 10px;
-}
-/* Tail pointing left */
-.comment-bubble::before {
-  content: '';
-  position: absolute;
-  left: -9px;
-  top: 12px;
-  width: 0;
-  height: 0;
-  border-top: 7px solid transparent;
-  border-bottom: 7px solid transparent;
-  border-right: 9px solid #F0C060;
-}
-.comment-bubble::after {
-  content: '';
-  position: absolute;
-  left: -7px;
-  top: 13px;
-  width: 0;
-  height: 0;
-  border-top: 6px solid transparent;
-  border-bottom: 6px solid transparent;
-  border-right: 8px solid #FFFBF0;
 }
 .comment-bubble--resolved {
   background: #F8F8F8;
   border-color: var(--border);
   opacity: 0.65;
 }
-.comment-bubble--resolved::before { border-right-color: var(--border); }
-.comment-bubble--resolved::after  { border-right-color: #F8F8F8; }
 
 .comment-bubble-header {
   display: flex;
