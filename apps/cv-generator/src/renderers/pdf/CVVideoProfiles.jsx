@@ -1,58 +1,31 @@
 import { View, Text, Link, StyleSheet } from '@react-pdf/renderer'
 import { theme } from '../../theme'
-import { getL } from '../../utils/labels'
-
-const GENERIC_MOCK = {
-  enabled: true,
-  title: 'Professional Introduction',
-  description: 'An overview of professional background, core skills, and approach to work.',
-  videoUrl: 'https://video.cloudflare.com/intro-placeholder',
-  duration: '3:12',
-}
-
-const PROJECT_MOCK = {
-  enabled: true,
-  projectName: 'Accenture — Cloud Migration 2025',
-  title: 'Project Introduction',
-  description: 'Tailored presentation of relevant experience for this specific engagement.',
-  videoUrl: 'https://video.cloudflare.com/project-placeholder',
-  duration: '2:48',
-}
 
 const C = theme.colors
+
 const styles = StyleSheet.create({
   wrapper: {
     marginBottom: theme.spacing.sectionGap,
   },
   grid: {
     flexDirection: 'row',
+    gap: 8,
   },
-  cardLeft: {
-    flex: 1,
-    marginRight: 7,
-    borderWidth: 0.75,
-    borderColor: '#E5E0D9',
-    borderStyle: 'solid',
-    borderRadius: 4,
-  },
-  cardRight: {
+  card: {
     flex: 1,
     borderWidth: 0.75,
     borderColor: '#E5E0D9',
     borderStyle: 'solid',
     borderRadius: 4,
+    paddingTop: 6,
+    paddingBottom: 7,
+    paddingLeft: 7,
+    paddingRight: 7,
   },
   typeBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F7F4F0',
-    paddingTop: 3,
-    paddingBottom: 3,
-    paddingLeft: 6,
-    paddingRight: 6,
-    borderBottomWidth: 0.5,
-    borderBottomColor: '#E5E0D9',
-    borderBottomStyle: 'solid',
+    marginBottom: 4,
   },
   dotGeneric: {
     width: 5,
@@ -72,6 +45,8 @@ const styles = StyleSheet.create({
     fontSize: 6,
     fontFamily: theme.fonts.heading,
     color: '#888',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   projectName: {
     fontSize: 6,
@@ -79,34 +54,26 @@ const styles = StyleSheet.create({
     fontFamily: theme.fonts.heading,
     marginLeft: 4,
   },
-  thumb: {
-    height: 44,
-    backgroundColor: '#1A1A2E',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  thumbText: {
-    fontSize: 7,
-    color: 'rgba(255,255,255,0.45)',
-    letterSpacing: 1,
-  },
-  body: {
-    paddingTop: 5,
-    paddingBottom: 6,
-    paddingLeft: 6,
-    paddingRight: 6,
-  },
   title: {
     fontSize: 8,
     fontFamily: theme.fonts.heading,
     color: C.primary,
-    marginBottom: 2,
+    marginBottom: 3,
   },
   desc: {
     fontSize: 6.5,
     color: C.muted,
     lineHeight: 1.4,
-    marginBottom: 4,
+    marginBottom: 5,
+  },
+  linkRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  playLabel: {
+    fontSize: 6.5,
+    color: '#4A90D9',
+    marginRight: 3,
   },
   link: {
     fontSize: 6.5,
@@ -117,49 +84,46 @@ const styles = StyleSheet.create({
 function VideoCard({ profile, type, lang, isLeft }) {
   const isProject = type === 'project'
   const videoUrl  = profile.videoUrl || '#'
+  const watchLabel = lang === 'no' ? '▶ Se video' : '▶ Watch video'
 
   return (
-    <View style={isLeft ? styles.cardLeft : styles.cardRight}>
+    <View style={styles.card}>
       <View style={styles.typeBadge}>
         <View style={isProject ? styles.dotProject : styles.dotGeneric} />
         <Text style={styles.typeLabel}>
           {isProject
-            ? (lang === 'no' ? 'FOR PROSJEKT' : 'FOR PROJECT')
-            : (lang === 'no' ? 'GENERELL' : 'GENERIC')}
+            ? (lang === 'no' ? 'For prosjekt' : 'For project')
+            : (lang === 'no' ? 'Generell' : 'Generic')}
         </Text>
-        {isProject && profile.projectName && (
-          <Text style={styles.projectName}>{profile.projectName}</Text>
-        )}
-      </View>
-
-      <View style={styles.thumb}>
-        <Text style={styles.thumbText}>
-          {profile.duration ? `▶  ${profile.duration}` : '▶  VIDEO'}
-        </Text>
-      </View>
-
-      <View style={styles.body}>
-        <Text style={styles.title}>{profile.title}</Text>
-        {profile.description ? (
-          <Text style={styles.desc}>{profile.description}</Text>
+        {isProject && profile.projectName ? (
+          <Text style={styles.projectName}>— {profile.projectName}</Text>
         ) : null}
-        <Link src={videoUrl} style={styles.link}>
-          {lang === 'no' ? '▶ Se video' : '▶ Watch video'}
-        </Link>
+      </View>
+
+      <Text style={styles.title}>{profile.title}</Text>
+
+      {profile.description ? (
+        <Text style={styles.desc}>{profile.description}</Text>
+      ) : null}
+
+      <View style={styles.linkRow}>
+        <Link src={videoUrl} style={styles.link}>{watchLabel}</Link>
       </View>
     </View>
   )
 }
 
 export default function CVVideoProfiles({ videoProfile, projectVideoProfile, lang }) {
-  const generic = (videoProfile?.enabled ? videoProfile : null) ?? GENERIC_MOCK
-  const project = (projectVideoProfile?.enabled ? projectVideoProfile : null) ?? PROJECT_MOCK
+  const generic = videoProfile?.enabled ? videoProfile : null
+  const project = projectVideoProfile?.enabled ? projectVideoProfile : null
+
+  if (!generic && !project) return null
 
   return (
     <View style={styles.wrapper}>
       <View style={styles.grid}>
-        <VideoCard profile={generic} type="generic" lang={lang} isLeft />
-        <VideoCard profile={project} type="project" lang={lang} />
+        {generic && <VideoCard profile={generic} type="generic" lang={lang} isLeft />}
+        {project && <VideoCard profile={project} type="project" lang={lang} />}
       </View>
     </View>
   )

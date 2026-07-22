@@ -2265,129 +2265,7 @@ textarea.cv-field {
 }
 
 /* ─── Video Profile card (inside the CV document) ─── */
-.cv-vidpro-wrap {
-  display: flex;
-  gap: 14px;
-  align-items: flex-start;
-  background: #FDFCFA;
-  border: 1px solid var(--border);
-  border-left: 3px solid var(--accent);
-  border-radius: 7px;
-  padding: 12px 14px;
-  margin-bottom: 18px;
-}
-
-.cv-vidpro-thumb {
-  position: relative;
-  width: 108px;
-  aspect-ratio: 4/3;
-  flex-shrink: 0;
-  border-radius: 5px;
-  overflow: hidden;
-  background: #0E0E18;
-  cursor: pointer;
-  border: none;
-  padding: 0;
-  display: block;
-  transition: opacity 0.15s;
-}
-.cv-vidpro-thumb:hover { opacity: 0.88; }
-.cv-vidpro-thumb-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-.cv-vidpro-thumb-placeholder {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, #1A1A2E 0%, #0E0E1A 100%);
-}
-.cv-vidpro-play-overlay {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0,0,0,0.32);
-  transition: background 0.15s;
-}
-.cv-vidpro-thumb:hover .cv-vidpro-play-overlay { background: rgba(0,0,0,0.18); }
-.cv-vidpro-duration {
-  position: absolute;
-  bottom: 4px;
-  right: 5px;
-  font-size: 0.58rem;
-  font-weight: 700;
-  color: #fff;
-  background: rgba(0,0,0,0.65);
-  border-radius: 3px;
-  padding: 1px 4px;
-  letter-spacing: 0.02em;
-}
-
-.cv-vidpro-body {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.cv-vidpro-top {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  flex-wrap: wrap;
-}
-.cv-vidpro-title {
-  font-size: 0.73rem;
-  font-weight: 700;
-  color: var(--primary);
-}
-.cv-vidpro-badge {
-  font-size: 0.56rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--muted);
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  padding: 1px 6px;
-}
-.cv-vidpro-badge--project {
-  color: var(--accent);
-  background: var(--accent-lt);
-  border-color: rgba(201,123,75,0.3);
-}
-.cv-vidpro-desc {
-  font-size: 0.67rem;
-  color: var(--muted);
-  line-height: 1.5;
-}
-.cv-vidpro-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 0.65rem;
-  font-weight: 600;
-  color: var(--accent);
-  text-decoration: none;
-  margin-top: 2px;
-  transition: color 0.15s;
-}
-.cv-vidpro-link:hover { color: #a85e30; text-decoration: underline; }
-.cv-vidpro-link-url {
-  font-weight: 400;
-  color: var(--muted);
-  font-size: 0.6rem;
-  margin-left: 2px;
-}
-
-/* ─── Two-card video grid (generic + project) ─── */
+/* ─── Video profile cards — text + link only, no thumbnails ─── */
 .cv-vidpro-section {
   margin-bottom: 20px;
 }
@@ -2431,8 +2309,8 @@ textarea.cv-field {
   border-radius: 50%;
   flex-shrink: 0;
 }
-.cv-vidcard-type-dot--generic  { background: #7A7A7A; }
-.cv-vidcard-type-dot--project  { background: var(--accent); }
+.cv-vidcard-type-dot--generic { background: #7A7A7A; }
+.cv-vidcard-type-dot--project { background: var(--accent); }
 .cv-vidcard-project-name {
   color: var(--accent);
   text-transform: none;
@@ -2446,47 +2324,8 @@ textarea.cv-field {
   min-width: 0;
 }
 
-.cv-vidcard-thumb {
-  position: relative;
-  aspect-ratio: 16/9;
-  width: 100%;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-  display: block;
-  transition: opacity 0.15s;
-  background: #0A0A14;
-}
-.cv-vidcard-thumb:hover { opacity: 0.88; }
-.cv-vidcard-thumb-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-.cv-vidcard-thumb-bg {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, #1A1A2E 0%, #0C0C18 100%);
-}
-.cv-vidcard-thumb:hover .cv-vidcard-thumb-bg { background: linear-gradient(135deg, #222240 0%, #111126 100%); }
-.cv-vidcard-duration {
-  position: absolute;
-  bottom: 4px;
-  right: 5px;
-  font-size: 0.56rem;
-  font-weight: 700;
-  color: #fff;
-  background: rgba(0,0,0,0.65);
-  border-radius: 3px;
-  padding: 1px 4px;
-}
-
 .cv-vidcard-info {
-  padding: 8px 10px 9px;
+  padding: 9px 10px 10px;
   display: flex;
   flex-direction: column;
   gap: 3px;
@@ -2501,10 +2340,6 @@ textarea.cv-field {
   font-size: 0.62rem;
   color: var(--muted);
   line-height: 1.45;
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
 }
 .cv-vidcard-link {
   display: inline-flex;
@@ -2514,10 +2349,17 @@ textarea.cv-field {
   font-weight: 600;
   color: var(--accent);
   text-decoration: none;
-  margin-top: 2px;
+  margin-top: 3px;
   transition: color 0.15s;
+  flex-wrap: wrap;
+  word-break: break-all;
 }
 .cv-vidcard-link:hover { text-decoration: underline; }
+.cv-vidcard-link--empty {
+  color: var(--muted);
+  font-weight: 400;
+  font-style: italic;
+}
 .cv-vidcard-link-url {
   font-weight: 400;
   color: var(--muted);
