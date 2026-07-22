@@ -89,6 +89,11 @@ export const emptyCvData = {
     duration: '',
   },
 
+  portfolio: [
+    // { platform: 'github', label: '', url: '', description: '' }
+    // platforms: github | gitlab | stackoverflow | dribbble | behance | website | other
+  ],
+
   competences: {
     enabled: false,
     projectLabel: '',

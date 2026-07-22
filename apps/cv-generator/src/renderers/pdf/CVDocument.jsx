@@ -11,6 +11,7 @@ import CVCertsCourses from './CVCertsCourses'
 import CVLanguages from './CVLanguages'
 import SectionHeading from './SectionHeading'
 import CVVideoProfiles from './CVVideoProfiles'
+import CVPortfolio from './CVPortfolio'
 
 const styles = StyleSheet.create({
   page: {
@@ -75,6 +76,8 @@ export default function CVDocument({ data, lang = 'en' }) {
         <CVCertsCourses certifications={data.certifications} courses={data.courses} lang={lang} />
 
         <CVLanguages items={data.languages} lang={lang} />
+
+        <CVPortfolio items={data.portfolio} lang={lang} />
 
       </Page>
     </Document>

@@ -11,6 +11,7 @@ import { buildEducation } from './buildEducation'
 import { buildCertsCourses } from './buildCertsCourses'
 import { buildLanguages } from './buildLanguages'
 import { buildVideoProfiles } from './buildVideoProfiles'
+import { buildPortfolio } from './buildPortfolio'
 
 function section(paras) {
   if (!paras.length) return []
@@ -43,6 +44,7 @@ function buildDoc(data, lang = 'en') {
           ...section(buildEducation(data.education, lang)),
           ...section(buildCertsCourses(data.certifications, data.courses, lang)),
           ...section(buildLanguages(data.languages, lang)),
+          ...section(buildPortfolio(data.portfolio, lang)),
           new Paragraph({ children: [], spacing: { after: 0 } }),
         ],
       },

@@ -1,5 +1,6 @@
 const SECTION_RULES = [
-  { pattern: /summary|profile|introduction|overview|opening|about you|portfolio|github/i,          section: 'Summary',        key: 'summary' },
+  { pattern: /portfolio|github|gitlab|stack.?overflow|dribbble|behance|personal.?site|work.?sample|demo|showcase/i, section: 'Portfolio', key: 'portfolio' },
+  { pattern: /summary|profile|introduction|overview|opening|about you/i,                           section: 'Summary',        key: 'summary' },
   { pattern: /education|degree|university|ntnu|msc|bsc|academic|study|date/i,                      section: 'Education',      key: 'education' },
   { pattern: /languages? section|norwegian|multilingual/i,                                          section: 'Languages',      key: 'languages' },
   { pattern: /skill|technology|tech stack|tool|framework|language|stack/i,                          section: 'Skills',         key: 'skills' },

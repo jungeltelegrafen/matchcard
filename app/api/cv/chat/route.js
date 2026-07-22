@@ -68,6 +68,8 @@ FIELD GUIDE (what each path means):
 - competences[].items[i]    → rows in the competence matrix: { requirement, level, lastUsed, yearsRelevant, projects, detail }
 - courses[]                 → short courses and training (not formal education or certifications)
 - certifications[]          → professional certificates: { name, issuer, year }
+- portfolio[]               → portfolio links: { platform: 'github'|'gitlab'|'stackoverflow'|'dribbble'|'behance'|'website'|'other', label: string, url: string, description: string }
+    Use "append" to add a link, "replace" to update a field, e.g. "portfolio.0.description"
 
 OUTPUT LANGUAGE for all CV text: ${langName}
 

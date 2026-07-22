@@ -31,6 +31,7 @@ const CV_SECTION_MAP = {
   certifications: 'certifications',
   courses:        'certifications',
   positions:      'experience',
+  portfolio:      'portfolio',
 }
 
 function diffCvSections(oldCv, newCv) {
@@ -72,6 +73,7 @@ export default function App() {
         courses:       nextCv.courses     ?? cv.courses,
         positions:     nextCv.positions   ?? cv.positions,
         competences:   nextCv.competences ?? cv.competences,
+        portfolio:     nextCv.portfolio   ?? cv.portfolio   ?? [],
       })
       setMeta(nextMeta)
       return
