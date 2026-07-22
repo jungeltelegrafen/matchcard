@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { chatWithClaude } from '../utils/parseWithClaude'
+import { applyPatches } from '../utils/applyPatches'
 
 const ACCEPT = '.pdf,.docx,.txt'
 
@@ -35,9 +36,12 @@ export default function InputPanel({ cv, lang, onGenerate, generating, error }) 
     setMessages(next)
     setChatBusy(true)
     try {
-      const { reply, cv: updatedCv } = await chatWithClaude(cv, msg, messages, { lang })
+      const { reply, patches } = await chatWithClaude(cv, msg, messages, { lang })
       setMessages([...next, { role: 'assistant', content: reply }])
-      if (updatedCv) onGenerate([], '', updatedCv)
+      if (patches?.length > 0) {
+        const patchedCv = applyPatches(cv, patches)
+        onGenerate([], '', patchedCv)
+      }
     } catch (err) {
       const errMsg = err.message || 'Something went wrong. Please try again.'
       setChatError(errMsg)
