@@ -57,7 +57,29 @@ export function parseFeedbackFromAI(text) {
       continue
     }
 
-    // --- Pattern 2: "**1. Title**" on its own line, description follows on next lines
+    // --- Pattern 2: "1. **Title**" — number outside bold, description on next lines (most common Haiku format)
+    const numBoldMatch = line.match(/^\d+\.\s+\*\*(.+?)\*\*\s*$/)
+    if (numBoldMatch) {
+      const title = numBoldMatch[1].trim()
+      const descLines = []
+      let j = i + 1
+      while (j < lines.length) {
+        const next = lines[j].trim()
+        if (/^\d+\.\s+\*\*/.test(next) || /^\*\*\d+\./.test(next) || /^---/.test(next) || /^#/.test(next)) break
+        if (!next) { j++; if (descLines.length > 0) break; else continue }
+        descLines.push(next)
+        j++
+      }
+      i = j - 1
+      const desc = clean(descLines.join(' '))
+      if (title && desc) {
+        const { section, key } = detectSection(`${title} ${desc}`)
+        items.push(makeItem(items.length, section, key, title, desc))
+      }
+      continue
+    }
+
+    // --- Pattern 3: "**1. Title**" on its own line, description follows on next lines
     const boldNumMatch = line.match(/^\*\*\d+\.\s+(.+?)\*\*\s*$/)
     if (boldNumMatch) {
       const title = boldNumMatch[1].trim()

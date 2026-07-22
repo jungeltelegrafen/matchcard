@@ -52,7 +52,7 @@ export default function AgentsBar({ cv, lang, onFeedback }) {
     setAgentErrors(e => ({ ...e, [agent.id]: null }))
     try {
       const text  = await runAgent(cv, agent.prompt, lang)
-      const items = parseFeedbackFromAI(text).map(item => ({
+const items = parseFeedbackFromAI(text).map(item => ({
         ...item,
         source:     'agent',
         agentId:    agent.id,
