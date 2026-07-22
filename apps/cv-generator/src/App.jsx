@@ -64,7 +64,15 @@ export default function App() {
       const changed = diffCvSections(cv, directCv)
       setChatChangedSections(changed)
       const { cv: nextCv, meta: nextMeta } = applyAiResult(meta, cv, directCv)
-      setCv({ ...nextCv, competences: nextCv.competences ?? cv.competences, cvType: cv.cvType })
+      // Defensively preserve fields Claude might omit — never let a section be wiped by a missing key
+      setCv({
+        ...nextCv,
+        cvType:        cv.cvType,
+        videoProfiles: cv.videoProfiles ?? [],
+        courses:       nextCv.courses     ?? cv.courses,
+        positions:     nextCv.positions   ?? cv.positions,
+        competences:   nextCv.competences ?? cv.competences,
+      })
       setMeta(nextMeta)
       return
     }
