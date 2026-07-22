@@ -4,9 +4,14 @@
     "description": "Strukturer klientens behov til en ren oppdragsbeskrivelse klar for eksport.",
     "category": "Automation",
     "icon": "📋",
-    "url": "https://matchcard.no/behovsavklarer",
-    "repo": "jungeltelegrafen/behovsavklarer",
-    "status": "live"
+    "url": "https://jungeltelegrafen.github.io/behovsavklarer/",
+    "status": "sandbox",
+    "auth": {
+      "required": false,
+      "provider": "microsoft",
+      "allowedDomains": []
+    },
+    "repo": "jungeltelegrafen/behovsavklarer"
   },
   {
     "name": "CV Generator",
@@ -97,5 +102,21 @@
     "repo": "",
     "url": "",
     "status": "suggestion"
+  },
+  {
+    "name": "My Service Name",
+    "description": "One sentence: what does this tool do and who is it for?",
+    "category": "Automation",
+    "icon": "🔧",
+    "url": "",
+    "repo": "jungeltelegrafen/matchcard-service-template"
+  },
+  {
+    "name": "CV Generator",
+    "description": "Upload your existing CV or LinkedIn export and get a polished PDF and Word document in seconds.",
+    "category": "Documents",
+    "icon": "📄",
+    "url": "https://jungeltelegrafen.github.io/cv-generator/",
+    "repo": "jungeltelegrafen/cv-generator"
   }
 ]
