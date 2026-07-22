@@ -1103,8 +1103,12 @@ html {
 .comment-source-badge--agent {
   background: transparent;
 }
+.comment-bubble-footer {
+  margin-top: 8px;
+  display: flex;
+  justify-content: flex-end;
+}
 .comment-resolve-btn {
-  margin-left: auto;
   background: none;
   border: 1px solid rgba(180,83,9,0.3);
   border-radius: 5px;
@@ -1112,11 +1116,10 @@ html {
   font-weight: 700;
   font-family: inherit;
   color: #B45309;
-  padding: 2px 7px;
+  padding: 3px 8px;
   cursor: pointer;
   white-space: nowrap;
   transition: background 0.15s;
-  flex-shrink: 0;
 }
 .comment-resolve-btn:hover { background: rgba(180,83,9,0.07); }
 .comment-resolve-btn--undo {

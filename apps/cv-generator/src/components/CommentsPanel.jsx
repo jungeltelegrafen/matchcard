@@ -127,6 +127,10 @@ function CommentBubble({ item, lang, resolved, onResolve, onHover, onLeave }) {
             {lang === 'no' ? 'Fra chat' : 'From chat'}
           </span>
         ) : null}
+      </div>
+      {item.title && <p className="comment-title">{item.title}</p>}
+      <p className="comment-text">{item.text}</p>
+      <div className="comment-bubble-footer">
         <button
           className={`comment-resolve-btn${resolved ? ' comment-resolve-btn--undo' : ''}`}
           onClick={onResolve}
@@ -136,8 +140,6 @@ function CommentBubble({ item, lang, resolved, onResolve, onHover, onLeave }) {
             : (lang === 'no' ? 'Merk som løst' : 'Mark as resolved')}
         </button>
       </div>
-      {item.title && <p className="comment-title">{item.title}</p>}
-      <p className="comment-text">{item.text}</p>
     </div>
   )
 }
