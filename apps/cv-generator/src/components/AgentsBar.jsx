@@ -6,7 +6,7 @@ const AGENTS = [
   {
     id: 'grammar',
     title: 'Grammar & Clarity',
-    desc: 'Fix grammatical issues without changing content',
+    desc: 'Checks grammar, phrasing, passive voice and sentence clarity — without changing your content',
     color: '#4A90D9',
     prompt: `You are a professional CV editor reviewing for grammar, clarity, and writing quality only — do NOT suggest content changes or additions.
 Identify specific issues: awkward phrasing, passive voice overuse, unclear sentences, grammar errors, inconsistent punctuation, or wordy constructions.
@@ -16,7 +16,7 @@ If the CV is well-written with no issues, say so briefly.`,
   {
     id: 'recruiter',
     title: 'Recruiter Perspective',
-    desc: 'Surface red flags a hiring manager would notice',
+    desc: 'Flags gaps, red flags, and hesitation points a recruiter would notice when shortlisting',
     color: '#C97B4B',
     prompt: `You are a senior recruiter reviewing this CV for shortlisting decisions.
 Identify specific concerns, gaps, red flags, or missing elements that would make you hesitate to call this candidate. Be direct and point to specific sections or statements — avoid generic advice.
@@ -25,7 +25,7 @@ Return ONLY a numbered list of issues. For each: **N. Issue title** on its own l
   {
     id: 'impact',
     title: 'Strengthen Impact',
-    desc: 'Find vague bullets and suggest quantified results',
+    desc: 'Identifies task-focused bullets and suggests how to reframe them as measurable achievements',
     color: '#5BA85A',
     prompt: `You are a career coach specialising in results-driven CVs.
 Find every bullet point or description that states a task or responsibility rather than an achievement or measurable outcome. For each, explain what is weak and suggest specifically how to quantify or reframe it.
@@ -34,7 +34,7 @@ Return ONLY a numbered list: **N. Issue title** on its own line, then a 1–2 se
   {
     id: 'consistency',
     title: 'Consistency Check',
-    desc: 'Audit dates, formatting and tone across all sections',
+    desc: 'Audits date formats, tense shifts, capitalisation and tone inconsistencies across all sections',
     color: '#8B5CF6',
     prompt: `You are a CV proofreader checking for internal consistency.
 Look for: mixed date formats, inconsistent tense (past vs present tense), varying capitalisation, punctuation style inconsistencies, and shifts in tone or person (first vs third).
@@ -52,7 +52,13 @@ export default function AgentsBar({ cv, lang, onFeedback }) {
     setAgentErrors(e => ({ ...e, [agent.id]: null }))
     try {
       const text  = await runAgent(cv, agent.prompt, lang)
-      const items = parseFeedbackFromAI(text)
+      const items = parseFeedbackFromAI(text).map(item => ({
+        ...item,
+        source:     'agent',
+        agentId:    agent.id,
+        agentTitle: agent.title,
+        agentColor: agent.color,
+      }))
       if (items.length > 0) onFeedback?.(items)
       setStates(s => ({ ...s, [agent.id]: 'done' }))
     } catch (err) {
@@ -77,6 +83,9 @@ export default function AgentsBar({ cv, lang, onFeedback }) {
               key={agent.id}
               className={`abar-card abar-card--${state}`}
               style={{ '--agent-color': agent.color }}
+              onClick={(e) => { if (!e.target.closest('button') && state !== 'running') run(agent) }}
+              role="button"
+              tabIndex={state !== 'running' ? 0 : undefined}
             >
               <div className="abar-accent" />
               <div className="abar-body">

@@ -1100,6 +1100,9 @@ html {
   padding: 1px 5px;
   white-space: nowrap;
 }
+.comment-source-badge--agent {
+  background: transparent;
+}
 .comment-resolve-btn {
   margin-left: auto;
   background: none;
@@ -2178,9 +2181,11 @@ textarea.cv-field {
   background: #FDFCFA;
   transition: box-shadow 0.15s, border-color 0.15s;
   min-width: 0;
+  cursor: pointer;
+  user-select: none;
 }
-.abar-card:hover { box-shadow: 0 2px 10px rgba(0,0,0,0.07); }
-.abar-card--running { border-color: rgba(201,123,75,0.35); }
+.abar-card:hover:not(.abar-card--running) { box-shadow: 0 2px 10px rgba(0,0,0,0.07); }
+.abar-card--running { border-color: rgba(201,123,75,0.35); cursor: default; }
 .abar-card--done    { border-color: rgba(91,168,90,0.4); }
 
 .abar-accent {
@@ -3145,42 +3150,68 @@ textarea.cv-field {
   border: 1px solid rgba(255,255,255,0.2);
 }
 
-.export-share-wrap {
-  position: relative;
-}
-
-.share-url-toast {
-  position: absolute;
-  bottom: calc(100% + 8px);
-  right: 0;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.18);
-  padding: 10px 14px;
-  min-width: 260px;
-  max-width: 360px;
-  z-index: 10;
+/* ── Share URL bar (inline, above actions row) ── */
+.export-share-bar {
   display: flex;
   align-items: center;
   gap: 10px;
+  padding: 7px 28px;
+  background: rgba(255,255,255,0.07);
+  border-top: 1px solid rgba(255,255,255,0.08);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
 }
 
-.share-url-text {
-  font-size: 0.72rem;
-  color: var(--muted);
+.export-share-bar-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.45);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+.export-share-bar-url {
+  flex: 1;
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.8);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  flex: 1;
+  font-family: 'SF Mono', 'Fira Code', monospace;
 }
 
-.share-url-open {
+.export-share-bar-copy {
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 5px;
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  font-family: inherit;
+  padding: 4px 10px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity 0.15s;
+}
+.export-share-bar-copy:hover { opacity: 0.8; }
+
+.export-share-bar-open {
   font-size: 0.75rem;
   font-weight: 700;
-  color: var(--accent);
+  color: #7DAACB;
   text-decoration: none;
   white-space: nowrap;
-  flex-shrink: 0;
 }
-.share-url-open:hover { text-decoration: underline; }
+.export-share-bar-open:hover { text-decoration: underline; }
+
+.export-share-bar-close {
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.35);
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0 2px;
+  line-height: 1;
+  transition: color 0.15s;
+}
+.export-share-bar-close:hover { color: rgba(255,255,255,0.7); }

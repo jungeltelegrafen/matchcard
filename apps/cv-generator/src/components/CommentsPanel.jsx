@@ -115,18 +115,25 @@ function CommentBubble({ item, lang, resolved, onResolve, onHover, onLeave }) {
     >
       <div className="comment-bubble-header">
         <span className="comment-section-tag">{item.section}</span>
-        {item.source === 'chat' && (
+        {item.agentTitle ? (
+          <span
+            className="comment-source-badge comment-source-badge--agent"
+            style={{ color: item.agentColor, borderColor: item.agentColor }}
+          >
+            {item.agentTitle}
+          </span>
+        ) : item.source === 'chat' ? (
           <span className="comment-source-badge">
             {lang === 'no' ? 'Fra chat' : 'From chat'}
           </span>
-        )}
+        ) : null}
         <button
           className={`comment-resolve-btn${resolved ? ' comment-resolve-btn--undo' : ''}`}
           onClick={onResolve}
         >
           {resolved
-            ? (lang === 'no' ? 'Gjenåpne' : 'Reopen')
-            : (lang === 'no' ? 'Løst' : 'Resolve')}
+            ? (lang === 'no' ? 'Merk som uløst' : 'Mark as unresolved')
+            : (lang === 'no' ? 'Merk som løst' : 'Mark as resolved')}
         </button>
       </div>
       {item.title && <p className="comment-title">{item.title}</p>}
