@@ -15,11 +15,11 @@ If the CV is well-written with no issues, say so briefly.`,
   },
   {
     id: 'recruiter',
-    title: 'Recruiter Perspective',
-    desc: 'Flags gaps, red flags, and hesitation points a recruiter would notice when shortlisting',
+    title: 'Hiring Manager Perspective',
+    desc: 'Flags gaps, red flags, and hesitation points a hiring manager would notice when evaluating',
     color: '#C97B4B',
-    prompt: `You are a senior recruiter reviewing this CV for shortlisting decisions.
-Identify specific concerns, gaps, red flags, or missing elements that would make you hesitate to call this candidate. Be direct and point to specific sections or statements — avoid generic advice.
+    prompt: `You are a senior hiring manager reviewing this CV to decide whether to invite this candidate for an interview.
+Identify specific concerns, gaps, red flags, or missing elements that would make you hesitate to proceed. Be direct and point to specific sections or statements — avoid generic advice.
 Return ONLY a numbered list of issues. For each: **N. Issue title** on its own line, then a 1–2 sentence explanation on the next line.`,
   },
   {
