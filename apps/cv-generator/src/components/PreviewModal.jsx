@@ -1,7 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import React from 'react'
-import { pdf } from '@react-pdf/renderer'
-import CVDocument from '../renderers/pdf/CVDocument'
+import { renderPdfBlob } from '../utils/renderPdf'
 
 export default function PreviewModal({ cv, lang = 'en', onClose }) {
   const [url, setUrl]       = useState(null)
@@ -14,8 +12,7 @@ export default function PreviewModal({ cv, lang = 'en', onClose }) {
     setLoading(true)
     setError(null)
 
-    pdf(React.createElement(CVDocument, { data: cv, lang }))
-      .toBlob()
+    renderPdfBlob(cv, lang)
       .then(blob => {
         if (cancelled) return
         if (urlRef.current) URL.revokeObjectURL(urlRef.current)

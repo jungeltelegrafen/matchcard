@@ -131,3 +131,24 @@ export const L = {
 export function getL(lang) {
   return L[lang] || L.en
 }
+
+// ── Feedback section labels ──────────────────────────────────────
+// Display names for the structured section keys agents return
+// (FEEDBACK_SECTION_KEYS in @lib/cv/schema).
+export const FEEDBACK_SECTION_LABELS = {
+  summary:        { en: 'Summary',        no: 'Sammendrag' },
+  skills:         { en: 'Skills',         no: 'Ferdigheter' },
+  competences:    { en: 'Competences',    no: 'Kompetanse' },
+  experience:     { en: 'Experience',     no: 'Erfaring' },
+  positions:      { en: 'Positions',      no: 'Verv' },
+  education:      { en: 'Education',      no: 'Utdanning' },
+  certifications: { en: 'Certifications', no: 'Sertifiseringer' },
+  languages:      { en: 'Languages',      no: 'Språk' },
+  portfolio:      { en: 'Portfolio',      no: 'Portefølje' },
+  general:        { en: 'General',        no: 'Generelt' },
+}
+
+export function feedbackSectionLabel(key, lang = 'en') {
+  const entry = FEEDBACK_SECTION_LABELS[key] || FEEDBACK_SECTION_LABELS.general
+  return entry[lang] || entry.en
+}

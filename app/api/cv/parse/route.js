@@ -1,81 +1,62 @@
 import Anthropic from '@anthropic-ai/sdk'
+import { buildCvJsonSchema, normalizeCv, PARSE_CHAR_LIMIT } from '@/lib/cv/schema'
+import { checkRateLimit, rateLimitedResponse, LIMITS } from '@/lib/rateLimit'
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
-const SCHEMA = `{
-  "personal": {
-    "firstName": "", "lastName": "", "title": "",
-    "location": "", "educationSummary": "", "itExperienceSince": "",
-    "phone": "", "email": "", "linkedin": "",
-    "availableFrom": "", "workPreference": "",
-    "showContactInfo": true, "birthYear": "", "summary": ""
-  },
-  "experience": [{ "company": "", "role": "", "startDate": "", "endDate": "", "location": "", "description": "", "bullets": [], "technologies": "", "methodologies": "", "result": "" }],
-  "education": [{ "institution": "", "degree": "", "field": "", "startDate": "", "endDate": "" }],
-  "skills": [{ "category": "", "items": [] }],
-  "languages": [{ "language": "", "proficiency": "" }],
-  "certifications": [{ "name": "", "issuer": "", "year": "" }],
-  "courses": [{ "name": "", "institution": "", "year": "" }],
-  "positions": {
-    "enabled": false, "useProjectFormat": false,
-    "items": [{ "company": "", "startDate": "", "endDate": "", "title": "", "description": "", "bullets": [], "technologies": "", "methodologies": "" }]
-  },
-  "competences": {
-    "enabled": false, "projectLabel": "",
-    "items": [{ "requirement": "", "level": "", "lastUsed": "", "yearsRelevant": "", "projects": "", "detail": "" }]
-  }
-}`
+// Forced tool use — the model must return a CV matching the shared schema.
+// `competences` is excluded: the matrix is hand-curated per bid, never parsed.
+// Note: no `strict: true` here — the full CV schema exceeds the API's strict-
+// grammar size limit. Forced tool_choice + normalizeCv() at the boundary
+// guarantee the response shape instead.
+const SAVE_CV_TOOL = {
+  name: 'save_cv',
+  description: 'Save the structured CV data extracted from the source text.',
+  input_schema: buildCvJsonSchema({ exclude: ['competences'] }),
+}
 
 export async function POST(request) {
+  const limit = await checkRateLimit(request, LIMITS.ai)
+  if (!limit.ok) return rateLimitedResponse(limit.retryAfter)
+
   try {
     const { text, userEdits = {}, lang = 'en' } = await request.json()
     if (!text) return Response.json({ error: 'No text provided' }, { status: 400 })
 
-    const langName   = lang === 'no' ? 'Norwegian (Bokmål)' : 'English'
+    const langName = lang === 'no' ? 'Norwegian (Bokmål)' : 'English'
     const editsBlock = Object.keys(userEdits).length > 0
       ? `\nPreserve these user-edited fields exactly (only override if the new source clearly contradicts):\n${JSON.stringify(userEdits, null, 2)}\n`
       : ''
 
+    // Sonnet, not Haiku: Haiku proved unstable emitting this large tool schema
+    // (intermittently dropped whole sections or emitted arrays as JSON strings).
+    // Parsing is the core boundary and runs once per explicit user action.
     const msg = await client.messages.create({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 4096,
+      model: 'claude-sonnet-4-6',
+      max_tokens: 8192,
+      tools: [SAVE_CV_TOOL],
+      tool_choice: { type: 'tool', name: 'save_cv' },
       messages: [{
         role: 'user',
-        content: `You are a CV parser. Extract all information from the source text and return ONLY a valid JSON object — no markdown, no code fences, no explanation.
-
-Schema (empty string for missing text fields, empty array [] for missing lists):
-${SCHEMA}
+        content: `You are a CV parser. Extract all information from the source text and save it with the save_cv tool.
 
 Rules:
-- skills.items: array of strings (never comma-separated string)
-- experience.bullets: array of strings, one per achievement
-- Missing sections: empty array
+- Extract every section you can find; omit fields the source does not mention
 - Preserve dates as written (e.g. "Jan 2021", "2019–2022")
-- Output language: ${langName} — translate all text content to ${langName} (keep names, dates, URLs unchanged)${editsBlock}
+- Output language for all text content: ${langName}. Keep names, dates, URLs, company and school names unchanged.${editsBlock}
 
 Source text:
-${text.slice(0, 14000)}`,
+${text.slice(0, PARSE_CHAR_LIMIT)}`,
       }],
     })
 
-    const data = parseJson(msg.content[0].text)
-    return Response.json(data)
+    const toolUse = msg.content.find(b => b.type === 'tool_use')
+    if (!toolUse) throw new Error('Model did not return structured CV data')
+
+    // Normalize at the boundary — the client always receives a full-shape CV.
+    return Response.json(normalizeCv(toolUse.input))
   } catch (err) {
     console.error('[cv/parse]', err)
-    return Response.json({ error: err.message }, { status: 500 })
+    return Response.json({ error: 'Failed to parse CV' }, { status: 500 })
   }
-}
-
-function parseJson(raw) {
-  const start = raw.indexOf('{')
-  const end   = raw.lastIndexOf('}')
-  if (start === -1 || end === -1) throw new Error('Model did not return valid JSON')
-  const data = JSON.parse(raw.slice(start, end + 1))
-  if (Array.isArray(data.skills)) {
-    data.skills = data.skills.map(g => ({
-      ...g,
-      items: Array.isArray(g.items) ? g.items : String(g.items).split(/,\s*/).filter(Boolean),
-    }))
-  }
-  return data
 }

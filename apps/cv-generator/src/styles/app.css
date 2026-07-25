@@ -423,6 +423,37 @@ html {
   border-radius: 6px;
 }
 
+.input-warning {
+  font-size: 0.78rem;
+  color: #ffd699;
+  padding: 6px 10px;
+  background: rgba(255,180,60,0.12);
+  border-radius: 6px;
+}
+
+/* ── Draft-restored notice ──────────────────────────────────── */
+.draft-notice {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 6px 14px;
+  font-size: 0.8rem;
+  color: #bcd9bc;
+  background: rgba(153,188,133,0.14);
+  border-bottom: 1px solid rgba(153,188,133,0.25);
+}
+.draft-notice-dismiss {
+  background: none;
+  border: none;
+  color: inherit;
+  font-size: 1rem;
+  cursor: pointer;
+  opacity: 0.7;
+  padding: 0 4px;
+}
+.draft-notice-dismiss:hover { opacity: 1; }
+
 /* ── Chat section ───────────────────────────────────────────── */
 .input-chat {
   border-top: 1px solid rgba(255,255,255,0.1);

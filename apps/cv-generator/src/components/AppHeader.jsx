@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import FeedbackModal from './FeedbackModal'
 
-export default function AppHeader({ cv, lang, onLangChange, onClear, onCvTypeChange }) {
+export default function AppHeader({ cv, lang, onLangChange, onClear, onCvTypeChange, onTranslate, translating }) {
   const [feedbackOpen, setFeedbackOpen] = useState(false)
 
   const candidateName = [cv.personal.firstName, cv.personal.lastName].filter(Boolean).join(' ')
   const candidateTitle = cv.personal.title
+  const cvHasContent = Boolean(cv.personal.firstName || cv.personal.summary || cv.experience.length)
 
   function handleClear() {
     if (!window.confirm(lang === 'no' ? 'Nullstille hele CVen?' : 'Reset the entire CV?')) return
@@ -81,6 +82,23 @@ export default function AppHeader({ cv, lang, onLangChange, onClear, onCvTypeCha
               </button>
             </div>
           </div>
+
+          {/* Explicit translation — exports always use the CV exactly as shown,
+              so translating is a deliberate user action, never a side effect */}
+          {cvHasContent && (
+            <button
+              className="header-action-btn"
+              onClick={onTranslate}
+              disabled={translating}
+              title={lang === 'no'
+                ? 'Oversett CV-innholdet til valgt språk'
+                : 'Translate the CV content into the selected language'}
+            >
+              {translating
+                ? (lang === 'no' ? 'Oversetter…' : 'Translating…')
+                : (lang === 'no' ? '⇄ Oversett CV til norsk' : '⇄ Translate CV to English')}
+            </button>
+          )}
 
           <div className="header-divider" />
 

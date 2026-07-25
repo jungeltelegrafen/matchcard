@@ -4,7 +4,7 @@ import { applyPatches } from '../utils/applyPatches'
 
 const ACCEPT = '.pdf,.docx,.txt'
 
-export default function InputPanel({ cv, lang, onGenerate, generating, error }) {
+export default function InputPanel({ cv, lang, onGenerate, generating, error, warning }) {
   const [files, setFiles]         = useState([])
   const [rawText, setRawText]     = useState('')
   const [dragging, setDragging]   = useState(false)
@@ -33,11 +33,15 @@ export default function InputPanel({ cv, lang, onGenerate, generating, error }) 
     setChatInput('')
     setChatError('')
     const next = [...messages, { role: 'user', content: msg }]
-    setMessages(next)
+    // Placeholder assistant bubble — filled in live as the reply streams
+    setMessages([...next, { role: 'assistant', content: '' }])
     setChatBusy(true)
     try {
-      const { reply, patches } = await chatWithClaude(cv, msg, messages, { lang })
-      setMessages([...next, { role: 'assistant', content: reply }])
+      const { reply, patches } = await chatWithClaude(cv, msg, messages, {
+        lang,
+        onDelta: partial => setMessages([...next, { role: 'assistant', content: partial }]),
+      })
+      setMessages([...next, { role: 'assistant', content: reply || 'Done.' }])
       if (patches?.length > 0) {
         const patchedCv = applyPatches(cv, patches)
         onGenerate([], '', patchedCv)
@@ -108,6 +112,7 @@ export default function InputPanel({ cv, lang, onGenerate, generating, error }) 
         {/* ── Generate button ── */}
         <div className="input-generate-row">
           {error && <p className="input-error">{error}</p>}
+          {warning && <p className="input-warning">{warning}</p>}
           <button
             className="input-generate-btn"
             onClick={() => onGenerate(files, rawText, null)}
@@ -128,16 +133,18 @@ export default function InputPanel({ cv, lang, onGenerate, generating, error }) 
 
           {messages.length > 0 && (
             <div className="input-chat-messages">
-              {messages.map((m, i) => (
-                <div key={i} className={`input-chat-bubble input-chat-bubble--${m.role}`}>
-                  {m.content}
-                </div>
-              ))}
-              {chatBusy && (
-                <div className="input-chat-bubble input-chat-bubble--assistant input-chat-bubble--thinking">
-                  <span className="spinner-sm" /> Thinking…
-                </div>
-              )}
+              {messages.map((m, i) => {
+                const isThinking = chatBusy && i === messages.length - 1
+                  && m.role === 'assistant' && !m.content
+                return (
+                  <div
+                    key={i}
+                    className={`input-chat-bubble input-chat-bubble--${m.role}${isThinking ? ' input-chat-bubble--thinking' : ''}`}
+                  >
+                    {isThinking ? <><span className="spinner-sm" /> Thinking…</> : m.content}
+                  </div>
+                )
+              })}
               <div ref={chatEndRef} />
             </div>
           )}

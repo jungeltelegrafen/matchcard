@@ -1,11 +1,9 @@
 import { useState } from 'react'
-import React from 'react'
-import { pdf } from '@react-pdf/renderer'
 import { saveAs } from 'file-saver'
-import CVDocument from '../renderers/pdf/CVDocument'
+import { renderPdfBlob } from '../utils/renderPdf'
 import { downloadDocx } from '../renderers/docx/buildDocument'
 import { downloadEmail } from '../utils/generateEmail'
-import { translateCv } from '../utils/parseWithClaude'
+import { stripIds } from '@lib/cv/schema'
 
 // ── Completeness scoring ──────────────────────────────────────────────────────
 
@@ -72,12 +70,16 @@ export default function ExportFooter({ cv, filename, lang, onPreview }) {
   const [exportStatus,  setExportStatus]  = useState('')
   const [shareUrl,      setShareUrl]      = useState('')
   const [sharing,       setSharing]       = useState(false)
+  const [copied,        setCopied]        = useState(false)
 
   const pct   = Math.round(computeCvScore(cv) * 100)
   const label = scoreLabel(pct)
 
-  async function getOutputCv() {
-    return translateCv(cv, lang)
+  // Exports use the CV exactly as shown on screen (no silent translation —
+  // translating is an explicit action in the header). Internal _id markers
+  // are stripped so exports and share payloads stay clean.
+  function getOutputCv() {
+    return stripIds(cv)
   }
 
   async function run(statusMsg, fn) {
@@ -85,8 +87,7 @@ export default function ExportFooter({ cv, filename, lang, onPreview }) {
     setEmailMenuOpen(false)
     setExportStatus(statusMsg)
     try {
-      const exportCv = await getOutputCv()
-      await fn(exportCv)
+      await fn(getOutputCv())
     } catch (err) {
       console.error(err)
       setExportStatus('Error — check console')
@@ -100,7 +101,7 @@ export default function ExportFooter({ cv, filename, lang, onPreview }) {
 
   function handlePdf() {
     run('Preparing PDF…', async exportCv => {
-      const blob = await pdf(React.createElement(CVDocument, { data: exportCv, lang })).toBlob()
+      const blob = await renderPdfBlob(exportCv, lang)
       saveAs(blob, `${filename}.pdf`)
     })
   }
@@ -113,11 +114,17 @@ export default function ExportFooter({ cv, filename, lang, onPreview }) {
     run('Preparing email…', exportCv => downloadEmail(exportCv, filename, attachFormat, lang))
   }
 
+  function handleCopyLink() {
+    navigator.clipboard.writeText(shareUrl).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    }).catch(() => {})
+  }
+
   async function handleShare() {
     setSharing(true)
-    setShareUrl('')
     try {
-      const exportCv = await getOutputCv()
+      const exportCv = getOutputCv()
       const res = await fetch('/api/cv/share', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -156,6 +163,21 @@ export default function ExportFooter({ cv, filename, lang, onPreview }) {
         <span className="export-progress-label">{label}</span>
       </div>
 
+      {/* ── Share URL bar (appears after generating link) ── */}
+      {shareUrl && (
+        <div className="export-share-bar">
+          <span className="export-share-bar-label">Share link</span>
+          <span className="export-share-bar-url">{shareUrl}</span>
+          <button className="export-share-bar-copy" onClick={handleCopyLink}>
+            {copied ? '✓ Copied' : '⎘ Copy'}
+          </button>
+          <a href={shareUrl} target="_blank" rel="noopener noreferrer" className="export-share-bar-open">
+            Open ↗
+          </a>
+          <button className="export-share-bar-close" onClick={() => setShareUrl('')}>×</button>
+        </div>
+      )}
+
       {/* ── Actions row ── */}
       <div className="export-actions-row">
         <div className="export-left">
@@ -187,21 +209,13 @@ export default function ExportFooter({ cv, filename, lang, onPreview }) {
             )}
           </div>
 
-          <div className="export-share-wrap">
-            <button
-              className="export-btn export-btn--share"
-              onClick={shareUrl ? () => { navigator.clipboard.writeText(shareUrl) } : handleShare}
-              disabled={sharing || exporting}
-            >
-              {sharing ? '…' : shareUrl ? '⎘ Copy link' : '⤷ Share'}
-            </button>
-            {shareUrl && (
-              <div className="share-url-toast">
-                <span className="share-url-text">{shareUrl}</span>
-                <a href={shareUrl} target="_blank" rel="noopener noreferrer" className="share-url-open">Open ↗</a>
-              </div>
-            )}
-          </div>
+          <button
+            className="export-btn export-btn--share"
+            onClick={handleShare}
+            disabled={sharing || exporting}
+          >
+            {sharing ? '…' : shareUrl ? '↻ New link' : '⤷ Share'}
+          </button>
         </div>
       </div>
 

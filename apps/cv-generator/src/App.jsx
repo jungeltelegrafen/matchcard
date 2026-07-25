@@ -1,7 +1,8 @@
-import { useState } from 'react'
-import { emptyCvData } from './data/schema'
+import { useState, useEffect } from 'react'
+import { emptyCv, ensureIds, stripIds, PARSE_CHAR_LIMIT } from '@lib/cv/schema'
 import { extractText } from './utils/extractText'
-import { parseWithClaude } from './utils/parseWithClaude'
+import { parseWithClaude, translateCv } from './utils/parseWithClaude'
+import { loadDraft, saveDraft, clearDraft, draftHasContent } from './utils/draftStorage'
 import {
   emptyMeta,
   markUserEdit,
@@ -10,6 +11,7 @@ import {
   applyAiResult,
   setValueAtPath,
   getUserEdits,
+  remapMeta,
 } from './utils/fieldMeta'
 import AppHeader from './components/AppHeader'
 import InputPanel from './components/InputPanel'
@@ -45,36 +47,40 @@ function diffCvSections(oldCv, newCv) {
 }
 
 export default function App() {
-  const [cv, setCv]             = useState(emptyCvData)
-  const [meta, setMeta]         = useState(emptyMeta())
-  const [lang, setLang]         = useState('en')
+  // Restore the previous session's draft once, before first render
+  const [draft] = useState(loadDraft)
+
+  const [cv, setCv]             = useState(() => draft?.cv ?? emptyCv())
+  const [meta, setMeta]         = useState(() => draft?.meta ?? emptyMeta())
+  const [lang, setLang]         = useState(() => draft?.lang ?? 'en')
   const [generating, setGenerating] = useState(false)
+  const [translating, setTranslating] = useState(false)
   const [genError, setGenError] = useState('')
+  const [genWarning, setGenWarning] = useState('')
   const [previewOpen, setPreviewOpen]   = useState(false)
-  const [feedbackItems, setFeedbackItems] = useState([])
+  const [feedbackItems, setFeedbackItems] = useState(() => draft?.feedbackItems ?? [])
   const [hoveredSection, setHoveredSection] = useState(null)
   const [chatChangedSections, setChatChangedSections] = useState(new Set())
+  const [showRestored, setShowRestored] = useState(() => draftHasContent(draft))
+
+  // Debounced autosave — everything the user could lose on a refresh
+  useEffect(() => {
+    const t = setTimeout(() => saveDraft({ cv, meta, lang, feedbackItems }), 600)
+    return () => clearTimeout(t)
+  }, [cv, meta, lang, feedbackItems])
 
   function dismissChatChange(key) {
     setChatChangedSections(prev => { const n = new Set(prev); n.delete(key); return n })
   }
 
   async function handleGenerate(files, rawText, directCv = null) {
-    // Chat sends an already-parsed CV directly — diff sections and apply
+    // Chat sends an already-patched CV directly — diff sections and merge.
+    // applyAiResult normalizes, correlates item ids, and preserves user edits;
+    // client-only sections (cvType, video profiles) are never overwritten.
     if (directCv) {
-      const changed = diffCvSections(cv, directCv)
-      setChatChangedSections(changed)
+      setChatChangedSections(diffCvSections(cv, directCv))
       const { cv: nextCv, meta: nextMeta } = applyAiResult(meta, cv, directCv)
-      // Defensively preserve fields Claude might omit — never let a section be wiped by a missing key
-      setCv({
-        ...nextCv,
-        cvType:        cv.cvType,
-        videoProfiles: cv.videoProfiles ?? [],
-        courses:       nextCv.courses     ?? cv.courses,
-        positions:     nextCv.positions   ?? cv.positions,
-        competences:   nextCv.competences ?? cv.competences,
-        portfolio:     nextCv.portfolio   ?? cv.portfolio   ?? [],
-      })
+      setCv(nextCv)
       setMeta(nextMeta)
       return
     }
@@ -91,18 +97,45 @@ export default function App() {
         text = text ? `${text}\n\n---\n\n${rawText.trim()}` : rawText.trim()
       }
       if (!text) {
-        text = `Current CV data (re-apply and refine):\n${JSON.stringify(cv, null, 2)}`
+        text = `Current CV data (re-apply and refine):\n${JSON.stringify(stripIds(cv), null, 2)}`
       }
+
+      // Never truncate silently — warn when source text exceeds the parse limit
+      setGenWarning(text.length > PARSE_CHAR_LIMIT
+        ? (lang === 'no'
+            ? `Kildeteksten er på ${text.length.toLocaleString()} tegn — bare de første ${PARSE_CHAR_LIMIT.toLocaleString()} ble brukt. Last opp de mest relevante dokumentene for å unngå at innhold går tapt.`
+            : `Source text is ${text.length.toLocaleString()} characters — only the first ${PARSE_CHAR_LIMIT.toLocaleString()} were used. Upload the most relevant documents to avoid losing content.`)
+        : '')
 
       const userEdits = getUserEdits(meta, cv)
       const newCv = await parseWithClaude(text, { userEdits, lang })
-      const { cv: nextCv, meta: nextMeta } = applyAiResult(meta, cv, newCv)
-      setCv({ ...nextCv, competences: cv.competences, cvType: cv.cvType })
+      // The competence matrix is hand-curated per bid — parsing never overwrites it
+      const { cv: nextCv, meta: nextMeta } = applyAiResult(meta, cv, newCv, { keepSections: ['competences'] })
+      setCv(nextCv)
       setMeta(nextMeta)
     } catch (err) {
       setGenError(err.message || 'Something went wrong. Please try again.')
     } finally {
       setGenerating(false)
+    }
+  }
+
+  // Explicit translation — the only place CV content is ever run through the
+  // model without the user typing a request. User-edited fields are protected:
+  // their translations surface as accept/dismiss suggestions instead of
+  // silently replacing hand-written text.
+  async function handleTranslate() {
+    setTranslating(true)
+    setGenError('')
+    try {
+      const translated = await translateCv(cv, lang)
+      const { cv: nextCv, meta: nextMeta } = applyAiResult(meta, cv, translated)
+      setCv(nextCv)
+      setMeta(nextMeta)
+    } catch (err) {
+      setGenError(err.message || 'Translation failed. Please try again.')
+    } finally {
+      setTranslating(false)
     }
   }
 
@@ -120,8 +153,12 @@ export default function App() {
     setMeta(prev => dismissSuggestion(prev, path))
   }
 
+  // Structural changes (add/remove/reorder items) shift array indexes, so meta
+  // keys are remapped by item id to stay attached to the right items.
   function handleStructural(sectionKey, newData) {
-    setCv(prev => ({ ...prev, [sectionKey]: newData }))
+    const next = ensureIds({ ...cv, [sectionKey]: newData })
+    setMeta(remapMeta(meta, cv, next))
+    setCv(next)
   }
 
   function handleCvTypeChange(type) {
@@ -129,10 +166,13 @@ export default function App() {
   }
 
   function handleClear() {
-    setCv(emptyCvData)
+    clearDraft()
+    setCv(emptyCv())
     setMeta(emptyMeta())
     setFeedbackItems([])
     setChatChangedSections(new Set())
+    setGenWarning('')
+    setShowRestored(false)
   }
 
   const commentCounts = feedbackItems
@@ -153,7 +193,20 @@ export default function App() {
         onLangChange={setLang}
         onClear={handleClear}
         onCvTypeChange={handleCvTypeChange}
+        onTranslate={handleTranslate}
+        translating={translating}
       />
+
+      {showRestored && (
+        <div className="draft-notice">
+          <span>
+            {lang === 'no'
+              ? 'Utkastet fra forrige økt er gjenopprettet.'
+              : 'Your draft from the previous session was restored.'}
+          </span>
+          <button className="draft-notice-dismiss" onClick={() => setShowRestored(false)}>×</button>
+        </div>
+      )}
 
       <InputPanel
         cv={cv}
@@ -161,6 +214,7 @@ export default function App() {
         onGenerate={handleGenerate}
         generating={generating}
         error={genError}
+        warning={genWarning}
       />
 
       <main className="cv-main">

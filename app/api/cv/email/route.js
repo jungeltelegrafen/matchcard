@@ -1,8 +1,12 @@
 import Anthropic from '@anthropic-ai/sdk'
+import { checkRateLimit, rateLimitedResponse, LIMITS } from '@/lib/rateLimit'
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
 export async function POST(request) {
+  const limit = await checkRateLimit(request, LIMITS.ai)
+  if (!limit.ok) return rateLimitedResponse(limit.retryAfter)
+
   try {
     const { cv, lang = 'en' } = await request.json()
     if (!cv) return Response.json({ error: 'cv required' }, { status: 400 })
@@ -23,6 +27,6 @@ ${JSON.stringify(cv)}`,
     return Response.json({ text: msg.content[0].text.trim() })
   } catch (err) {
     console.error('[cv/email]', err)
-    return Response.json({ error: err.message }, { status: 500 })
+    return Response.json({ error: 'Failed to generate email' }, { status: 500 })
   }
 }

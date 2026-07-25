@@ -1,26 +1,15 @@
-function deepClone(obj) {
-  return JSON.parse(JSON.stringify(obj))
-}
+// Applies surgical patches (from the chat agent) to a CV snapshot.
+// Patch paths use numeric array indexes ('education.0.degree') — they are
+// resolved against the snapshot they were generated for, applied atomically.
 
-function parsePath(path) {
-  return path.split('.').map(p => (/^\d+$/.test(p) ? parseInt(p) : p))
-}
-
-function deepGet(obj, parts) {
-  return parts.reduce((cur, key) => (cur == null ? undefined : cur[key]), obj)
-}
-
-function deepSet(obj, parts, value) {
-  const last = parts[parts.length - 1]
-  const parent = parts.slice(0, -1).reduce((cur, key) => cur[key], obj)
-  parent[last] = value
-}
+import { deepClone, deepGet, deepSet, parsePath } from '@lib/cv/paths'
 
 export function applyPatches(cv, patches) {
   if (!Array.isArray(patches) || patches.length === 0) return cv
   const result = deepClone(cv)
 
-  for (const { op, path, value } of patches) {
+  for (const patch of patches) {
+    const { op, path, value } = patch || {}
     if (!op || !path) continue
     const parts = parsePath(path)
     try {
@@ -30,17 +19,17 @@ export function applyPatches(cv, patches) {
         const arr = deepGet(result, parts)
         deepSet(result, parts, Array.isArray(arr) ? [...arr, value] : [value])
       } else if (op === 'remove') {
-        const lastPart = parts[parts.length - 1]
-        if (typeof lastPart === 'number') {
+        const last = parts[parts.length - 1]
+        if (typeof last === 'number') {
           const parentParts = parts.slice(0, -1)
           const arr = deepGet(result, parentParts)
           if (Array.isArray(arr)) {
-            deepSet(result, parentParts, arr.filter((_, i) => i !== lastPart))
+            deepSet(result, parentParts, arr.filter((_, i) => i !== last))
           }
         }
       }
     } catch (e) {
-      console.warn('[applyPatches] skipped patch:', { op, path }, e.message)
+      console.warn('[applyPatches] skipped patch:', { op, path }, e?.message)
     }
   }
 

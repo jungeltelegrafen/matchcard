@@ -1,7 +1,5 @@
-import React from 'react'
-import { pdf } from '@react-pdf/renderer'
 import { saveAs } from 'file-saver'
-import CVDocument from '../renderers/pdf/CVDocument'
+import { renderPdfBlob } from './renderPdf'
 import { buildDocxBlob } from '../renderers/docx/buildDocument'
 import { generateEmailSummary } from './parseWithClaude'
 
@@ -43,7 +41,7 @@ export async function downloadEmail(cv, filename, attachFormat, lang) {
 }
 
 async function getPdfBase64(cv, lang) {
-  const blob = await pdf(React.createElement(CVDocument, { data: cv, lang })).toBlob()
+  const blob = await renderPdfBlob(cv, lang)
   return blobToBase64(blob)
 }
 
