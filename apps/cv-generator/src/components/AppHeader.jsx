@@ -1,15 +1,29 @@
 import { useState } from 'react'
 import FeedbackModal from './FeedbackModal'
 
-export default function AppHeader({ cv, lang, onLangChange, onClear, onCvTypeChange, onTranslate, translating }) {
+const LANG_ENDONYM = { en: 'English', no: 'Norsk' }
+
+export default function AppHeader({
+  cv,
+  uiLang,
+  contentLang,
+  activeHasContent,
+  translating,
+  onUiLangChange,
+  onContentLangChange,
+  onTranslate,
+  onClear,
+  onCvTypeChange,
+}) {
   const [feedbackOpen, setFeedbackOpen] = useState(false)
+  const no = uiLang === 'no'
 
   const candidateName = [cv.personal.firstName, cv.personal.lastName].filter(Boolean).join(' ')
   const candidateTitle = cv.personal.title
-  const cvHasContent = Boolean(cv.personal.firstName || cv.personal.summary || cv.experience.length)
+  const otherLang = contentLang === 'en' ? 'no' : 'en'
 
   function handleClear() {
-    if (!window.confirm(lang === 'no' ? 'Nullstille hele CVen?' : 'Reset the entire CV?')) return
+    if (!window.confirm(no ? 'Nullstille begge språkversjoner av CV-en?' : 'Reset both language versions of the CV?')) return
     onClear()
   }
 
@@ -32,7 +46,7 @@ export default function AppHeader({ cv, lang, onLangChange, onClear, onCvTypeCha
             </div>
           ) : (
             <span className="header-candidate-empty">
-              {lang === 'no' ? 'Skriv inn navn for å komme i gang' : 'Enter a name to get started'}
+              {no ? 'Skriv inn navn for å komme i gang' : 'Enter a name to get started'}
             </span>
           )}
         </div>
@@ -41,73 +55,89 @@ export default function AppHeader({ cv, lang, onLangChange, onClear, onCvTypeCha
 
           {/* CV Type toggle */}
           <div className="header-toggle-group">
-            <span className="header-toggle-label">
-              {lang === 'no' ? 'Format' : 'Format'}
-            </span>
+            <span className="header-toggle-label">Format</span>
             <div className="header-pill">
               <button
                 className={`header-pill-btn${cv.cvType !== 'management' ? ' active' : ''}`}
                 onClick={() => onCvTypeChange('technical')}
               >
-                {lang === 'no' ? 'Teknisk' : 'Technical'}
+                {no ? 'Teknisk' : 'Technical'}
               </button>
               <button
                 className={`header-pill-btn${cv.cvType === 'management' ? ' active' : ''}`}
                 onClick={() => onCvTypeChange('management')}
               >
-                {lang === 'no' ? 'Leder' : 'Management'}
+                {no ? 'Leder' : 'Management'}
               </button>
             </div>
           </div>
 
           <div className="header-divider" />
 
-          {/* Language toggle */}
+          {/* Site language toggle — UI chrome only */}
           <div className="header-toggle-group">
-            <span className="header-toggle-label">
-              {lang === 'no' ? 'Språk' : 'Language'}
-            </span>
+            <span className="header-toggle-label">{no ? 'Nettsted' : 'Site'}</span>
             <div className="header-pill">
               <button
-                className={`header-pill-btn${lang === 'no' ? ' active' : ''}`}
-                onClick={() => onLangChange('no')}
+                className={`header-pill-btn${uiLang === 'no' ? ' active' : ''}`}
+                onClick={() => onUiLangChange('no')}
               >
                 Norsk
               </button>
               <button
-                className={`header-pill-btn${lang === 'en' ? ' active' : ''}`}
-                onClick={() => onLangChange('en')}
+                className={`header-pill-btn${uiLang === 'en' ? ' active' : ''}`}
+                onClick={() => onUiLangChange('en')}
               >
                 English
               </button>
             </div>
           </div>
 
-          {/* Explicit translation — exports always use the CV exactly as shown,
-              so translating is a deliberate user action, never a side effect */}
-          {cvHasContent && (
+          {/* CV content language toggle — which language is viewed/edited/exported.
+              Switching is instant and lossless; the other version is kept. */}
+          <div className="header-toggle-group">
+            <span className="header-toggle-label">CV</span>
+            <div className="header-pill">
+              <button
+                className={`header-pill-btn${contentLang === 'no' ? ' active' : ''}`}
+                onClick={() => onContentLangChange('no')}
+              >
+                Norsk
+              </button>
+              <button
+                className={`header-pill-btn${contentLang === 'en' ? ' active' : ''}`}
+                onClick={() => onContentLangChange('en')}
+              >
+                English
+              </button>
+            </div>
+          </div>
+
+          {/* Translate the CV currently shown into the other language. Merges
+              into that language's slot, preserving any hand-edits there. */}
+          {activeHasContent && (
             <button
               className="header-action-btn"
               onClick={onTranslate}
               disabled={translating}
-              title={lang === 'no'
-                ? 'Oversett CV-innholdet til valgt språk'
-                : 'Translate the CV content into the selected language'}
+              title={no
+                ? `Oversett CV-en til ${LANG_ENDONYM[otherLang]} (beholder ${LANG_ENDONYM[contentLang]}-versjonen)`
+                : `Translate this CV into ${LANG_ENDONYM[otherLang]} (keeps the ${LANG_ENDONYM[contentLang]} version)`}
             >
               {translating
-                ? (lang === 'no' ? 'Oversetter…' : 'Translating…')
-                : (lang === 'no' ? '⇄ Oversett CV til norsk' : '⇄ Translate CV to English')}
+                ? (no ? 'Oversetter…' : 'Translating…')
+                : `⇄ ${no ? 'Oversett til' : 'Translate to'} ${LANG_ENDONYM[otherLang]}`}
             </button>
           )}
 
           <div className="header-divider" />
 
           <button className="header-action-btn" onClick={() => setFeedbackOpen(true)}>
-            {lang === 'no' ? '💬 Tilbakemelding' : '💬 Feedback'}
+            {no ? '💬 Tilbakemelding' : '💬 Feedback'}
           </button>
 
           <button className="header-action-btn header-action-btn--muted" onClick={handleClear}>
-            {lang === 'no' ? 'Nullstill' : 'Reset'}
+            {no ? 'Nullstill' : 'Reset'}
           </button>
 
         </div>

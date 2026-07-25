@@ -3,7 +3,9 @@ import { saveAs } from 'file-saver'
 import { renderPdfBlob } from '../utils/renderPdf'
 import { downloadDocx } from '../renderers/docx/buildDocument'
 import { downloadEmail } from '../utils/generateEmail'
-import { stripIds } from '@lib/cv/schema'
+import { stripIds, cvHasContent } from '@lib/cv/schema'
+
+const LANG_ENDONYM = { en: 'English', no: 'Norsk' }
 
 // ── Completeness scoring ──────────────────────────────────────────────────────
 
@@ -50,11 +52,11 @@ function computeCvScore(cv) {
   return personalScore * 0.30 + expScore * 0.35 + eduScore * 0.15 + skillScore * 0.15 + langScore * 0.05
 }
 
-function scoreLabel(pct) {
-  if (pct < 30)  return 'Start adding your information'
-  if (pct < 60)  return 'Good start — keep going'
-  if (pct < 85)  return 'Almost there'
-  return 'CV complete ✓'
+function scoreLabel(pct, no) {
+  if (pct < 30)  return no ? 'Begynn å legge inn informasjon' : 'Start adding your information'
+  if (pct < 60)  return no ? 'God start — fortsett' : 'Good start — keep going'
+  if (pct < 85)  return no ? 'Nesten der' : 'Almost there'
+  return no ? 'CV komplett ✓' : 'CV complete ✓'
 }
 
 function barColor(pct) {
@@ -64,33 +66,41 @@ function barColor(pct) {
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
-export default function ExportFooter({ cv, filename, lang, onPreview }) {
-  const [exporting,    setExporting]    = useState(false)
-  const [emailMenuOpen, setEmailMenuOpen] = useState(false)
+export default function ExportFooter({ cvByLang, contentLang, uiLang, filename, onPreview }) {
+  const [exporting,     setExporting]     = useState(false)
+  const [openMenu,      setOpenMenu]      = useState(null) // 'pdf' | 'docx' | 'email' | null
   const [exportStatus,  setExportStatus]  = useState('')
   const [shareUrl,      setShareUrl]      = useState('')
   const [sharing,       setSharing]       = useState(false)
   const [copied,        setCopied]        = useState(false)
 
+  const no = uiLang === 'no'
+  const cv = cvByLang[contentLang]
   const pct   = Math.round(computeCvScore(cv) * 100)
-  const label = scoreLabel(pct)
+  const label = scoreLabel(pct, no)
 
-  // Exports use the CV exactly as shown on screen (no silent translation —
-  // translating is an explicit action in the header). Internal _id markers
-  // are stripped so exports and share payloads stay clean.
-  function getOutputCv() {
-    return stripIds(cv)
+  // Languages worth offering: those with real content. Fall back to the
+  // currently-viewed language so a brand-new CV can still be exported.
+  const filled = ['en', 'no'].filter(l => cvHasContent(cvByLang[l]))
+  const exportLangs = filled.length ? filled : [contentLang]
+  const multi = exportLangs.length > 1
+
+  const fileFor = lang => `${filename}_${lang.toUpperCase()}`
+  const outputCv = lang => stripIds(cvByLang[lang])
+
+  function toggleMenu(name) {
+    setOpenMenu(prev => (prev === name ? null : name))
   }
 
   async function run(statusMsg, fn) {
     setExporting(true)
-    setEmailMenuOpen(false)
+    setOpenMenu(null)
     setExportStatus(statusMsg)
     try {
-      await fn(getOutputCv())
+      await fn()
     } catch (err) {
       console.error(err)
-      setExportStatus('Error — check console')
+      setExportStatus(no ? 'Feil — se konsollen' : 'Error — check console')
       setTimeout(() => setExportStatus(''), 3000)
       setExporting(false)
       return
@@ -99,19 +109,21 @@ export default function ExportFooter({ cv, filename, lang, onPreview }) {
     setExporting(false)
   }
 
-  function handlePdf() {
-    run('Preparing PDF…', async exportCv => {
-      const blob = await renderPdfBlob(exportCv, lang)
-      saveAs(blob, `${filename}.pdf`)
+  function handlePdf(lang) {
+    run(no ? 'Klargjør PDF…' : 'Preparing PDF…', async () => {
+      const blob = await renderPdfBlob(outputCv(lang), lang)
+      saveAs(blob, `${fileFor(lang)}.pdf`)
     })
   }
 
-  function handleDocx() {
-    run('Preparing Word…', exportCv => downloadDocx(exportCv, `${filename}.docx`, lang))
+  function handleDocx(lang) {
+    run(no ? 'Klargjør Word…' : 'Preparing Word…', () =>
+      downloadDocx(outputCv(lang), `${fileFor(lang)}.docx`, lang))
   }
 
-  function handleEmail(attachFormat) {
-    run('Preparing email…', exportCv => downloadEmail(exportCv, filename, attachFormat, lang))
+  function handleEmail(lang, attachFormat) {
+    run(no ? 'Klargjør e-post…' : 'Preparing email…', () =>
+      downloadEmail(outputCv(lang), fileFor(lang), attachFormat, lang))
   }
 
   function handleCopyLink() {
@@ -121,14 +133,14 @@ export default function ExportFooter({ cv, filename, lang, onPreview }) {
     }).catch(() => {})
   }
 
+  // Share publishes a snapshot of the currently-viewed language.
   async function handleShare() {
     setSharing(true)
     try {
-      const exportCv = getOutputCv()
       const res = await fetch('/api/cv/share', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cv: exportCv, lang, filename }),
+        body: JSON.stringify({ cv: outputCv(contentLang), lang: contentLang, filename: fileFor(contentLang) }),
       })
       if (!res.ok) throw new Error('Share failed')
       const { url } = await res.json()
@@ -136,11 +148,45 @@ export default function ExportFooter({ cv, filename, lang, onPreview }) {
       navigator.clipboard.writeText(url).catch(() => {})
     } catch (err) {
       console.error(err)
-      setExportStatus('Share failed')
+      setExportStatus(no ? 'Deling feilet' : 'Share failed')
       setTimeout(() => setExportStatus(''), 3000)
     } finally {
       setSharing(false)
     }
+  }
+
+  // A format button: direct download when only one language exists, a language
+  // dropdown when both do.
+  function FormatControl({ name, label, onPick }) {
+    if (!multi) {
+      return (
+        <button
+          className={`export-btn export-btn--${name}`}
+          onClick={() => onPick(exportLangs[0])}
+          disabled={exporting}
+        >
+          ↓ {label}
+        </button>
+      )
+    }
+    return (
+      <div className="export-menu-wrap">
+        <button
+          className={`export-btn export-btn--${name}`}
+          onClick={() => toggleMenu(name)}
+          disabled={exporting}
+        >
+          ↓ {label} ▾
+        </button>
+        {openMenu === name && (
+          <div className="export-menu">
+            {exportLangs.map(l => (
+              <button key={l} onClick={() => onPick(l)}>{LANG_ENDONYM[l]}</button>
+            ))}
+          </div>
+        )}
+      </div>
+    )
   }
 
   return (
@@ -166,13 +212,13 @@ export default function ExportFooter({ cv, filename, lang, onPreview }) {
       {/* ── Share URL bar (appears after generating link) ── */}
       {shareUrl && (
         <div className="export-share-bar">
-          <span className="export-share-bar-label">Share link</span>
+          <span className="export-share-bar-label">{no ? 'Delingslenke' : 'Share link'}</span>
           <span className="export-share-bar-url">{shareUrl}</span>
           <button className="export-share-bar-copy" onClick={handleCopyLink}>
-            {copied ? '✓ Copied' : '⎘ Copy'}
+            {copied ? (no ? '✓ Kopiert' : '✓ Copied') : (no ? '⎘ Kopier' : '⎘ Copy')}
           </button>
           <a href={shareUrl} target="_blank" rel="noopener noreferrer" className="export-share-bar-open">
-            Open ↗
+            {no ? 'Åpne ↗' : 'Open ↗'}
           </a>
           <button className="export-share-bar-close" onClick={() => setShareUrl('')}>×</button>
         </div>
@@ -187,24 +233,30 @@ export default function ExportFooter({ cv, filename, lang, onPreview }) {
 
         <div className="export-right">
           <button className="export-btn export-btn--preview" onClick={onPreview}>
-            Preview
+            {no ? 'Forhåndsvis' : 'Preview'}
           </button>
-          <button className="export-btn export-btn--pdf"  onClick={handlePdf}  disabled={exporting}>↓ PDF</button>
-          <button className="export-btn export-btn--docx" onClick={handleDocx} disabled={exporting}>↓ Word</button>
 
-          <div className="export-email-wrap">
+          <FormatControl name="pdf"  label="PDF"  onPick={handlePdf} />
+          <FormatControl name="docx" label="Word" onPick={handleDocx} />
+
+          <div className="export-menu-wrap">
             <button
               className="export-btn export-btn--email"
-              onClick={() => setEmailMenuOpen(v => !v)}
+              onClick={() => toggleMenu('email')}
               disabled={exporting}
             >
-              ✉ Email ▾
+              ✉ {no ? 'E-post' : 'Email'} ▾
             </button>
-            {emailMenuOpen && (
-              <div className="email-menu">
-                <button onClick={() => handleEmail('pdf')}>Attach PDF</button>
-                <button onClick={() => handleEmail('docx')}>Attach Word</button>
-                <button onClick={() => handleEmail('both')}>Attach Both</button>
+            {openMenu === 'email' && (
+              <div className="export-menu">
+                {exportLangs.map(l => (
+                  <div key={l} className="export-menu-group">
+                    {multi && <span className="export-menu-heading">{LANG_ENDONYM[l]}</span>}
+                    <button onClick={() => handleEmail(l, 'pdf')}>{no ? 'Legg ved PDF' : 'Attach PDF'}</button>
+                    <button onClick={() => handleEmail(l, 'docx')}>{no ? 'Legg ved Word' : 'Attach Word'}</button>
+                    <button onClick={() => handleEmail(l, 'both')}>{no ? 'Legg ved begge' : 'Attach Both'}</button>
+                  </div>
+                ))}
               </div>
             )}
           </div>
@@ -213,8 +265,11 @@ export default function ExportFooter({ cv, filename, lang, onPreview }) {
             className="export-btn export-btn--share"
             onClick={handleShare}
             disabled={sharing || exporting}
+            title={no
+              ? `Deler ${LANG_ENDONYM[contentLang]}-versjonen`
+              : `Shares the ${LANG_ENDONYM[contentLang]} version`}
           >
-            {sharing ? '…' : shareUrl ? '↻ New link' : '⤷ Share'}
+            {sharing ? '…' : shareUrl ? (no ? '↻ Ny lenke' : '↻ New link') : (no ? '⤷ Del' : '⤷ Share')}
           </button>
         </div>
       </div>

@@ -61,7 +61,10 @@ Only report competences the text genuinely demonstrates — never invent or infe
   },
 ]
 
-export default function AgentsBar({ cv, lang, onFeedback }) {
+// `lang` drives the bar's own chrome (matches the site UI language).
+// `reviewLang` is the CV's content language — the findings (and the section
+// labels stored on them) are written to match the CV being reviewed.
+export default function AgentsBar({ cv, lang, reviewLang = lang, onFeedback }) {
   const [states, setStates] = useState({})
   const [agentErrors, setAgentErrors] = useState({})
 
@@ -69,13 +72,13 @@ export default function AgentsBar({ cv, lang, onFeedback }) {
     setStates(s => ({ ...s, [agent.id]: 'running' }))
     setAgentErrors(e => ({ ...e, [agent.id]: null }))
     try {
-      const findings = await runAgent(cv, agent.prompt, lang)
+      const findings = await runAgent(cv, agent.prompt, reviewLang)
       const stamp = Date.now()
       const items = findings
         .filter(f => f?.detail)
         .map((f, i) => ({
           id:         `${agent.id}-${stamp}-${i}`,
-          section:    feedbackSectionLabel(f.section, lang),
+          section:    feedbackSectionLabel(f.section, reviewLang),
           sectionKey: FEEDBACK_SECTION_LABELS[f.section] ? f.section : 'general',
           title:      f.title || null,
           text:       f.detail,

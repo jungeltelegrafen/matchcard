@@ -454,6 +454,33 @@ html {
 }
 .draft-notice-dismiss:hover { opacity: 1; }
 
+/* ── Translate-from-other-language banner ───────────────────── */
+.translate-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 8px 14px;
+  font-size: 0.82rem;
+  color: #cfe0ef;
+  background: rgba(125,170,203,0.14);
+  border-bottom: 1px solid rgba(125,170,203,0.28);
+}
+.translate-banner-btn {
+  background: #7DAACB;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 0.8rem;
+  font-family: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.translate-banner-btn:hover:not(:disabled) { opacity: 0.88; }
+.translate-banner-btn:disabled { opacity: 0.5; cursor: default; }
+
 /* ── Chat section ───────────────────────────────────────────── */
 .input-chat {
   border-top: 1px solid rgba(255,255,255,0.1);
@@ -3030,6 +3057,44 @@ textarea.cv-field {
   transition: background 0.1s;
 }
 .email-menu button:hover { background: var(--bg); }
+
+/* Per-language export dropdowns (PDF / Word / Email) */
+.export-menu-wrap { position: relative; }
+.export-menu {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  right: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+  overflow: hidden;
+  min-width: 168px;
+  z-index: 10;
+}
+.export-menu button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  padding: 10px 14px;
+  font-size: 0.8rem;
+  font-family: inherit;
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.export-menu button:hover { background: var(--bg); }
+.export-menu-group + .export-menu-group { border-top: 1px solid var(--border); }
+.export-menu-heading {
+  display: block;
+  padding: 7px 14px 3px;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.6;
+}
 
 .export-btn--share {
   background: rgba(255,255,255,0.12);

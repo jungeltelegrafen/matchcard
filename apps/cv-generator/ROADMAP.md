@@ -4,7 +4,22 @@ Ordered plan from the 2026-07-22 review. Done already: F1 (single schema source
 of truth in `lib/cv/`), F3 (no translate-on-export; explicit translate button),
 F5 (structured outputs + streaming chat), truncation warning, stable item ids,
 shared path helpers, vitest suite, claim-evidence + coverage agents, F2
-localStorage persistence.
+localStorage persistence, #1 rate limiting.
+
+## Bilingual support — DONE (2026-07-25)
+CV is stored per language: `cvByLang / metaByLang / feedbackByLang = { en, no }`.
+Two independent header toggles: **Site** (uiLang, chrome only) and **CV**
+(contentLang — viewed/edited/exported). Switching CV language is instant and
+lossless. Translation is directional (`runTranslate(src, tgt)` in App.jsx):
+translates one language INTO the other slot via `applyAiResult` (preserves the
+target's hand-edits, surfaces conflicts as suggestions), never mutating the
+source; cvType is synced across languages. Empty-language banner offers
+"Translate from <other>". Export menus offer each language that has content
+(per-language PDF/Word/Email; filenames get `_EN`/`_NO`). Draft bumped to v2
+(both languages + both toggles) with automatic v1→v2 migration. Verified with a
+live translation round-trip: EN untouched after translating to NO and back.
+Deferred: bilingual share links (share still publishes the viewed language
+only); staleness flag when source edited after translating.
 
 ## 1. Rate limiting on /api/cv/* — DONE (2026-07-25)
 Postgres-backed fixed-window limiter (in-memory is useless on Vercel — isolated
