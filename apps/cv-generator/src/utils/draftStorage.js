@@ -3,14 +3,16 @@
 // Server-side persistence will replace this once auth lands; the versioned
 // payload gives that migration a stable format to read.
 //
-// v2 stores BOTH language versions of the CV side by side, plus the two
-// independent language toggles (site UI vs CV content). Translating one
-// language never touches the other.
+// v3 adds job-tailoring `variants` (a saved selection + text overrides over the
+// master, per role) and the `activeVariantId` currently in view. v2 stored both
+// language versions; v1 was single-language. Older drafts migrate forward.
 
-import { normalizeCv, ensureIds, emptyCv, cvHasContent } from '@lib/cv/schema'
+import { normalizeCv, ensureIds, emptyCv, cvHasContent, newId } from '@lib/cv/schema'
 
-const KEY = 'cv-generator:draft:v2'
+const KEY = 'cv-generator:draft:v3'
+const KEY_V2 = 'cv-generator:draft:v2'
 const KEY_V1 = 'cv-generator:draft:v1'
+const LEGACY_KEYS = [KEY_V2, KEY_V1]
 const LANGS = ['en', 'no']
 
 function toLang(v, fallback = 'en') {
@@ -29,25 +31,54 @@ function objByLang(raw, coerce) {
   return out
 }
 
+function normalizeVariant(v) {
+  if (!v || typeof v !== 'object') return null
+  const ov = v.overrides || {}
+  return {
+    id: typeof v.id === 'string' ? v.id : newId(),
+    name: typeof v.name === 'string' && v.name.trim() ? v.name : 'Untitled role',
+    role: {
+      title: String(v.role?.title ?? ''),
+      text: String(v.role?.text ?? ''),
+    },
+    tailoredInLang: toLang(v.tailoredInLang),
+    createdAt: typeof v.createdAt === 'number' ? v.createdAt : Date.now(),
+    excludedIds: Array.isArray(v.excludedIds) ? v.excludedIds.filter(x => typeof x === 'string') : [],
+    excludedSkillTags: v.excludedSkillTags && typeof v.excludedSkillTags === 'object' ? v.excludedSkillTags : {},
+    order: v.order && typeof v.order === 'object' ? v.order : {},
+    overrides: {
+      en: { summary: String(ov.en?.summary ?? ''), expDesc: ov.en?.expDesc && typeof ov.en.expDesc === 'object' ? ov.en.expDesc : {} },
+      no: { summary: String(ov.no?.summary ?? ''), expDesc: ov.no?.expDesc && typeof ov.no.expDesc === 'object' ? ov.no.expDesc : {} },
+    },
+    rationale: {
+      fitNote: String(v.rationale?.fitNote ?? ''),
+      reasons: v.rationale?.reasons && typeof v.rationale.reasons === 'object' ? v.rationale.reasons : {},
+    },
+  }
+}
+
+function normalizeVariants(raw) {
+  return Array.isArray(raw) ? raw.map(normalizeVariant).filter(Boolean) : []
+}
+
 export function loadDraft() {
   try {
-    const rawV2 = localStorage.getItem(KEY)
-    if (rawV2) return parseV2(JSON.parse(rawV2))
+    const rawV3 = localStorage.getItem(KEY)
+    if (rawV3) return parseV3(JSON.parse(rawV3))
 
-    // Migrate a v1 draft (single-language) into the v2 shape once.
+    const rawV2 = localStorage.getItem(KEY_V2)
+    if (rawV2) return migrateV2(JSON.parse(rawV2))
+
     const rawV1 = localStorage.getItem(KEY_V1)
-    if (rawV1) {
-      const migrated = migrateV1(JSON.parse(rawV1))
-      if (migrated) return migrated
-    }
+    if (rawV1) return migrateV1(JSON.parse(rawV1))
+
     return null
   } catch {
     return null
   }
 }
 
-function parseV2(draft) {
-  if (draft?.v !== 2 || !draft.cvByLang || typeof draft.cvByLang !== 'object') return null
+function baseFromV2Shape(draft) {
   return {
     cvByLang: normalizeCvByLang(draft.cvByLang),
     metaByLang: objByLang(draft.metaByLang, m => (m && typeof m === 'object' ? m : {})),
@@ -58,42 +89,49 @@ function parseV2(draft) {
   }
 }
 
+function parseV3(draft) {
+  if (draft?.v !== 3 || !draft.cvByLang || typeof draft.cvByLang !== 'object') return null
+  const base = baseFromV2Shape(draft)
+  const variants = normalizeVariants(draft.variants)
+  const activeVariantId = variants.some(v => v.id === draft.activeVariantId) ? draft.activeVariantId : null
+  return { ...base, variants, activeVariantId }
+}
+
+function migrateV2(draft) {
+  if (draft?.v !== 2 || !draft.cvByLang || typeof draft.cvByLang !== 'object') return null
+  return { ...baseFromV2Shape(draft), variants: [], activeVariantId: null }
+}
+
 function migrateV1(draft) {
   if (draft?.v !== 1 || !draft.cv || typeof draft.cv !== 'object') return null
   const lang = toLang(draft.lang)
   const other = lang === 'en' ? 'no' : 'en'
   return {
-    cvByLang: {
-      [lang]: ensureIds(normalizeCv(draft.cv)),
-      [other]: emptyCv(),
-    },
-    metaByLang: {
-      [lang]: draft.meta && typeof draft.meta === 'object' ? draft.meta : {},
-      [other]: {},
-    },
-    feedbackByLang: {
-      [lang]: Array.isArray(draft.feedbackItems) ? draft.feedbackItems : [],
-      [other]: [],
-    },
+    cvByLang: { [lang]: ensureIds(normalizeCv(draft.cv)), [other]: emptyCv() },
+    metaByLang: { [lang]: draft.meta && typeof draft.meta === 'object' ? draft.meta : {}, [other]: {} },
+    feedbackByLang: { [lang]: Array.isArray(draft.feedbackItems) ? draft.feedbackItems : [], [other]: [] },
     uiLang: lang,
     contentLang: lang,
+    variants: [],
+    activeVariantId: null,
     savedAt: typeof draft.savedAt === 'number' ? draft.savedAt : null,
   }
 }
 
-export function saveDraft({ cvByLang, metaByLang, feedbackByLang, uiLang, contentLang }) {
+export function saveDraft({ cvByLang, metaByLang, feedbackByLang, uiLang, contentLang, variants, activeVariantId }) {
   try {
     localStorage.setItem(KEY, JSON.stringify({
-      v: 2,
+      v: 3,
       savedAt: Date.now(),
       cvByLang,
       metaByLang,
       feedbackByLang,
       uiLang,
       contentLang,
+      variants: variants ?? [],
+      activeVariantId: activeVariantId ?? null,
     }))
-    // The old single-language draft is now superseded.
-    localStorage.removeItem(KEY_V1)
+    for (const k of LEGACY_KEYS) localStorage.removeItem(k)
   } catch {
     // quota exceeded / private mode — autosave is best-effort
   }
@@ -102,7 +140,7 @@ export function saveDraft({ cvByLang, metaByLang, feedbackByLang, uiLang, conten
 export function clearDraft() {
   try {
     localStorage.removeItem(KEY)
-    localStorage.removeItem(KEY_V1)
+    for (const k of LEGACY_KEYS) localStorage.removeItem(k)
   } catch {
     // ignore
   }

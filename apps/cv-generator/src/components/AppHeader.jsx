@@ -9,6 +9,11 @@ export default function AppHeader({
   contentLang,
   activeHasContent,
   translating,
+  variants = [],
+  activeVariantId = null,
+  onSelectVariant,
+  onOpenTailor,
+  onDeleteVariant,
   onUiLangChange,
   onContentLangChange,
   onTranslate,
@@ -16,11 +21,20 @@ export default function AppHeader({
   onCvTypeChange,
 }) {
   const [feedbackOpen, setFeedbackOpen] = useState(false)
+  const [versionMenuOpen, setVersionMenuOpen] = useState(false)
   const no = uiLang === 'no'
 
   const candidateName = [cv.personal.firstName, cv.personal.lastName].filter(Boolean).join(' ')
   const candidateTitle = cv.personal.title
   const otherLang = contentLang === 'en' ? 'no' : 'en'
+
+  const activeVariant = variants.find(v => v.id === activeVariantId) || null
+  const versionLabel = activeVariant ? activeVariant.name : (no ? 'Master' : 'Master')
+
+  function selectVersion(id) {
+    onSelectVariant?.(id)
+    setVersionMenuOpen(false)
+  }
 
   function handleClear() {
     if (!window.confirm(no ? 'Nullstille begge språkversjoner av CV-en?' : 'Reset both language versions of the CV?')) return
@@ -52,6 +66,49 @@ export default function AppHeader({
         </div>
 
         <div className="header-actions">
+
+          {/* Version selector — Master + tailored job variants */}
+          <div className="header-toggle-group">
+            <span className="header-toggle-label">{no ? 'Versjon' : 'Version'}</span>
+            <div className="header-version-wrap">
+              <button
+                className={`header-version-btn${activeVariant ? ' header-version-btn--tailored' : ''}`}
+                onClick={() => setVersionMenuOpen(v => !v)}
+              >
+                {activeVariant ? '✦ ' : ''}{versionLabel} ▾
+              </button>
+              {versionMenuOpen && (
+                <div className="header-version-menu">
+                  <button
+                    className={`header-version-item${!activeVariantId ? ' active' : ''}`}
+                    onClick={() => selectVersion(null)}
+                  >
+                    {no ? 'Master (full CV)' : 'Master (full CV)'}
+                  </button>
+                  {variants.map(v => (
+                    <div key={v.id} className={`header-version-item-row${v.id === activeVariantId ? ' active' : ''}`}>
+                      <button className="header-version-item" onClick={() => selectVersion(v.id)}>
+                        ✦ {v.name}
+                      </button>
+                      <button
+                        className="header-version-del"
+                        title={no ? 'Slett versjon' : 'Delete version'}
+                        onClick={() => onDeleteVariant?.(v.id)}
+                      >×</button>
+                    </div>
+                  ))}
+                  <button
+                    className="header-version-item header-version-add"
+                    onClick={() => { setVersionMenuOpen(false); onOpenTailor?.() }}
+                  >
+                    {no ? '+ Tilpass til en stilling…' : '+ Tailor to a job…'}
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="header-divider" />
 
           {/* CV Type toggle */}
           <div className="header-toggle-group">

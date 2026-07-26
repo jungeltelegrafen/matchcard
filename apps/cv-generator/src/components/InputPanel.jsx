@@ -13,10 +13,17 @@ export default function InputPanel({ cv, lang, onGenerate, generating, error, wa
   const [chatBusy, setChatBusy]   = useState(false)
   const [chatError, setChatError] = useState('')
   const inputRef   = useRef(null)
-  const chatEndRef = useRef(null)
+  const chatMessagesRef = useRef(null)
 
+  // Keep the chat pinned to the newest message by scrolling the messages box
+  // itself — never the page (scrollIntoView would nudge the whole viewport on
+  // every streaming delta). Only auto-stick when the user is already near the
+  // bottom, so scrolling up to re-read isn't yanked back down.
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    const el = chatMessagesRef.current
+    if (!el) return
+    const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 80
+    if (nearBottom) el.scrollTop = el.scrollHeight
   }, [messages, chatBusy])
 
   function addFiles(incoming) {
@@ -132,7 +139,7 @@ export default function InputPanel({ cv, lang, onGenerate, generating, error, wa
           </div>
 
           {messages.length > 0 && (
-            <div className="input-chat-messages">
+            <div className="input-chat-messages" ref={chatMessagesRef}>
               {messages.map((m, i) => {
                 const isThinking = chatBusy && i === messages.length - 1
                   && m.role === 'assistant' && !m.content
@@ -145,7 +152,6 @@ export default function InputPanel({ cv, lang, onGenerate, generating, error, wa
                   </div>
                 )
               })}
-              <div ref={chatEndRef} />
             </div>
           )}
 

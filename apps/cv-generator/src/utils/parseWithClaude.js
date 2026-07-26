@@ -38,6 +38,12 @@ export async function runAgent(cv, agentPrompt, lang = 'en') {
   return findings || []
 }
 
+// Tailoring keeps the _id markers: the plan references master items by _id.
+export async function tailorCv(cv, role, lang = 'en') {
+  const { plan } = await apiJson('/api/cv/tailor', { cv, role, lang })
+  return plan
+}
+
 // Streaming chat. Calls onDelta with the accumulated reply text as it streams;
 // resolves with { reply, patches } once the server finishes.
 export async function chatWithClaude(cv, userMessage, history, { lang = 'en', onDelta } = {}) {

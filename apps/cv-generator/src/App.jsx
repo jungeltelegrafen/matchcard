@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { emptyCv, ensureIds, stripIds, cvHasContent, PARSE_CHAR_LIMIT } from '@lib/cv/schema'
+import { deriveTailoredCv, variantFromPlan } from '@lib/cv/tailor'
 import { extractText } from './utils/extractText'
-import { parseWithClaude, translateCv } from './utils/parseWithClaude'
+import { parseWithClaude, translateCv, tailorCv } from './utils/parseWithClaude'
 import { loadDraft, saveDraft, clearDraft, draftHasContent } from './utils/draftStorage'
 import {
   emptyMeta,
@@ -21,10 +22,14 @@ import LeftSidebar from './components/LeftSidebar'
 import RightSidebar from './components/RightSidebar'
 import PreviewModal from './components/PreviewModal'
 import ExportFooter from './components/ExportFooter'
+import TailorPanel from './components/TailorPanel'
+import TailoringReview from './components/TailoringReview'
+import FeedbackStrip from './components/FeedbackStrip'
 import './styles/app.css'
 
 const LANG_ENDONYM = { en: 'English', no: 'Norsk' }
 const otherOf = l => (l === 'en' ? 'no' : 'en')
+const slug = s => (s || '').replace(/[^a-z0-9]+/gi, '_').replace(/^_+|_+$/g, '') || 'version'
 
 // CV key → SectionWrap key mapping for chat diff
 const CV_SECTION_MAP = {
@@ -53,15 +58,20 @@ export default function App() {
   // Restore the previous session's draft once, before first render
   const [draft] = useState(loadDraft)
 
-  // The CV is stored per language ('en' | 'no'). The two toggles are
-  // independent: uiLang drives the chrome/labels, contentLang drives which
-  // CV language is viewed, edited, and exported. Translating writes into the
-  // other language slot and never mutates the source language.
+  // Master CV, stored per language. Two independent toggles: uiLang (chrome),
+  // contentLang (which CV language is viewed/edited/exported).
   const [cvByLang, setCvByLang]           = useState(() => draft?.cvByLang       ?? { en: emptyCv(), no: emptyCv() })
   const [metaByLang, setMetaByLang]       = useState(() => draft?.metaByLang     ?? { en: emptyMeta(), no: emptyMeta() })
   const [feedbackByLang, setFeedbackByLang] = useState(() => draft?.feedbackByLang ?? { en: [], no: [] })
   const [uiLang, setUiLang]               = useState(() => draft?.uiLang      ?? 'en')
   const [contentLang, setContentLang]     = useState(() => draft?.contentLang ?? 'en')
+
+  // Job-tailoring variants over the master (null active = Master view).
+  const [variants, setVariants]           = useState(() => draft?.variants ?? [])
+  const [activeVariantId, setActiveVariantId] = useState(() => draft?.activeVariantId ?? null)
+  const [tailorOpen, setTailorOpen]       = useState(false)
+  const [tailoring, setTailoring]         = useState(false)
+  const [tailorError, setTailorError]     = useState('')
 
   const [generating, setGenerating]   = useState(false)
   const [translating, setTranslating] = useState(false)
@@ -72,41 +82,47 @@ export default function App() {
   const [chatChangedSections, setChatChangedSections] = useState(new Set())
   const [showRestored, setShowRestored] = useState(() => draftHasContent(draft))
 
-  // Active slice for the currently-viewed content language. Everything
-  // downstream (editor, renderers, export) consumes these exactly as before.
-  const cv   = cvByLang[contentLang]
+  // Master slice for the active content language, plus edit metadata & feedback.
+  const masterCv = cvByLang[contentLang]
   const meta = metaByLang[contentLang]
   const feedbackItems = feedbackByLang[contentLang]
 
+  // Active job variant and the presented (tailored) CV derived from the master.
+  const activeVariant = variants.find(v => v.id === activeVariantId) || null
+  const viewCv = deriveTailoredCv(masterCv, activeVariant, contentLang)
+  const viewByLang = activeVariant
+    ? { en: deriveTailoredCv(cvByLang.en, activeVariant, 'en'), no: deriveTailoredCv(cvByLang.no, activeVariant, 'no') }
+    : cvByLang
+
   const otherLang        = otherOf(contentLang)
-  const activeHasContent = cvHasContent(cv)
+  const activeHasContent = cvHasContent(masterCv)
   const otherHasContent  = cvHasContent(cvByLang[otherLang])
 
-  // Debounced autosave — both languages + both toggles
+  // Debounced autosave — master (both languages), toggles, and variants
   useEffect(() => {
     const t = setTimeout(
-      () => saveDraft({ cvByLang, metaByLang, feedbackByLang, uiLang, contentLang }),
+      () => saveDraft({ cvByLang, metaByLang, feedbackByLang, uiLang, contentLang, variants, activeVariantId }),
       600
     )
     return () => clearTimeout(t)
-  }, [cvByLang, metaByLang, feedbackByLang, uiLang, contentLang])
+  }, [cvByLang, metaByLang, feedbackByLang, uiLang, contentLang, variants, activeVariantId])
 
-  // ── active-slot setters ─────────────────────────────────────────────────
+  // ── active master-slot setters ──────────────────────────────────────────
   const setActiveCv   = next => setCvByLang(prev => ({ ...prev, [contentLang]: typeof next === 'function' ? next(prev[contentLang]) : next }))
   const setActiveMeta = next => setMetaByLang(prev => ({ ...prev, [contentLang]: typeof next === 'function' ? next(prev[contentLang]) : next }))
   const setActiveFeedback = next => setFeedbackByLang(prev => ({ ...prev, [contentLang]: typeof next === 'function' ? next(prev[contentLang]) : next }))
+  const updateActiveVariant = updater => setVariants(prev => prev.map(v => v.id === activeVariantId ? updater(v) : v))
 
   function dismissChatChange(key) {
     setChatChangedSections(prev => { const n = new Set(prev); n.delete(key); return n })
   }
 
   async function handleGenerate(files, rawText, directCv = null) {
-    // Chat sends an already-patched CV directly — diff sections and merge into
-    // the active language. applyAiResult normalizes, correlates item ids, and
-    // preserves user edits; client-only sections are never overwritten.
+    // Generation and chat always build the MASTER (facts). applyAiResult
+    // normalizes, correlates item ids, and preserves user edits.
     if (directCv) {
-      setChatChangedSections(diffCvSections(cv, directCv))
-      const { cv: nextCv, meta: nextMeta } = applyAiResult(meta, cv, directCv)
+      setChatChangedSections(diffCvSections(masterCv, directCv))
+      const { cv: nextCv, meta: nextMeta } = applyAiResult(meta, masterCv, directCv)
       setActiveCv(nextCv)
       setActiveMeta(nextMeta)
       return
@@ -124,21 +140,18 @@ export default function App() {
         text = text ? `${text}\n\n---\n\n${rawText.trim()}` : rawText.trim()
       }
       if (!text) {
-        text = `Current CV data (re-apply and refine):\n${JSON.stringify(stripIds(cv), null, 2)}`
+        text = `Current CV data (re-apply and refine):\n${JSON.stringify(stripIds(masterCv), null, 2)}`
       }
 
-      // Never truncate silently — warn when source text exceeds the parse limit
       setGenWarning(text.length > PARSE_CHAR_LIMIT
         ? (uiLang === 'no'
             ? `Kildeteksten er på ${text.length.toLocaleString()} tegn — bare de første ${PARSE_CHAR_LIMIT.toLocaleString()} ble brukt. Last opp de mest relevante dokumentene for å unngå at innhold går tapt.`
             : `Source text is ${text.length.toLocaleString()} characters — only the first ${PARSE_CHAR_LIMIT.toLocaleString()} were used. Upload the most relevant documents to avoid losing content.`)
         : '')
 
-      const userEdits = getUserEdits(meta, cv)
-      // Generate in the currently-viewed content language
+      const userEdits = getUserEdits(meta, masterCv)
       const newCv = await parseWithClaude(text, { userEdits, lang: contentLang })
-      // The competence matrix is hand-curated per bid — parsing never overwrites it
-      const { cv: nextCv, meta: nextMeta } = applyAiResult(meta, cv, newCv, { keepSections: ['competences'] })
+      const { cv: nextCv, meta: nextMeta } = applyAiResult(meta, masterCv, newCv, { keepSections: ['competences'] })
       setActiveCv(nextCv)
       setActiveMeta(nextMeta)
     } catch (err) {
@@ -148,11 +161,7 @@ export default function App() {
     }
   }
 
-  // Directional translation: produce `targetLang` from `sourceLang` and merge
-  // into the target slot, leaving the source untouched. The target's own
-  // user-edits are preserved (conflicts surface as accept/dismiss suggestions),
-  // and cvType is carried across since it isn't language-specific. The view
-  // switches to the target so the result is visible.
+  // Directional, lossless translation of the master (see bilingual design).
   async function runTranslate(sourceLang, targetLang) {
     setTranslating(true)
     setGenError('')
@@ -172,35 +181,86 @@ export default function App() {
     }
   }
 
+  // ── master field/structural editing (only reachable in Master view) ─────
   function handleFieldEdit(path, value) {
     setActiveCv(prev => setValueAtPath(prev, path, value))
     setActiveMeta(prev => markUserEdit(prev, path))
   }
-
   function handleAccept(path, suggestion) {
     setActiveCv(prev => setValueAtPath(prev, path, suggestion))
     setActiveMeta(prev => acceptSuggestion(prev, path))
   }
-
   function handleDismiss(path) {
     setActiveMeta(prev => dismissSuggestion(prev, path))
   }
-
-  // Structural changes (add/remove/reorder items) shift array indexes, so meta
-  // keys are remapped by item id to stay attached to the right items.
   function handleStructural(sectionKey, newData) {
-    const next = ensureIds({ ...cv, [sectionKey]: newData })
-    setMetaByLang(prev => ({ ...prev, [contentLang]: remapMeta(prev[contentLang], cv, next) }))
+    const next = ensureIds({ ...masterCv, [sectionKey]: newData })
+    setMetaByLang(prev => ({ ...prev, [contentLang]: remapMeta(prev[contentLang], masterCv, next) }))
     setCvByLang(prev => ({ ...prev, [contentLang]: next }))
   }
-
-  // cvType (technical / management) is not language-specific — keep both
-  // language versions in sync.
   function handleCvTypeChange(type) {
-    setCvByLang(prev => ({
-      en: { ...prev.en, cvType: type },
-      no: { ...prev.no, cvType: type },
+    setCvByLang(prev => ({ en: { ...prev.en, cvType: type }, no: { ...prev.no, cvType: type } }))
+  }
+
+  // ── job variants ────────────────────────────────────────────────────────
+  async function handleCreateVariant(name, roleText) {
+    setTailoring(true)
+    setTailorError('')
+    try {
+      const plan = await tailorCv(masterCv, roleText, contentLang)
+      const v = variantFromPlan(masterCv, plan, { name, role: { title: name, text: roleText }, lang: contentLang })
+      setVariants(prev => [...prev, v])
+      setActiveVariantId(v.id)
+      setTailorOpen(false)
+    } catch (err) {
+      setTailorError(err.message || 'Failed to tailor. Please try again.')
+    } finally {
+      setTailoring(false)
+    }
+  }
+  function handleDeleteVariant(id) {
+    setVariants(prev => prev.filter(v => v.id !== id))
+    setActiveVariantId(cur => (cur === id ? null : cur))
+  }
+  function handleReorder(section, id, dir) {
+    const arr = section === 'experience' ? masterCv.experience : (masterCv.competences.items || [])
+    updateActiveVariant(v => {
+      const base = v.order[section]?.length ? v.order[section] : arr.map(x => x._id)
+      const i = base.indexOf(id)
+      if (i < 0) return v
+      const j = dir === 'up' ? i - 1 : i + 1
+      if (j < 0 || j >= base.length) return v
+      const next = [...base]; [next[i], next[j]] = [next[j], next[i]]
+      return { ...v, order: { ...v.order, [section]: next } }
+    })
+  }
+  function handleToggleExclude(id) {
+    updateActiveVariant(v => ({
+      ...v,
+      excludedIds: v.excludedIds.includes(id) ? v.excludedIds.filter(x => x !== id) : [...v.excludedIds, id],
     }))
+  }
+  function handleToggleSkillTag(groupId, tag) {
+    updateActiveVariant(v => {
+      const cur = v.excludedSkillTags[groupId] || []
+      const nextTags = cur.includes(tag) ? cur.filter(t => t !== tag) : [...cur, tag]
+      const map = { ...v.excludedSkillTags }
+      if (nextTags.length) map[groupId] = nextTags; else delete map[groupId]
+      return { ...v, excludedSkillTags: map }
+    })
+  }
+  function handleVariantSummary(text) {
+    updateActiveVariant(v => ({
+      ...v, overrides: { ...v.overrides, [contentLang]: { ...v.overrides[contentLang], summary: text } },
+    }))
+  }
+  function handleVariantExpDesc(id, text) {
+    updateActiveVariant(v => {
+      const cur = v.overrides[contentLang]
+      const expDesc = { ...cur.expDesc }
+      if (text) expDesc[id] = text; else delete expDesc[id]
+      return { ...v, overrides: { ...v.overrides, [contentLang]: { ...cur, expDesc } } }
+    })
   }
 
   function handleClear() {
@@ -208,6 +268,9 @@ export default function App() {
     setCvByLang({ en: emptyCv(), no: emptyCv() })
     setMetaByLang({ en: emptyMeta(), no: emptyMeta() })
     setFeedbackByLang({ en: [], no: [] })
+    setVariants([])
+    setActiveVariantId(null)
+    setTailorOpen(false)
     setChatChangedSections(new Set())
     setGenWarning('')
     setShowRestored(false)
@@ -220,17 +283,23 @@ export default function App() {
       return acc
     }, {})
 
-  const filename = [cv.personal.firstName, cv.personal.lastName]
+  const baseName = [masterCv.personal.firstName, masterCv.personal.lastName]
     .filter(Boolean).join('_').replace(/\s+/g, '_') || 'CV'
+  const filename = activeVariant ? `${baseName}_${slug(activeVariant.name)}` : baseName
 
   return (
     <div className="app-layout">
       <AppHeader
-        cv={cv}
+        cv={masterCv}
         uiLang={uiLang}
         contentLang={contentLang}
         activeHasContent={activeHasContent}
         translating={translating}
+        variants={variants}
+        activeVariantId={activeVariantId}
+        onSelectVariant={setActiveVariantId}
+        onOpenTailor={() => { setTailorError(''); setTailorOpen(true) }}
+        onDeleteVariant={handleDeleteVariant}
         onUiLangChange={setUiLang}
         onContentLangChange={setContentLang}
         onTranslate={() => runTranslate(contentLang, otherLang)}
@@ -249,8 +318,6 @@ export default function App() {
         </div>
       )}
 
-      {/* Empty-language banner: this language has no content yet but the other
-          does — offer a one-click translation to fill it in. */}
       {!activeHasContent && otherHasContent && (
         <div className="translate-banner">
           <span>
@@ -272,8 +339,21 @@ export default function App() {
         </div>
       )}
 
+      {activeVariant && (
+        <div className="variant-notice">
+          <span>
+            {uiLang === 'no'
+              ? `Viser tilpasset versjon «${activeVariant.name}». Rediger fakta i Master.`
+              : `Viewing tailored version “${activeVariant.name}”. Edit facts in Master.`}
+          </span>
+          <button className="variant-notice-btn" onClick={() => setActiveVariantId(null)}>
+            {uiLang === 'no' ? 'Til Master' : 'Back to Master'}
+          </button>
+        </div>
+      )}
+
       <InputPanel
-        cv={cv}
+        cv={masterCv}
         lang={contentLang}
         onGenerate={handleGenerate}
         generating={generating}
@@ -283,25 +363,39 @@ export default function App() {
 
       <main className="cv-main">
         <AgentsBar
-          cv={cv}
+          cv={viewCv}
           lang={uiLang}
           reviewLang={contentLang}
           onFeedback={items => setActiveFeedback(prev => [...items, ...prev])}
         />
 
         <div className="cv-columns">
-          <LeftSidebar
-            lang={uiLang}
-            feedbackItems={feedbackItems}
-            onFeedbackChange={setActiveFeedback}
-            onSectionHover={setHoveredSection}
-          />
-
-          <div className="cv-page">
-            <CVEditor
-              cv={cv}
+          {activeVariant ? (
+            <TailoringReview
+              master={masterCv}
+              variant={activeVariant}
               lang={contentLang}
-              meta={meta}
+              uiLang={uiLang}
+              onToggleExclude={handleToggleExclude}
+              onToggleSkillTag={handleToggleSkillTag}
+              onSummaryChange={handleVariantSummary}
+              onExpDescChange={handleVariantExpDesc}
+              onReorder={handleReorder}
+            />
+          ) : (
+            <LeftSidebar
+              lang={uiLang}
+              feedbackItems={feedbackItems}
+              onFeedbackChange={setActiveFeedback}
+              onSectionHover={setHoveredSection}
+            />
+          )}
+
+          <div className={`cv-page${activeVariant ? ' cv-page--locked' : ''}`}>
+            <CVEditor
+              cv={viewCv}
+              lang={contentLang}
+              meta={activeVariant ? {} : meta}
               onFieldEdit={handleFieldEdit}
               onAccept={handleAccept}
               onDismiss={handleDismiss}
@@ -315,14 +409,30 @@ export default function App() {
 
           <RightSidebar lang={uiLang} />
         </div>
+
+        {/* In a tailored view the left sidebar is the tailoring panel, so agent
+            feedback surfaces here, below the CV. */}
+        {activeVariant && (
+          <FeedbackStrip items={feedbackItems} lang={uiLang} onChange={setActiveFeedback} />
+        )}
       </main>
 
       {previewOpen && (
-        <PreviewModal cv={cv} lang={contentLang} onClose={() => setPreviewOpen(false)} />
+        <PreviewModal cv={viewCv} lang={contentLang} onClose={() => setPreviewOpen(false)} />
+      )}
+
+      {tailorOpen && (
+        <TailorPanel
+          lang={uiLang}
+          busy={tailoring}
+          error={tailorError}
+          onCancel={() => { setTailorOpen(false); setTailorError('') }}
+          onCreate={handleCreateVariant}
+        />
       )}
 
       <ExportFooter
-        cvByLang={cvByLang}
+        cvByLang={viewByLang}
         contentLang={contentLang}
         uiLang={uiLang}
         filename={filename}

@@ -30,17 +30,31 @@ share POST 15/60s, share GET 120/60s. Fail-OPEN on DB error. Also fixed error
 leaks: email + share now return generic messages, share got its missing
 try/catch. Verified: 429 + Retry-After trips at the limit, fail-open confirmed.
 
-## 2. Requirements-matching gap report (the killer feature)
-Paste a job posting / tender requirements → extract requirements (reuse the
-parse pattern) → match each against the competence matrix + experience
-evidence → honest per-requirement verdict: met / partial / not met, with
-evidence pointers and "don't claim more than X". This is the product's
-mission made executable, and it needs nothing from the other items:
-- New route `/api/cv/match` (forced tool use, findings-style schema)
-- UI: paste box (raw-text panel already exists) + report panel; offer
-  "add to competence matrix" per matched requirement
-- The anti-overselling stance means the report must be comfortable
-  outputting "not a match"
+## 2. Job tailoring / matching — DONE (2026-07-25)
+Master CV + saved job "variants". A variant is a non-destructive presentation
+over the master: hide items (by stable _id), reorder, and per-language text
+overrides (rewritten summary + re-angled experience descriptions). Nothing is
+deleted — excluded items live in the master and re-toggle instantly.
+- Engine: `lib/cv/tailor.js` — `deriveTailoredCv(master, variant, lang)`,
+  `emptyVariant`, `variantFromPlan` (validates every AI-referenced _id against
+  the master, so a hallucinated id can't hide/mislabel anything). Pure + unit
+  tested (`tailor.test.js`).
+- Route: `/api/cv/tailor` (Sonnet, forced tool use, rate-limited). Realism
+  guardrails in the system prompt: hide/reorder/re-emphasize only, never invent
+  or alter facts, competence levels immutable, honest fit note with gaps.
+  Verified live — it hid an irrelevant frontend role, rewrote the summary from
+  real facts, and the fit note named genuine gaps rather than overselling.
+- UI: header **Version** dropdown (Master / variants / "+ Tailor to a job…");
+  `TailorPanel` modal (drop/paste role desc); `TailoringReview` left panel
+  (include/exclude checkboxes + reasons, reorder ↑↓, skill-tag chips, summary +
+  per-experience override textareas, fit note). Variant view LOCKS the main
+  editor (pointer-events) — facts are edited in Master; a variant only curates.
+- Persistence: draft v3 (`variants` + `activeVariantId`), migrates v2/v1.
+- Trust guarantee is structural: every variant is a subset+reorder+emphasis of
+  the SAME master facts, so two variants can't contradict each other.
+Deferred: translating a variant's overrides into the other language (falls back
+to master text there for now); manual drag-reorder (has ↑↓); per-variant agent
+feedback (agents review the tailored view but feedback is stored per-language).
 
 ## 3. Azure AD auth (unblocks everything below)
 The better-auth scaffold is done; register the app, set env vars, auth

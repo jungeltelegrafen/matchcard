@@ -11,99 +11,119 @@ globalThis.localStorage = {
 
 const { loadDraft, saveDraft, clearDraft, draftHasContent } = await import('../utils/draftStorage')
 
+const V3 = 'cv-generator:draft:v3'
 const V2 = 'cv-generator:draft:v2'
 const V1 = 'cv-generator:draft:v1'
 
+const baseSave = extra => ({
+  cvByLang: { en: normalizeCv({}), no: normalizeCv({}) },
+  metaByLang: { en: {}, no: {} },
+  feedbackByLang: { en: [], no: [] },
+  uiLang: 'en', contentLang: 'en', variants: [], activeVariantId: null,
+  ...extra,
+})
+
 beforeEach(() => store.clear())
 
-describe('draftStorage v2', () => {
-  it('round-trips both language versions and both toggles', () => {
-    const enCv = ensureIds(normalizeCv({ personal: { firstName: 'Kari' }, experience: [{ company: 'Acme', role: 'Dev' }] }))
-    const noCv = ensureIds(normalizeCv({ personal: { firstName: 'Kari' }, experience: [{ company: 'Acme', role: 'Utvikler' }] }))
-    saveDraft({
-      cvByLang: { en: enCv, no: noCv },
-      metaByLang: { en: { 'personal.firstName': { source: 'user', aiSuggestion: null } }, no: {} },
-      feedbackByLang: { en: [{ id: 'x', text: 'note' }], no: [] },
-      uiLang: 'en',
-      contentLang: 'no',
-    })
+describe('draftStorage v3', () => {
+  it('round-trips languages, toggles, and tailoring variants', () => {
+    const enCv = ensureIds(normalizeCv({ personal: { firstName: 'Kari' }, experience: [{ company: 'Acme' }] }))
+    const variant = {
+      id: 'var1', name: 'Cloud @ DNB', role: { title: 'Cloud', text: 'desc' }, tailoredInLang: 'en',
+      createdAt: 123, excludedIds: [enCv.experience[0]._id], excludedSkillTags: {}, order: {},
+      overrides: { en: { summary: 'Tailored', expDesc: {} }, no: { summary: '', expDesc: {} } },
+      rationale: { fitNote: 'Strong fit', reasons: {} },
+    }
+    saveDraft(baseSave({
+      cvByLang: { en: enCv, no: normalizeCv({}) },
+      contentLang: 'no', variants: [variant], activeVariantId: 'var1',
+    }))
 
     const draft = loadDraft()
-    expect(draft.cvByLang.en.experience[0].role).toBe('Dev')
-    expect(draft.cvByLang.no.experience[0].role).toBe('Utvikler')
-    expect(draft.cvByLang.en.experience[0]._id).toBe(enCv.experience[0]._id)
-    expect(draft.metaByLang.en['personal.firstName'].source).toBe('user')
-    expect(draft.feedbackByLang.en).toHaveLength(1)
-    expect(draft.uiLang).toBe('en')
+    expect(draft.variants).toHaveLength(1)
+    expect(draft.variants[0].name).toBe('Cloud @ DNB')
+    expect(draft.variants[0].excludedIds).toEqual([enCv.experience[0]._id])
+    expect(draft.variants[0].overrides.en.summary).toBe('Tailored')
+    expect(draft.variants[0].rationale.fitNote).toBe('Strong fit')
+    expect(draft.activeVariantId).toBe('var1')
     expect(draft.contentLang).toBe('no')
-    expect(typeof draft.savedAt).toBe('number')
   })
 
-  it('normalizes each language slot and fills a missing one', () => {
-    store.set(V2, JSON.stringify({
-      v: 2,
-      cvByLang: { en: { personal: { firstName: 'Old' }, obsolete: [1, 2] } }, // no `no` slot, unknown key
+  it('drops activeVariantId if it references a missing variant', () => {
+    saveDraft(baseSave({ variants: [], activeVariantId: 'ghost' }))
+    expect(loadDraft().activeVariantId).toBeNull()
+  })
+
+  it('coerces a malformed variant to a safe shape and skips non-objects', () => {
+    store.set(V3, JSON.stringify({
+      v: 3,
+      cvByLang: { en: { personal: { firstName: 'X' } } },
+      variants: [{ id: 'v', name: '' }, null, 'nope'],
     }))
     const draft = loadDraft()
-    expect(draft.cvByLang.en.personal.firstName).toBe('Old')
-    expect(draft.cvByLang.en.obsolete).toBeUndefined()
-    expect(draft.cvByLang.no).toBeDefined()
-    expect(draft.cvByLang.no.personal.firstName).toBe('')
-    expect(draft.uiLang).toBe('en')
-    expect(draft.contentLang).toBe('en')
+    expect(draft.variants).toHaveLength(1)
+    const v = draft.variants[0]
+    expect(v.name).toBe('Untitled role')
+    expect(v.excludedIds).toEqual([])
+    expect(v.overrides.en.summary).toBe('')
+    expect(v.rationale.reasons).toEqual({})
   })
 
-  it('migrates a v1 draft into the language slot it was saved under', () => {
+  it('migrates a v2 draft, adding empty variants', () => {
+    store.set(V2, JSON.stringify({
+      v: 2,
+      cvByLang: { en: { personal: { firstName: 'Kari' } }, no: {} },
+      uiLang: 'en', contentLang: 'en',
+    }))
+    const draft = loadDraft()
+    expect(draft.cvByLang.en.personal.firstName).toBe('Kari')
+    expect(draft.variants).toEqual([])
+    expect(draft.activeVariantId).toBeNull()
+  })
+
+  it('migrates a v1 draft into a language slot with empty variants', () => {
     store.set(V1, JSON.stringify({
-      v: 1,
-      cv: { personal: { firstName: 'Nils' }, experience: [{ company: 'Telenor' }] },
-      meta: { 'personal.firstName': { source: 'user', aiSuggestion: null } },
-      lang: 'no',
-      feedbackItems: [{ id: 'f1' }],
+      v: 1, cv: { personal: { firstName: 'Nils' } }, lang: 'no', feedbackItems: [],
     }))
     const draft = loadDraft()
     expect(draft.cvByLang.no.personal.firstName).toBe('Nils')
-    expect(draft.cvByLang.no.experience[0].company).toBe('Telenor')
-    expect(draft.cvByLang.en.personal.firstName).toBe('') // empty EN slot created
-    expect(draft.metaByLang.no['personal.firstName'].source).toBe('user')
-    expect(draft.feedbackByLang.no).toHaveLength(1)
-    expect(draft.uiLang).toBe('no')
+    expect(draft.cvByLang.en.personal.firstName).toBe('')
+    expect(draft.variants).toEqual([])
     expect(draft.contentLang).toBe('no')
   })
 
-  it('prefers a v2 draft over a stale v1 draft', () => {
-    store.set(V1, JSON.stringify({ v: 1, cv: { personal: { firstName: 'OldV1' } }, lang: 'en' }))
-    store.set(V2, JSON.stringify({ v: 2, cvByLang: { en: { personal: { firstName: 'NewV2' } } } }))
-    expect(loadDraft().cvByLang.en.personal.firstName).toBe('NewV2')
+  it('prefers v3 over older drafts', () => {
+    store.set(V1, JSON.stringify({ v: 1, cv: { personal: { firstName: 'v1' } }, lang: 'en' }))
+    store.set(V2, JSON.stringify({ v: 2, cvByLang: { en: { personal: { firstName: 'v2' } } } }))
+    store.set(V3, JSON.stringify({ v: 3, cvByLang: { en: { personal: { firstName: 'v3' } } } }))
+    expect(loadDraft().cvByLang.en.personal.firstName).toBe('v3')
   })
 
-  it('saving clears any superseded v1 draft', () => {
-    store.set(V1, JSON.stringify({ v: 1, cv: { personal: { firstName: 'x' } }, lang: 'en' }))
-    saveDraft({
-      cvByLang: { en: normalizeCv({}), no: normalizeCv({}) },
-      metaByLang: { en: {}, no: {} },
-      feedbackByLang: { en: [], no: [] },
-      uiLang: 'en', contentLang: 'en',
-    })
+  it('saving clears superseded v1/v2 keys', () => {
+    store.set(V1, 'x')
+    store.set(V2, 'y')
+    saveDraft(baseSave({}))
     expect(store.has(V1)).toBe(false)
-    expect(store.has(V2)).toBe(true)
+    expect(store.has(V2)).toBe(false)
+    expect(store.has(V3)).toBe(true)
   })
 
   it('returns null for missing, corrupt, or wrong-version drafts', () => {
     expect(loadDraft()).toBeNull()
-    store.set(V2, 'not json {{{')
+    store.set(V3, 'not json {{{')
     expect(loadDraft()).toBeNull()
     store.clear()
-    store.set(V2, JSON.stringify({ v: 99, cvByLang: {} }))
+    store.set(V3, JSON.stringify({ v: 99, cvByLang: {} }))
     expect(loadDraft()).toBeNull()
   })
 
-  it('clearDraft removes both v1 and v2 keys', () => {
-    store.set(V1, 'x')
-    saveDraft({ cvByLang: { en: normalizeCv({}), no: normalizeCv({}) }, metaByLang: { en: {}, no: {} }, feedbackByLang: { en: [], no: [] }, uiLang: 'en', contentLang: 'en' })
+  it('clearDraft removes all draft keys', () => {
+    store.set(V1, 'x'); store.set(V2, 'y')
+    saveDraft(baseSave({}))
     clearDraft()
     expect(store.has(V1)).toBe(false)
     expect(store.has(V2)).toBe(false)
+    expect(store.has(V3)).toBe(false)
   })
 
   it('draftHasContent is true if either language has content', () => {
