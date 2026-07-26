@@ -1,4 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk'
+import { LANG_NAME } from '@/lib/cv/lang'
 import { FEEDBACK_SECTION_KEYS } from '@/lib/cv/schema'
 import { checkRateLimit, rateLimitedResponse, LIMITS } from '@/lib/rateLimit'
 
@@ -44,9 +45,7 @@ export async function POST(request) {
     const { cv, prompt, lang = 'en' } = await request.json()
     if (!prompt) return Response.json({ error: 'No prompt provided' }, { status: 400 })
 
-    const langNote = lang === 'no'
-      ? 'Write finding titles and details in Norwegian (Bokmål).'
-      : 'Write finding titles and details in English.'
+    const langNote = `Write finding titles and details in ${LANG_NAME[lang] || 'English'}.`
 
     const msg = await client.messages.create({
       model: 'claude-haiku-4-5-20251001',

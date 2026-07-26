@@ -53,19 +53,26 @@ html {
   z-index: 50;
 }
 
-/* Back button */
-.header-back-btn {
+/* Left cluster — back button + version + format */
+.header-left {
   position: absolute;
   left: 16px;
   top: 50%;
   transform: translateY(-50%);
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+/* Back button */
+.header-back-btn {
   display: flex;
   align-items: center;
   gap: 5px;
   text-decoration: none;
   border: 1px solid var(--border);
   border-radius: 8px;
-  padding: 5px 10px;
+  padding: 6px 10px;
   background: var(--surface);
   transition: background 0.15s;
 }
@@ -3265,20 +3272,25 @@ textarea.cv-field {
 .variant-notice-btn:hover { opacity: 0.9; }
 
 /* ── Locked editor while viewing a tailored variant ── */
-.cv-page--locked { position: relative; }
-.cv-page--locked input,
-.cv-page--locked textarea,
-.cv-page--locked button,
-.cv-page--locked [contenteditable] {
+/* Tailored view: text fields stay editable (they edit the master fact, or the
+   variant's own summary/description overrides). Only structural controls —
+   add/remove/reorder buttons, checkboxes, selects, and non-field inputs — are
+   disabled, since add/remove/reorder is a Master-only operation. */
+.cv-page--variant { position: relative; }
+.cv-page--variant button:not(.cv-comp-level-dot),
+.cv-page--variant select,
+.cv-page--variant input:not(.cv-field),
+.cv-page--variant textarea:not(.cv-field),
+.cv-page--variant [contenteditable] {
   pointer-events: none !important;
+  opacity: 0.5;
 }
-.cv-page--locked .cv-field { cursor: default; }
 
 /* ── Tailor modal ── */
-.tailor-modal { max-width: 560px; width: 92vw; }
-.tailor-body { display: flex; flex-direction: column; gap: 10px; }
-.tailor-intro { font-size: 0.85rem; color: var(--muted); line-height: 1.5; margin: 0 0 4px; }
-.tailor-label { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+.tailor-modal { max-width: 720px; width: 94vw; height: auto; max-height: 90vh; }
+.tailor-body { display: flex; flex-direction: column; gap: 14px; padding: 22px 26px; overflow-y: auto; }
+.tailor-intro { font-size: 0.88rem; color: var(--muted); line-height: 1.55; margin: 0 0 2px; }
+.tailor-label { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin-bottom: -6px; }
 .tailor-name-input,
 .tailor-textarea {
   width: 100%;
@@ -3295,7 +3307,7 @@ textarea.cv-field {
 .tailor-drop {
   border: 1.5px dashed var(--border);
   border-radius: 8px;
-  padding: 16px;
+  padding: 26px;
   text-align: center;
   cursor: pointer;
   display: flex;
@@ -3313,7 +3325,7 @@ textarea.cv-field {
 }
 .tailor-file-list button { background: none; border: none; cursor: pointer; color: var(--muted); font-size: 0.95rem; }
 .tailor-error { font-size: 0.78rem; color: #c0392b; background: rgba(192,57,43,0.08); border-radius: 6px; padding: 6px 10px; margin: 0; }
-.tailor-footer { display: flex; justify-content: flex-end; gap: 10px; padding: 14px 18px; border-top: 1px solid var(--border); }
+.tailor-footer { display: flex; justify-content: flex-end; gap: 10px; padding: 16px 26px; border-top: 1px solid var(--border); }
 .tailor-btn {
   border: none; border-radius: 7px; padding: 8px 16px;
   font-size: 0.82rem; font-weight: 600; font-family: inherit; cursor: pointer;
@@ -3410,9 +3422,28 @@ textarea.cv-field {
 .feedback-strip-track {
   display: flex;
   gap: 10px;
-  overflow-x: auto;
-  padding: 12px 14px;
+  overflow-x: scroll;
+  padding: 12px 14px 6px;
   scroll-snap-type: x proximity;
+}
+/* Keep the scrollbar visible at all times. NOTE: we deliberately do NOT set the
+   standard `scrollbar-width`/`scrollbar-color` — when they're present Chrome 121+
+   ignores ::-webkit-scrollbar and reverts to the macOS auto-hiding overlay bar. */
+.feedback-strip-track::-webkit-scrollbar {
+  height: 10px;
+  -webkit-appearance: none;
+}
+.feedback-strip-track::-webkit-scrollbar-track {
+  background: var(--bg);
+  border-radius: 6px;
+}
+.feedback-strip-track::-webkit-scrollbar-thumb {
+  background: var(--accent);
+  border-radius: 6px;
+  border: 2px solid var(--bg);
+}
+.feedback-strip-track::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
 }
 .feedback-strip-empty { font-size: 0.8rem; color: var(--muted); margin: 0; }
 .feedback-card {

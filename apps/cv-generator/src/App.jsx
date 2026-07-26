@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { emptyCv, ensureIds, stripIds, cvHasContent, PARSE_CHAR_LIMIT } from '@lib/cv/schema'
+import { LANGS, LANG_ENDONYM } from '@lib/cv/lang'
 import { deriveTailoredCv, variantFromPlan } from '@lib/cv/tailor'
 import { extractText } from './utils/extractText'
 import { parseWithClaude, translateCv, tailorCv } from './utils/parseWithClaude'
@@ -27,8 +28,6 @@ import TailoringReview from './components/TailoringReview'
 import FeedbackStrip from './components/FeedbackStrip'
 import './styles/app.css'
 
-const LANG_ENDONYM = { en: 'English', no: 'Norsk' }
-const otherOf = l => (l === 'en' ? 'no' : 'en')
 const slug = s => (s || '').replace(/[^a-z0-9]+/gi, '_').replace(/^_+|_+$/g, '') || 'version'
 
 // CV key → SectionWrap key mapping for chat diff
@@ -54,15 +53,45 @@ function diffCvSections(oldCv, newCv) {
   return changed
 }
 
+// A tailored view is derived from the master: array sections are filtered
+// (excluded items removed) and reordered, so a field's index path in the view
+// (e.g. "experience.2.role") may point at a different master index. This walks
+// master + view in parallel, remapping each array index by the item's stable
+// _id (or by value for string arrays), and returns the equivalent MASTER path.
+// Returns null if the target can't be located (e.g. item no longer present).
+function resolveViewPathToMaster(master, view, path) {
+  const segs = path.split('.')
+  const out = []
+  let m = master, vw = view
+  for (const seg of segs) {
+    if (/^\d+$/.test(seg)) {
+      if (!Array.isArray(vw) || !Array.isArray(m)) return null
+      const el = vw[Number(seg)]
+      if (el === undefined) return null
+      const mi = (el && typeof el === 'object' && el._id != null)
+        ? m.findIndex(x => x && x._id === el._id)
+        : m.indexOf(el)
+      if (mi < 0) return null
+      out.push(String(mi))
+      m = m[mi]; vw = el
+    } else {
+      out.push(seg)
+      m = m == null ? undefined : m[seg]
+      vw = vw == null ? undefined : vw[seg]
+    }
+  }
+  return out.join('.')
+}
+
 export default function App() {
   // Restore the previous session's draft once, before first render
   const [draft] = useState(loadDraft)
 
   // Master CV, stored per language. Two independent toggles: uiLang (chrome),
   // contentLang (which CV language is viewed/edited/exported).
-  const [cvByLang, setCvByLang]           = useState(() => draft?.cvByLang       ?? { en: emptyCv(), no: emptyCv() })
-  const [metaByLang, setMetaByLang]       = useState(() => draft?.metaByLang     ?? { en: emptyMeta(), no: emptyMeta() })
-  const [feedbackByLang, setFeedbackByLang] = useState(() => draft?.feedbackByLang ?? { en: [], no: [] })
+  const [cvByLang, setCvByLang]           = useState(() => draft?.cvByLang       ?? Object.fromEntries(LANGS.map(l => [l, emptyCv()])))
+  const [metaByLang, setMetaByLang]       = useState(() => draft?.metaByLang     ?? Object.fromEntries(LANGS.map(l => [l, emptyMeta()])))
+  const [feedbackByLang, setFeedbackByLang] = useState(() => draft?.feedbackByLang ?? Object.fromEntries(LANGS.map(l => [l, []])))
   const [uiLang, setUiLang]               = useState(() => draft?.uiLang      ?? 'en')
   const [contentLang, setContentLang]     = useState(() => draft?.contentLang ?? 'en')
 
@@ -91,12 +120,12 @@ export default function App() {
   const activeVariant = variants.find(v => v.id === activeVariantId) || null
   const viewCv = deriveTailoredCv(masterCv, activeVariant, contentLang)
   const viewByLang = activeVariant
-    ? { en: deriveTailoredCv(cvByLang.en, activeVariant, 'en'), no: deriveTailoredCv(cvByLang.no, activeVariant, 'no') }
+    ? Object.fromEntries(LANGS.map(l => [l, deriveTailoredCv(cvByLang[l], activeVariant, l)]))
     : cvByLang
 
-  const otherLang        = otherOf(contentLang)
   const activeHasContent = cvHasContent(masterCv)
-  const otherHasContent  = cvHasContent(cvByLang[otherLang])
+  // Other content languages that already hold a CV — translation sources/targets.
+  const filledOthers     = LANGS.filter(l => l !== contentLang && cvHasContent(cvByLang[l]))
 
   // Debounced autosave — master (both languages), toggles, and variants
   useEffect(() => {
@@ -181,8 +210,25 @@ export default function App() {
     }
   }
 
-  // ── master field/structural editing (only reachable in Master view) ─────
+  // ── inline field editing ────────────────────────────────────────────────
+  // In a tailored view the summary and per-experience descriptions are the
+  // variant's own re-angled text (stored as overrides); every other field is a
+  // shared fact and edits the master. View→master index remapping keeps edits
+  // pointed at the right item even though the view is filtered/reordered.
   function handleFieldEdit(path, value) {
+    if (activeVariant) {
+      if (path === 'personal.summary') { handleVariantSummary(value); return }
+      const expMatch = /^experience\.(\d+)\.description$/.exec(path)
+      if (expMatch) {
+        const exp = viewCv.experience?.[Number(expMatch[1])]
+        if (exp?._id) { handleVariantExpDesc(exp._id, value); return }
+      }
+      const mp = resolveViewPathToMaster(masterCv, viewCv, path)
+      if (!mp) return
+      setActiveCv(prev => setValueAtPath(prev, mp, value))
+      setActiveMeta(prev => markUserEdit(prev, mp))
+      return
+    }
     setActiveCv(prev => setValueAtPath(prev, path, value))
     setActiveMeta(prev => markUserEdit(prev, path))
   }
@@ -194,12 +240,15 @@ export default function App() {
     setActiveMeta(prev => dismissSuggestion(prev, path))
   }
   function handleStructural(sectionKey, newData) {
+    // Structural changes (add/remove/reorder whole items) are Master-only — in a
+    // tailored view those controls are disabled, so this is a no-op guard.
+    if (activeVariant) return
     const next = ensureIds({ ...masterCv, [sectionKey]: newData })
     setMetaByLang(prev => ({ ...prev, [contentLang]: remapMeta(prev[contentLang], masterCv, next) }))
     setCvByLang(prev => ({ ...prev, [contentLang]: next }))
   }
   function handleCvTypeChange(type) {
-    setCvByLang(prev => ({ en: { ...prev.en, cvType: type }, no: { ...prev.no, cvType: type } }))
+    setCvByLang(prev => Object.fromEntries(LANGS.map(l => [l, { ...prev[l], cvType: type }])))
   }
 
   // ── job variants ────────────────────────────────────────────────────────
@@ -224,8 +273,14 @@ export default function App() {
   }
   function handleReorder(section, id, dir) {
     const arr = section === 'experience' ? masterCv.experience : (masterCv.competences.items || [])
+    const ids = arr.map(x => x._id)
     updateActiveVariant(v => {
-      const base = v.order[section]?.length ? v.order[section] : arr.map(x => x._id)
+      // The stored order can be partial (the AI only orders some items). Expand it
+      // to the FULL current sequence — stored ids first (those that still exist),
+      // then the remaining items in master order — so every item is movable and
+      // the stored order stays a complete, self-consistent list.
+      const stored = (v.order[section] || []).filter(x => ids.includes(x))
+      const base = [...stored, ...ids.filter(x => !stored.includes(x))]
       const i = base.indexOf(id)
       if (i < 0) return v
       const j = dir === 'up' ? i - 1 : i + 1
@@ -265,9 +320,9 @@ export default function App() {
 
   function handleClear() {
     clearDraft()
-    setCvByLang({ en: emptyCv(), no: emptyCv() })
-    setMetaByLang({ en: emptyMeta(), no: emptyMeta() })
-    setFeedbackByLang({ en: [], no: [] })
+    setCvByLang(Object.fromEntries(LANGS.map(l => [l, emptyCv()])))
+    setMetaByLang(Object.fromEntries(LANGS.map(l => [l, emptyMeta()])))
+    setFeedbackByLang(Object.fromEntries(LANGS.map(l => [l, []])))
     setVariants([])
     setActiveVariantId(null)
     setTailorOpen(false)
@@ -302,7 +357,8 @@ export default function App() {
         onDeleteVariant={handleDeleteVariant}
         onUiLangChange={setUiLang}
         onContentLangChange={setContentLang}
-        onTranslate={() => runTranslate(contentLang, otherLang)}
+        translateTargets={LANGS.filter(l => l !== contentLang)}
+        onTranslate={target => runTranslate(contentLang, target)}
         onClear={handleClear}
         onCvTypeChange={handleCvTypeChange}
       />
@@ -318,24 +374,27 @@ export default function App() {
         </div>
       )}
 
-      {!activeHasContent && otherHasContent && (
+      {!activeHasContent && filledOthers.length > 0 && (
         <div className="translate-banner">
           <span>
             {uiLang === 'no'
               ? `Denne CV-en finnes ikke på ${LANG_ENDONYM[contentLang]} ennå.`
               : `This CV has no ${LANG_ENDONYM[contentLang]} version yet.`}
           </span>
-          <button
-            className="translate-banner-btn"
-            onClick={() => runTranslate(otherLang, contentLang)}
-            disabled={translating}
-          >
-            {translating
-              ? (uiLang === 'no' ? 'Oversetter…' : 'Translating…')
-              : (uiLang === 'no'
-                  ? `⇄ Oversett fra ${LANG_ENDONYM[otherLang]}`
-                  : `⇄ Translate from ${LANG_ENDONYM[otherLang]}`)}
-          </button>
+          {filledOthers.map(src => (
+            <button
+              key={src}
+              className="translate-banner-btn"
+              onClick={() => runTranslate(src, contentLang)}
+              disabled={translating}
+            >
+              {translating
+                ? (uiLang === 'no' ? 'Oversetter…' : 'Translating…')
+                : (uiLang === 'no'
+                    ? `⇄ Oversett fra ${LANG_ENDONYM[src]}`
+                    : `⇄ Translate from ${LANG_ENDONYM[src]}`)}
+            </button>
+          ))}
         </div>
       )}
 
@@ -343,8 +402,8 @@ export default function App() {
         <div className="variant-notice">
           <span>
             {uiLang === 'no'
-              ? `Viser tilpasset versjon «${activeVariant.name}». Rediger fakta i Master.`
-              : `Viewing tailored version “${activeVariant.name}”. Edit facts in Master.`}
+              ? `Viser «${activeVariant.name}». Tilpasset tekst lagres i denne versjonen; faktaendringer gjelder alle versjoner.`
+              : `Viewing “${activeVariant.name}”. Tailored text stays in this version; fact edits apply to all versions.`}
           </span>
           <button className="variant-notice-btn" onClick={() => setActiveVariantId(null)}>
             {uiLang === 'no' ? 'Til Master' : 'Back to Master'}
@@ -391,7 +450,7 @@ export default function App() {
             />
           )}
 
-          <div className={`cv-page${activeVariant ? ' cv-page--locked' : ''}`}>
+          <div className={`cv-page${activeVariant ? ' cv-page--variant' : ''}`}>
             <CVEditor
               cv={viewCv}
               lang={contentLang}

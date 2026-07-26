@@ -1,4 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk'
+import { LANG_NAME } from '@/lib/cv/lang'
 import { buildCvJsonSchema, normalizeCv, PARSE_CHAR_LIMIT } from '@/lib/cv/schema'
 import { checkRateLimit, rateLimitedResponse, LIMITS } from '@/lib/rateLimit'
 
@@ -23,7 +24,7 @@ export async function POST(request) {
     const { text, userEdits = {}, lang = 'en' } = await request.json()
     if (!text) return Response.json({ error: 'No text provided' }, { status: 400 })
 
-    const langName = lang === 'no' ? 'Norwegian (Bokmål)' : 'English'
+    const langName = LANG_NAME[lang] || 'English'
     const editsBlock = Object.keys(userEdits).length > 0
       ? `\nPreserve these user-edited fields exactly (only override if the new source clearly contradicts):\n${JSON.stringify(userEdits, null, 2)}\n`
       : ''

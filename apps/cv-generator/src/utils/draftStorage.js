@@ -8,16 +8,12 @@
 // language versions; v1 was single-language. Older drafts migrate forward.
 
 import { normalizeCv, ensureIds, emptyCv, cvHasContent, newId } from '@lib/cv/schema'
+import { LANGS, toLang } from '@lib/cv/lang'
 
 const KEY = 'cv-generator:draft:v3'
 const KEY_V2 = 'cv-generator:draft:v2'
 const KEY_V1 = 'cv-generator:draft:v1'
 const LEGACY_KEYS = [KEY_V2, KEY_V1]
-const LANGS = ['en', 'no']
-
-function toLang(v, fallback = 'en') {
-  return v === 'no' ? 'no' : v === 'en' ? 'en' : fallback
-}
 
 function normalizeCvByLang(raw) {
   const out = {}
@@ -46,10 +42,10 @@ function normalizeVariant(v) {
     excludedIds: Array.isArray(v.excludedIds) ? v.excludedIds.filter(x => typeof x === 'string') : [],
     excludedSkillTags: v.excludedSkillTags && typeof v.excludedSkillTags === 'object' ? v.excludedSkillTags : {},
     order: v.order && typeof v.order === 'object' ? v.order : {},
-    overrides: {
-      en: { summary: String(ov.en?.summary ?? ''), expDesc: ov.en?.expDesc && typeof ov.en.expDesc === 'object' ? ov.en.expDesc : {} },
-      no: { summary: String(ov.no?.summary ?? ''), expDesc: ov.no?.expDesc && typeof ov.no.expDesc === 'object' ? ov.no.expDesc : {} },
-    },
+    overrides: Object.fromEntries(LANGS.map(l => [l, {
+      summary: String(ov[l]?.summary ?? ''),
+      expDesc: ov[l]?.expDesc && typeof ov[l].expDesc === 'object' ? ov[l].expDesc : {},
+    }])),
     rationale: {
       fitNote: String(v.rationale?.fitNote ?? ''),
       reasons: v.rationale?.reasons && typeof v.rationale.reasons === 'object' ? v.rationale.reasons : {},
@@ -105,12 +101,15 @@ function migrateV2(draft) {
 function migrateV1(draft) {
   if (draft?.v !== 1 || !draft.cv || typeof draft.cv !== 'object') return null
   const lang = toLang(draft.lang)
-  const other = lang === 'en' ? 'no' : 'en'
+  const cvByLang = {}, metaByLang = {}, feedbackByLang = {}
+  for (const l of LANGS) {
+    cvByLang[l] = l === lang ? ensureIds(normalizeCv(draft.cv)) : emptyCv()
+    metaByLang[l] = l === lang && draft.meta && typeof draft.meta === 'object' ? draft.meta : {}
+    feedbackByLang[l] = l === lang && Array.isArray(draft.feedbackItems) ? draft.feedbackItems : []
+  }
   return {
-    cvByLang: { [lang]: ensureIds(normalizeCv(draft.cv)), [other]: emptyCv() },
-    metaByLang: { [lang]: draft.meta && typeof draft.meta === 'object' ? draft.meta : {}, [other]: {} },
-    feedbackByLang: { [lang]: Array.isArray(draft.feedbackItems) ? draft.feedbackItems : [], [other]: [] },
-    uiLang: lang,
+    cvByLang, metaByLang, feedbackByLang,
+    uiLang: lang === 'no' ? 'no' : 'en',
     contentLang: lang,
     variants: [],
     activeVariantId: null,

@@ -1,7 +1,6 @@
 import { useState } from 'react'
+import { LANG_ENDONYM } from '@lib/cv/lang'
 import FeedbackModal from './FeedbackModal'
-
-const LANG_ENDONYM = { en: 'English', no: 'Norsk' }
 
 export default function AppHeader({
   cv,
@@ -16,17 +15,18 @@ export default function AppHeader({
   onDeleteVariant,
   onUiLangChange,
   onContentLangChange,
+  translateTargets = [],
   onTranslate,
   onClear,
   onCvTypeChange,
 }) {
   const [feedbackOpen, setFeedbackOpen] = useState(false)
   const [versionMenuOpen, setVersionMenuOpen] = useState(false)
+  const [translateMenuOpen, setTranslateMenuOpen] = useState(false)
   const no = uiLang === 'no'
 
   const candidateName = [cv.personal.firstName, cv.personal.lastName].filter(Boolean).join(' ')
   const candidateTitle = cv.personal.title
-  const otherLang = contentLang === 'en' ? 'no' : 'en'
 
   const activeVariant = variants.find(v => v.id === activeVariantId) || null
   const versionLabel = activeVariant ? activeVariant.name : (no ? 'Master' : 'Master')
@@ -45,27 +45,14 @@ export default function AppHeader({
     <>
       <header className="app-header">
 
-        <a href="https://matchcard.no" className="header-back-btn" title="Back to matchcard">
-          <span className="header-back-arrow">←</span>
-          <span className="header-back-label">matchcard</span>
-        </a>
+        {/* Left cluster — navigation + which CV (version + format) */}
+        <div className="header-left">
+          <a href="https://matchcard.no" className="header-back-btn" title="Back to matchcard">
+            <span className="header-back-arrow">←</span>
+            <span className="header-back-label">matchcard</span>
+          </a>
 
-        <div className="header-center">
-          <h1 className="header-title">CV Generator</h1>
-          <div className="header-accent-rule" />
-          {candidateName ? (
-            <div className="header-candidate">
-              <span className="header-candidate-name">{candidateName}</span>
-              {candidateTitle && <span className="header-candidate-title">{candidateTitle}</span>}
-            </div>
-          ) : (
-            <span className="header-candidate-empty">
-              {no ? 'Skriv inn navn for å komme i gang' : 'Enter a name to get started'}
-            </span>
-          )}
-        </div>
-
-        <div className="header-actions">
+          <div className="header-divider" />
 
           {/* Version selector — Master + tailored job variants */}
           <div className="header-toggle-group">
@@ -108,8 +95,6 @@ export default function AppHeader({
             </div>
           </div>
 
-          <div className="header-divider" />
-
           {/* CV Type toggle */}
           <div className="header-toggle-group">
             <span className="header-toggle-label">Format</span>
@@ -128,8 +113,24 @@ export default function AppHeader({
               </button>
             </div>
           </div>
+        </div>
 
-          <div className="header-divider" />
+        <div className="header-center">
+          <h1 className="header-title">CV Generator</h1>
+          <div className="header-accent-rule" />
+          {candidateName ? (
+            <div className="header-candidate">
+              <span className="header-candidate-name">{candidateName}</span>
+              {candidateTitle && <span className="header-candidate-title">{candidateTitle}</span>}
+            </div>
+          ) : (
+            <span className="header-candidate-empty">
+              {no ? 'Skriv inn navn for å komme i gang' : 'Enter a name to get started'}
+            </span>
+          )}
+        </div>
+
+        <div className="header-actions">
 
           {/* Site language toggle — UI chrome only */}
           <div className="header-toggle-group">
@@ -151,7 +152,7 @@ export default function AppHeader({
           </div>
 
           {/* CV content language toggle — which language is viewed/edited/exported.
-              Switching is instant and lossless; the other version is kept. */}
+              Switching is instant and lossless; the other versions are kept. */}
           <div className="header-toggle-group">
             <span className="header-toggle-label">CV</span>
             <div className="header-pill">
@@ -167,24 +168,42 @@ export default function AppHeader({
               >
                 English
               </button>
+              <button
+                className={`header-pill-btn${contentLang === 'es' ? ' active' : ''}`}
+                onClick={() => onContentLangChange('es')}
+              >
+                Español
+              </button>
             </div>
           </div>
 
-          {/* Translate the CV currently shown into the other language. Merges
-              into that language's slot, preserving any hand-edits there. */}
-          {activeHasContent && (
-            <button
-              className="header-action-btn"
-              onClick={onTranslate}
-              disabled={translating}
-              title={no
-                ? `Oversett CV-en til ${LANG_ENDONYM[otherLang]} (beholder ${LANG_ENDONYM[contentLang]}-versjonen)`
-                : `Translate this CV into ${LANG_ENDONYM[otherLang]} (keeps the ${LANG_ENDONYM[contentLang]} version)`}
-            >
-              {translating
-                ? (no ? 'Oversetter…' : 'Translating…')
-                : `⇄ ${no ? 'Oversett til' : 'Translate to'} ${LANG_ENDONYM[otherLang]}`}
-            </button>
+          {/* Translate the CV currently shown into another language. Merges into
+              that language's slot, preserving any hand-edits there. */}
+          {activeHasContent && translateTargets.length > 0 && (
+            <div className="header-version-wrap">
+              <button
+                className="header-action-btn"
+                onClick={() => setTranslateMenuOpen(o => !o)}
+                disabled={translating}
+              >
+                {translating
+                  ? (no ? 'Oversetter…' : 'Translating…')
+                  : `⇄ ${no ? 'Oversett' : 'Translate'} ▾`}
+              </button>
+              {translateMenuOpen && !translating && (
+                <div className="header-version-menu">
+                  {translateTargets.map(t => (
+                    <button
+                      key={t}
+                      className="header-version-item"
+                      onClick={() => { setTranslateMenuOpen(false); onTranslate(t) }}
+                    >
+                      {no ? 'Til' : 'To'} {LANG_ENDONYM[t]}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
 
           <div className="header-divider" />

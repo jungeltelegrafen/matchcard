@@ -4,8 +4,7 @@ import { renderPdfBlob } from '../utils/renderPdf'
 import { downloadDocx } from '../renderers/docx/buildDocument'
 import { downloadEmail } from '../utils/generateEmail'
 import { stripIds, cvHasContent } from '@lib/cv/schema'
-
-const LANG_ENDONYM = { en: 'English', no: 'Norsk' }
+import { LANGS, LANG_ENDONYM } from '@lib/cv/lang'
 
 // ── Completeness scoring ──────────────────────────────────────────────────────
 
@@ -81,7 +80,7 @@ export default function ExportFooter({ cvByLang, contentLang, uiLang, filename, 
 
   // Languages worth offering: those with real content. Fall back to the
   // currently-viewed language so a brand-new CV can still be exported.
-  const filled = ['en', 'no'].filter(l => cvHasContent(cvByLang[l]))
+  const filled = LANGS.filter(l => cvHasContent(cvByLang[l]))
   const exportLangs = filled.length ? filled : [contentLang]
   const multi = exportLangs.length > 1
 

@@ -59,12 +59,22 @@ function blobToBase64(blob) {
   })
 }
 
+// Base64 (UTF-8) so non-ASCII summaries — e.g. Norwegian æ/ø/å — survive intact.
+// (Declaring quoted-printable while emitting raw text corrupts those in strict
+// clients.) Attachments below already use base64 for the same reason.
+function base64Utf8(str) {
+  const bytes = new TextEncoder().encode(str)
+  let bin = ''
+  for (const b of bytes) bin += String.fromCharCode(b)
+  return btoa(bin)
+}
+
 function mimeTextPart(text) {
   return [
     'Content-Type: text/plain; charset=utf-8',
-    'Content-Transfer-Encoding: quoted-printable',
+    'Content-Transfer-Encoding: base64',
     '',
-    text,
+    base64Utf8(text),
   ].join('\r\n')
 }
 

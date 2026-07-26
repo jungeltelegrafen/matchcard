@@ -1,4 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk'
+import { LANG_NAME } from '@/lib/cv/lang'
 import { checkRateLimit, rateLimitedResponse, LIMITS } from '@/lib/rateLimit'
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
@@ -11,7 +12,7 @@ export async function POST(request) {
     const { cv, lang = 'en' } = await request.json()
     if (!cv) return Response.json({ error: 'cv required' }, { status: 400 })
 
-    const langName = lang === 'no' ? 'Norwegian (Bokmål)' : 'English'
+    const langName = LANG_NAME[lang] || 'English'
 
     const msg = await client.messages.create({
       model: 'claude-haiku-4-5-20251001',

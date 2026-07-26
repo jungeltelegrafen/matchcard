@@ -126,6 +126,70 @@ export const L = {
     addLanguageBtn:      '+ Legg til',
     managementBadge:     'Ledelse',
   },
+
+  es: {
+    // ── Section headings ──────────────────────────────────────────
+    experience:     'Experiencia de Proyectos',
+    education:      'Educación',
+    skills:         'Habilidades',
+    certifications: 'Certificaciones',
+    languages:      'Idiomas',
+    competences:    'Competencias Clave',
+    summary:        'Resumen',
+
+    // ── Experience field labels ───────────────────────────────────
+    role:           'Rol(es)',
+    projectDesc:    'Descripción del proyecto',
+    tasks:          'Tareas y responsabilidades',
+    technologies:   'Tecnologías utilizadas',
+    methodologies:  'Metodologías, tecnologías y competencias',
+    result:         'Resultado',
+
+    // ── Personal meta ─────────────────────────────────────────────
+    birthYear:        'Nacimiento',
+    address:          'Dirección',
+    educationSummary: 'Educación',
+    itSince:          'Experiencia en TI desde',
+    phone:            'Teléfono',
+    email:            'Correo electrónico',
+    linkedin:         'LinkedIn',
+    availableFrom:    'Disponible desde',
+    workPreference:   'Preferencia de trabajo',
+    hideContact:      'Incluir información de contacto en las exportaciones',
+
+    // ── Competence table ──────────────────────────────────────────
+    competencesFor:      'Competencias relevantes para',
+    forProject:          'para',
+    includedInExports:   '✓ Incluido en exportaciones',
+    addToExports:        '+ Añadir a exportaciones',
+    levelLabel:          'Nivel',
+    levelExpert:         'Experto',
+    lastUsed:            'Último uso',
+    totalYears:          'Años totales',
+    projects:            'Proyectos',
+    addCompetence:       '+ Añadir competencia',
+    competenceEmpty:     'Añade una tarjeta por cada requisito de competencia.',
+
+    // ── Buttons ───────────────────────────────────────────────────
+    remove:              'Eliminar',
+    addProject:          '+ Añadir proyecto',
+    addEducation:        '+ Añadir educación',
+    addCertification:    '+ Añadir certificación',
+    certsCourses:        'Certificaciones y Cursos',
+    courses:             'Cursos',
+    addCourse:           '+ Añadir curso',
+    institution:         'Institución',
+    positions:           'Lista de Cargos',
+    addPosition:         '+ Añadir cargo',
+    positionTitle:       'Título / Rol',
+    positionDesc:        'Descripción',
+    positionTech:        'Tecnologías, métodos y competencias utilizadas',
+    enablePositions:     'Incluir lista de cargos',
+    useProjectFormat:    'Formato de proyecto completo',
+    addSkillGroup:       '+ Añadir grupo de habilidades',
+    addLanguageBtn:      '+ Añadir',
+    managementBadge:     'Dirección',
+  },
 }
 
 export function getL(lang) {

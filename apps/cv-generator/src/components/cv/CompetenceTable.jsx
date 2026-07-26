@@ -4,7 +4,7 @@ import { getL } from '../../utils/labels'
 
 const emptyItem = { requirement: '', level: '', lastUsed: '', yearsRelevant: '', projects: '', detail: '' }
 
-function LevelPicker({ value, onChange, lang }) {
+function LevelPicker({ value, path, onEdit, lang }) {
   const lb = getL(lang)
   const current = parseInt(value) || 0
   return (
@@ -13,7 +13,7 @@ function LevelPicker({ value, onChange, lang }) {
         <button
           key={n}
           className={`cv-comp-level-dot${n <= current ? ' filled' : ''}`}
-          onClick={() => onChange(n === current ? '' : String(n))}
+          onClick={() => onEdit(path, n === current ? '' : String(n))}
           title={n === 5 ? lb.levelExpert : `${lb.levelLabel} ${n}`}
         />
       ))}
@@ -167,7 +167,8 @@ export default function CompetenceTable({ data, lang = 'en', meta, onFieldEdit, 
                   <span className="cv-comp-meta-label">{lb.levelLabel}</span>
                   <LevelPicker
                     value={item.level}
-                    onChange={val => setItemField(i, 'level', val)}
+                    path={prefix(i, 'level')}
+                    onEdit={onFieldEdit}
                     lang={lang}
                   />
                 </div>

@@ -1,4 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk'
+import { LANG_NAME } from '@/lib/cv/lang'
 import { buildCvJsonSchema, normalizeCv } from '@/lib/cv/schema'
 import { checkRateLimit, rateLimitedResponse, LIMITS } from '@/lib/rateLimit'
 
@@ -23,7 +24,7 @@ export async function POST(request) {
     const { cv, targetLang } = await request.json()
     if (!cv || !targetLang) return Response.json({ error: 'cv and targetLang required' }, { status: 400 })
 
-    const langName = targetLang === 'no' ? 'Norwegian (Bokmål)' : 'English'
+    const langName = LANG_NAME[targetLang] || 'English'
 
     // Sonnet for the same reason as /parse: Haiku is unstable emitting the
     // large CV tool schema. Translation is an explicit, occasional action.

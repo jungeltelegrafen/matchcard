@@ -1,4 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk'
+import { LANG_NAME } from '@/lib/cv/lang'
 import { checkRateLimit, rateLimitedResponse, LIMITS } from '@/lib/rateLimit'
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
@@ -111,7 +112,7 @@ export async function POST(request) {
     const { cv, message, history = [], lang = 'en' } = await request.json()
     if (!message) return Response.json({ error: 'No message provided' }, { status: 400 })
 
-    const langName = lang === 'no' ? 'Norwegian (Bokmål)' : 'English'
+    const langName = LANG_NAME[lang] || 'English'
     const system = buildSystem(cv, langName)
     const messages = [
       ...history.map(m => ({ role: m.role, content: m.content })),
