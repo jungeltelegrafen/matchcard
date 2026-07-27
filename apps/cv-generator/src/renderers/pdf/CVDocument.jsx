@@ -11,6 +11,7 @@ import CVCertsCourses from './CVCertsCourses'
 import CVLanguages from './CVLanguages'
 import SectionHeading from './SectionHeading'
 import CVVideoProfiles from './CVVideoProfiles'
+import CVVideos from './CVVideos'
 import CVPortfolio from './CVPortfolio'
 
 const styles = StyleSheet.create({
@@ -54,6 +55,8 @@ export default function CVDocument({ data, lang = 'en' }) {
             <Text style={styles.summary}>{data.personal.summary}</Text>
           </View>
         ) : null}
+
+        <CVVideos items={data.videos} lang={lang} />
 
         {data.skills?.length > 0 && (
           <CVSkills items={data.skills} lang={lang} />

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import CVField from './CVField'
 import VideoProfileModal from '../VideoProfileModal'
 import { getL } from '../../utils/labels'
+import { videoPoster } from '../../utils/videoPoster'
 
 const emptyItem = {
   title: '', kind: 'intro', description: '', placement: 'general',
@@ -42,7 +43,7 @@ export default function VideosSection({
           <div key={item._id || i} className="cv-videocard">
             <button
               className={`cv-videocard-poster${item.playbackUrl ? '' : ' empty'}`}
-              style={item.thumbnailUrl ? { backgroundImage: `url(${item.thumbnailUrl})` } : undefined}
+              style={videoPoster(item) ? { backgroundImage: `url(${videoPoster(item)})` } : undefined}
               onClick={() => item.playbackUrl && setOpenIdx(i)}
               title={item.playbackUrl ? lb.watchVideo : undefined}
             >

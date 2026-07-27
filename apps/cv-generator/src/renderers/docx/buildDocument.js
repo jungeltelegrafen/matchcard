@@ -10,7 +10,7 @@ import { buildPositions } from './buildPositions'
 import { buildEducation } from './buildEducation'
 import { buildCertsCourses } from './buildCertsCourses'
 import { buildLanguages } from './buildLanguages'
-import { buildVideoProfiles } from './buildVideoProfiles'
+import { buildVideos } from './buildVideos'
 import { buildPortfolio } from './buildPortfolio'
 
 function section(paras) {
@@ -36,7 +36,7 @@ function buildDoc(data, lang = 'en') {
         },
         children: [
           ...buildHeader(data.personal, lang),
-          ...section(buildVideoProfiles(data.videoProfile, data.projectVideoProfile, lang)),
+          ...section(buildVideos(data.videos, lang)),
           ...section(buildSkills(data.skills, lang)),
           ...section(buildCompetences(data.competences, lang)),
           ...section(buildExperience(data.experience, cvType, lang)),

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import VideoProfileModal from './VideoProfileModal'
 import VideoStudioModal from './VideoStudioModal'
+import { videoPoster } from '../utils/videoPoster'
 
 // Right-sidebar video hub: an overview of the CV's video presentations with
 // quick play/remove, and the entry point to the recording studio (which opens
@@ -47,7 +48,7 @@ export default function VideoPanel({ videos = [], cv = {}, uiLang = 'en', conten
               <button
                 className={`video-hub-thumb${v.playbackUrl ? '' : ' empty'}`}
                 onClick={() => v.playbackUrl && setOpenIdx(i)}
-                style={v.thumbnailUrl ? { backgroundImage: `url(${v.thumbnailUrl})` } : undefined}
+                style={videoPoster(v) ? { backgroundImage: `url(${videoPoster(v)})` } : undefined}
                 title={v.playbackUrl ? 'Play' : undefined}
               >
                 <span className="video-hub-thumb-play">▶</span>
