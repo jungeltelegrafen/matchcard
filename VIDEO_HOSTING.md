@@ -63,14 +63,26 @@ playback URL (the player components already recognize `videodelivery.net` /
    gives an S3 **Access Key ID** and **Secret Access Key**.
 5. **Set env vars** (`.env.local`) and restart the Next server:
    ```
-   R2_ACCOUNT_ID=your-cloudflare-account-id
    R2_ACCESS_KEY_ID=...
    R2_SECRET_ACCESS_KEY=...
    R2_BUCKET=your-bucket-name
-   R2_PUBLIC_BASE_URL=https://pub-xxxx.r2.dev      # or your custom domain
+   R2_PUBLIC_BASE_URL=https://pub-xxxx.r2.dev        # the bucket's public URL
+   # S3 endpoint — use R2_ENDPOINT for EU/jurisdiction buckets:
+   R2_ENDPOINT=https://<account-id>.eu.r2.cloudflarestorage.com
+   # …or, for a standard (non-jurisdiction) bucket, just:
+   # R2_ACCOUNT_ID=your-32-hex-account-id
    ```
+   **Gotchas:** don't paste the *whole* S3 URL into `R2_ACCOUNT_ID` — it's just
+   the 32-hex id (the route now tolerates a full URL, but `R2_ENDPOINT` is
+   clearer). **EU-jurisdiction buckets** must use the `.eu.` endpoint, so set
+   `R2_ENDPOINT`. `R2_PUBLIC_BASE_URL` is the bucket's own public `r2.dev` URL
+   (must belong to the *same* bucket you upload to).
 6. **Test:** record a clip → *Use this recording* → you should see *Uploading… %*,
    the "session only" badge disappears, and the clip plays on the share page and
    after a reload.
 
 Signing uses `aws4fetch` (tiny S3 SigV4 signer); no AWS SDK needed.
+
+> Note: automated tools (curl/Python) hitting the `r2.dev` public URL may get
+> Cloudflare `error 1010` — that's bot protection on the public domain, not a
+> bucket problem; real browsers are unaffected.

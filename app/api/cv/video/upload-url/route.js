@@ -26,8 +26,14 @@ import { checkRateLimit, rateLimitedResponse, LIMITS } from '@/lib/rateLimit'
 // endpoint + uploadVideo.js, so switching is a localized change, not a rewrite.
 //
 // Required env (absent → 501, client falls back to a session-only local clip):
-//   R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET,
-//   R2_PUBLIC_BASE_URL   (e.g. https://pub-xxxx.r2.dev or a custom domain)
+//   R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET, R2_PUBLIC_BASE_URL,
+//   and the S3 endpoint via ONE of:
+//     R2_ENDPOINT     — full endpoint base, e.g.
+//                       https://<acct>.eu.r2.cloudflarestorage.com  (handles EU/
+//                       jurisdiction buckets), or
+//     R2_ACCOUNT_ID   — the bare 32-hex account id (→ …r2.cloudflarestorage.com).
+//   (R2_ACCOUNT_ID also tolerates a full endpoint URL, with or without the
+//    bucket appended, so a common paste mistake still works.)
 // The bucket needs public read access and a CORS rule allowing PUT from the app
 // origin — see VIDEO_HOSTING.md.
 // ─────────────────────────────────────────────────────────────────────────────
@@ -38,12 +44,24 @@ export async function POST(req) {
   const limit = await checkRateLimit(req, LIMITS.ai)
   if (!limit.ok) return rateLimitedResponse(limit.retryAfter)
 
-  const accountId = process.env.R2_ACCOUNT_ID
   const accessKeyId = process.env.R2_ACCESS_KEY_ID
   const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY
   const bucket = process.env.R2_BUCKET
   const publicBase = process.env.R2_PUBLIC_BASE_URL
-  if (!accountId || !accessKeyId || !secretAccessKey || !bucket || !publicBase) {
+
+  // Resolve the account-level S3 endpoint. Accept either R2_ENDPOINT, a bare
+  // R2_ACCOUNT_ID (→ https://<id>.r2.cloudflarestorage.com), or a full endpoint
+  // URL pasted into R2_ACCOUNT_ID (incl. EU/other jurisdictions, with or without
+  // the bucket appended) — tolerant so common paste mistakes still work.
+  let endpointBase = process.env.R2_ENDPOINT || ''
+  if (!endpointBase && process.env.R2_ACCOUNT_ID) {
+    const raw = process.env.R2_ACCOUNT_ID.trim()
+    endpointBase = /^https?:\/\//.test(raw) ? raw : `https://${raw}.r2.cloudflarestorage.com`
+  }
+  endpointBase = endpointBase.replace(/\/+$/, '')
+  if (bucket && endpointBase.endsWith(`/${bucket}`)) endpointBase = endpointBase.slice(0, -(bucket.length + 1))
+
+  if (!endpointBase || !accessKeyId || !secretAccessKey || !bucket || !publicBase) {
     return NextResponse.json({ error: 'not_configured' }, { status: 501 })
   }
 
@@ -53,7 +71,7 @@ export async function POST(req) {
     const key = `videos/${crypto.randomUUID()}.${ext}`
 
     const client = new AwsClient({ accessKeyId, secretAccessKey })
-    const endpoint = `https://${accountId}.r2.cloudflarestorage.com/${bucket}/${key}`
+    const endpoint = `${endpointBase}/${bucket}/${key}`
     const signed = await client.sign(`${endpoint}?X-Amz-Expires=600`, {
       method: 'PUT',
       aws: { signQuery: true, service: 's3', region: 'auto' },
