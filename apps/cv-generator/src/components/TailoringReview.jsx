@@ -90,6 +90,13 @@ export default function TailoringReview({
         />
       </div>
 
+      {/* Videos — same position as the CV body (just under the summary) */}
+      <SimpleSection
+        title={lb.videos || 'Videos'}
+        items={master.videos || []}
+        labelFn={v => v.title || (no ? 'Uten tittel' : 'Untitled')}
+      />
+
       {/* Experience: include/exclude + reorder + re-angled description */}
       {experience.length > 0 && (
         <div className="tr-section">
@@ -116,19 +123,33 @@ export default function TailoringReview({
         </div>
       )}
 
-      {/* Competences */}
+      {/* Competences — level shown as dots to match the CV's star rating */}
       {competences.length > 0 && (
         <div className="tr-section">
           <h3 className="tr-section-title">{lb.competences || 'Competences'}</h3>
-          {competences.map(c => (
-            <CheckRow
-              key={c._id}
-              id={c._id}
-              section="competences"
-              canReorder
-              label={`${c.requirement || '—'}${c.level ? ` · ${lb.levelLabel || 'Level'} ${c.level}` : ''}`}
-            />
-          ))}
+          {competences.map(c => {
+            const lvl = parseInt(c.level) || 0
+            return (
+              <CheckRow
+                key={c._id}
+                id={c._id}
+                section="competences"
+                canReorder
+                label={
+                  <>
+                    {c.requirement || '—'}
+                    {lvl > 0 && (
+                      <span className="tr-level" title={`${lb.levelLabel || 'Level'} ${lvl}`}>
+                        {[1, 2, 3, 4, 5].map(n => (
+                          <span key={n} className={`tr-level-dot${n <= lvl ? ' on' : ''}`} />
+                        ))}
+                      </span>
+                    )}
+                  </>
+                }
+              />
+            )
+          })}
         </div>
       )}
 
@@ -183,11 +204,6 @@ export default function TailoringReview({
         title={no ? 'Portefølje' : 'Portfolio'}
         items={master.portfolio || []}
         labelFn={p => p.label || p.url || '—'}
-      />
-      <SimpleSection
-        title={lb.videos || 'Videos'}
-        items={master.videos || []}
-        labelFn={v => v.title || (no ? 'Uten tittel' : 'Untitled')}
       />
     </aside>
   )

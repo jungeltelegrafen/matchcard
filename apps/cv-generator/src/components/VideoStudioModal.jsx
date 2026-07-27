@@ -321,7 +321,7 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', onClose, onSave
       setPhase('review')
     }
     recRef.current = mr
-    mr.start()
+    mr.start(1000) // timeslice → periodic chunks, more robust for long clips
     setElapsed(0); setPhase('recording'); startTimer()
   }
 
@@ -410,8 +410,12 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', onClose, onSave
               ) : cameraLive ? (
                 mode === 'cv' ? (
                   <>
-                    <canvas ref={compositeRef} className="studio-video studio-video--contain" />
-                    <video ref={camVideoRef} className="studio-camhidden" autoPlay muted playsInline />
+                    {/* Full-size webcam kept on-screen BEHIND the canvas so the
+                        browser doesn't throttle its decoding (which froze the
+                        composite PiP after a few seconds). The opaque canvas
+                        covers it. */}
+                    <video ref={camVideoRef} className="studio-camunder" autoPlay muted playsInline />
+                    <canvas ref={compositeRef} className="studio-video studio-video--composite" />
                   </>
                 ) : (
                   <video ref={liveRef} className="studio-video studio-video--mirror" autoPlay muted playsInline />

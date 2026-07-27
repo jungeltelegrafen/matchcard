@@ -2769,9 +2769,10 @@ textarea.cv-field {
   background: rgba(230,160,40,0.14); border: 1px solid rgba(230,160,40,0.35);
   border-radius: 8px; padding: 8px 12px;
 }
-/* Hidden webcam source that the composite canvas draws from (must stay
-   attached & playing, so hide it without display:none). */
-.studio-camhidden { position: absolute; width: 2px; height: 2px; opacity: 0; pointer-events: none; }
+/* Webcam source for the composite: kept full-size & on-screen (so the browser
+   keeps decoding it) but underneath the opaque canvas that covers it. */
+.studio-camunder { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
+.studio-video--composite { position: absolute; inset: 0; z-index: 1; object-fit: contain; }
 /* "What to record" toggle */
 .studio-mode { display: flex; flex-direction: column; align-items: center; gap: 6px; }
 .studio-mode-label {
@@ -3729,6 +3730,11 @@ textarea.cv-field {
 .tr-check input { flex-shrink: 0; }
 .tr-label { font-size: 0.8rem; overflow: hidden; text-overflow: ellipsis; }
 .tr-row--out .tr-label { text-decoration: line-through; color: var(--muted); }
+.tr-level { display: inline-flex; gap: 2px; margin-left: 6px; vertical-align: middle; }
+.tr-level-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--border); }
+.tr-level-dot.on { background: var(--accent); }
+.tr-row--out .tr-level-dot { opacity: 0.4; }
+.tr-row--out .tr-level-dot.on { background: var(--muted); }
 .tr-reorder { display: flex; gap: 2px; }
 .tr-reorder button { background: var(--bg); border: 1px solid var(--border); border-radius: 4px; width: 20px; height: 20px; font-size: 0.7rem; cursor: pointer; padding: 0; color: var(--text); }
 .tr-reorder button:hover { background: var(--accent-lt); }
