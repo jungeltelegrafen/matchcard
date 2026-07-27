@@ -1,6 +1,22 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
+import * as pdfjsLib from 'pdfjs-dist'
 import { renderPdfBlob } from '../utils/renderPdf'
 import { hostRecording } from '../utils/uploadVideo'
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+  'pdfjs-dist/build/pdf.worker.min.mjs',
+  import.meta.url,
+).toString()
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath()
+  ctx.moveTo(x + r, y)
+  ctx.arcTo(x + w, y, x + w, y + h, r)
+  ctx.arcTo(x + w, y + h, x, y + h, r)
+  ctx.arcTo(x, y + h, x, y, r)
+  ctx.arcTo(x, y, x + w, y, r)
+  ctx.closePath()
+}
 
 // ── Teleprompter scripts (private cues, per language) ────────────────────────
 // Selecting a script pre-fills the saved card's title/kind/placement. The cues
@@ -40,6 +56,7 @@ const T = {
         record: 'Record', pause: 'Pause', resume: 'Resume', stop: 'Stop', retake: 'Re-take', use: 'Use this recording',
         recording: 'REC', paused: 'Paused', review: 'Review your recording', target: 'Target', starts: 'Recording in',
         next: 'Next ›', prev: '‹ Prev', uploading: 'Uploading…',
+        recMode: 'What to record', withCv: '📄 CV + me', justMe: '👤 Just me', page: 'Page',
         mp4Warn: 'Heads up: your browser records in a format that may not play for viewers on Safari. For best compatibility, record in Chrome, Edge, or Safari.',
         notUploaded: 'Saved to this session only (video hosting isn’t set up yet).' },
   no: { studio: 'Innspillingsstudio', yourCV: 'Din CV', script: 'Manus', cues: 'Stikkord — kun du ser disse',
@@ -48,6 +65,7 @@ const T = {
         record: 'Ta opp', pause: 'Pause', resume: 'Fortsett', stop: 'Stopp', retake: 'Ta opp på nytt', use: 'Bruk dette opptaket',
         recording: 'REC', paused: 'Pauset', review: 'Se gjennom opptaket', target: 'Mål', starts: 'Opptak om',
         next: 'Neste ›', prev: '‹ Forrige', uploading: 'Laster opp…',
+        recMode: 'Hva skal tas opp', withCv: '📄 CV + meg', justMe: '👤 Bare meg', page: 'Side',
         mp4Warn: 'Merk: nettleseren din tar opp i et format som kanskje ikke spilles av for seere på Safari. For best kompatibilitet, ta opp i Chrome, Edge eller Safari.',
         notUploaded: 'Lagret kun for denne økten (videohosting er ikke satt opp ennå).' },
   es: { studio: 'Estudio de grabación', yourCV: 'Tu CV', script: 'Guion', cues: 'Notas — solo tú las ves',
@@ -56,6 +74,7 @@ const T = {
         record: 'Grabar', pause: 'Pausar', resume: 'Reanudar', stop: 'Detener', retake: 'Regrabar', use: 'Usar esta grabación',
         recording: 'REC', paused: 'En pausa', review: 'Revisa tu grabación', target: 'Objetivo', starts: 'Grabando en',
         next: 'Siguiente ›', prev: '‹ Anterior', uploading: 'Subiendo…',
+        recMode: 'Qué grabar', withCv: '📄 CV + yo', justMe: '👤 Solo yo', page: 'Página',
         mp4Warn: 'Aviso: tu navegador graba en un formato que puede no reproducirse para quienes usan Safari. Para mayor compatibilidad, graba en Chrome, Edge o Safari.',
         notUploaded: 'Guardado solo para esta sesión (el alojamiento de vídeo aún no está configurado).' },
 }
@@ -118,8 +137,17 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', onClose, onSave
   const [errMsg, setErrMsg]     = useState('')
   const [pdfUrl, setPdfUrl]     = useState(null)
   const [uploadPct, setUploadPct] = useState(0)
+  const [mode, setMode]         = useState('cv')  // 'cv' = CV + face composite, 'me' = webcam only
+  const [pageCount, setPageCount] = useState(0)
+  const [pageIdx, setPageIdx]   = useState(0)
 
   const liveRef   = useRef(null)
+  const camVideoRef = useRef(null)   // hidden webcam source for the composite
+  const compositeRef = useRef(null)  // canvas we draw + record in CV mode
+  const pagesRef  = useRef([])       // CV pages rendered to canvases
+  const pageIdxRef = useRef(0)
+  const rafRef    = useRef(0)
+  const compStreamRef = useRef(null)
   const streamRef = useRef(null)
   const recRef    = useRef(null)
   const chunksRef = useRef([])
@@ -134,6 +162,7 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', onClose, onSave
   const stopStream = useCallback(() => {
     if (streamRef.current) streamRef.current.getTracks().forEach(tr => tr.stop())
     streamRef.current = null
+    if (compStreamRef.current) { compStreamRef.current.getTracks().forEach(tr => tr.stop()); compStreamRef.current = null }
   }, [])
 
   async function enableCamera() {
@@ -159,28 +188,91 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', onClose, onSave
   useEffect(() => {
     return () => {
       clearInterval(timerRef.current); clearInterval(cdRef.current)
+      cancelAnimationFrame(rafRef.current)
       stopStream()
       if (!savedRef.current && recordedUrl) URL.revokeObjectURL(recordedUrl)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Render the CV to a real PDF (the exact document a hiring manager sees) for
-  // the reference pane — accurate and legible.
+  // Render the CV to a real PDF (the exact document a hiring manager sees): the
+  // iframe reference pane, and per-page canvases used to composite the CV into
+  // the recorded video (Loom-style).
   useEffect(() => {
     let cancelled = false, url
-    renderPdfBlob(cv, lang).then(blob => {
-      if (cancelled) return
-      url = URL.createObjectURL(blob)
-      setPdfUrl(url)
-    }).catch(() => {})
+    ;(async () => {
+      try {
+        const blob = await renderPdfBlob(cv, lang)
+        if (cancelled) return
+        url = URL.createObjectURL(blob)
+        setPdfUrl(url)
+        const buf = await blob.arrayBuffer()
+        const pdf = await pdfjsLib.getDocument({ data: buf }).promise
+        const pages = []
+        for (let i = 1; i <= pdf.numPages && !cancelled; i++) {
+          const page = await pdf.getPage(i)
+          const vp = page.getViewport({ scale: 2 })
+          const c = document.createElement('canvas')
+          c.width = vp.width; c.height = vp.height
+          await page.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise
+          pages.push(c)
+        }
+        if (cancelled) return
+        pagesRef.current = pages
+        setPageCount(pages.length)
+      } catch { /* composite falls back to camera-only if page render fails */ }
+    })()
     return () => { cancelled = true; if (url) URL.revokeObjectURL(url) }
   }, [cv, lang])
 
-  // Keep the live feed attached whenever the camera is live.
+  useEffect(() => { pageIdxRef.current = pageIdx }, [pageIdx])
+
+  // Attach the webcam stream to the right element: a hidden source in CV mode
+  // (the composite draws from it), or the visible video in "just me" mode.
   useEffect(() => {
-    if (liveRef.current && streamRef.current && cameraLive) liveRef.current.srcObject = streamRef.current
-  }, [phase, cameraLive])
+    const el = mode === 'cv' ? camVideoRef.current : liveRef.current
+    if (el && streamRef.current && cameraLive) el.srcObject = streamRef.current
+  }, [phase, cameraLive, mode])
+
+  // Composite draw loop (CV mode): current CV page as the frame + webcam PiP in
+  // the corner. This canvas is what gets recorded, so the CV is in the video.
+  useEffect(() => {
+    if (mode !== 'cv' || !cameraLive) { cancelAnimationFrame(rafRef.current); return }
+    const canvas = compositeRef.current
+    if (!canvas) return
+    canvas.width = 1280; canvas.height = 720
+    const ctx = canvas.getContext('2d')
+    let stop = false
+    const draw = () => {
+      if (stop) return
+      const W = canvas.width, H = canvas.height
+      ctx.fillStyle = '#14110f'; ctx.fillRect(0, 0, W, H)
+      const page = pagesRef.current[pageIdxRef.current]
+      if (page && page.width) {
+        const s = Math.min(W / page.width, H / page.height)
+        const w = page.width * s, h = page.height * s, x = (W - w) / 2, y = (H - h) / 2
+        ctx.fillStyle = '#fff'; ctx.fillRect(x, y, w, h)
+        ctx.drawImage(page, x, y, w, h)
+      }
+      const v = camVideoRef.current
+      if (v && v.readyState >= 2 && v.videoWidth) {
+        const pipW = Math.round(W * 0.26), pipH = Math.round(pipW * 9 / 16)
+        const px = W - pipW - 22, py = H - pipH - 22
+        const vr = v.videoWidth / v.videoHeight, pr = pipW / pipH
+        let sw, sh, sx, sy
+        if (vr > pr) { sh = v.videoHeight; sw = sh * pr; sx = (v.videoWidth - sw) / 2; sy = 0 }
+        else { sw = v.videoWidth; sh = sw / pr; sx = 0; sy = (v.videoHeight - sh) / 2 }
+        ctx.save(); roundRect(ctx, px, py, pipW, pipH, 14); ctx.clip()
+        ctx.drawImage(v, sx, sy, sw, sh, px, py, pipW, pipH)
+        ctx.restore()
+        ctx.strokeStyle = 'rgba(255,255,255,0.92)'; ctx.lineWidth = 3
+        roundRect(ctx, px, py, pipW, pipH, 14); ctx.stroke()
+      }
+      rafRef.current = requestAnimationFrame(draw)
+    }
+    draw()
+    return () => { stop = true; cancelAnimationFrame(rafRef.current) }
+  }, [mode, cameraLive])
 
   useEffect(() => {
     function onKey(e) { if (e.key === 'Escape' && phase !== 'recording' && phase !== 'paused') onClose() }
@@ -211,10 +303,18 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', onClose, onSave
     const stream = streamRef.current
     if (!stream) { setPhase('ready'); return }
     chunksRef.current = []
-    const mr = new MediaRecorder(stream, pickMime() ? { mimeType: pickMime() } : undefined)
+    // In CV mode, record the composite canvas (CV + face) + the mic audio.
+    let recStream = stream
+    if (mode === 'cv' && compositeRef.current) {
+      const cs = compositeRef.current.captureStream(30)
+      compStreamRef.current = cs
+      recStream = new MediaStream([...cs.getVideoTracks(), ...stream.getAudioTracks()])
+    }
+    const mr = new MediaRecorder(recStream, pickMime() ? { mimeType: pickMime() } : undefined)
     mr.ondataavailable = e => { if (e.data.size) chunksRef.current.push(e.data) }
     mr.onstop = () => {
-      const blob = new Blob(chunksRef.current, { type: chunksRef.current[0]?.type || 'video/webm' })
+      const type = recRef.current?.mimeType || chunksRef.current[0]?.type || 'video/webm'
+      const blob = new Blob(chunksRef.current, { type })
       blobRef.current = blob
       setRecordedUrl(URL.createObjectURL(blob))
       stopStream()          // camera OFF the instant recording ends
@@ -263,6 +363,18 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', onClose, onSave
     onClose()
   }
 
+  // MediaRecorder blobs report duration:Infinity, which leaves the review
+  // player's timeline broken and can block playback. Force the browser to
+  // compute a real duration by seeking to the end and back.
+  function fixMediaDuration(e) {
+    const v = e.currentTarget
+    if (!isFinite(v.duration) || v.duration === 0) {
+      const onSeek = () => { v.removeEventListener('timeupdate', onSeek); v.currentTime = 0 }
+      v.addEventListener('timeupdate', onSeek)
+      v.currentTime = 1e101
+    }
+  }
+
   const busy = phase === 'recording' || phase === 'paused' || phase === 'uploading'
 
   return (
@@ -293,9 +405,17 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', onClose, onSave
           <div className="studio-stage">
             <div className={`studio-video-wrap${phase === 'recording' ? ' recording' : ''}`}>
               {phase === 'review' || phase === 'uploading' ? (
-                <video className="studio-video" src={recordedUrl} controls playsInline />
+                <video className="studio-video studio-video--contain" src={recordedUrl} controls playsInline
+                  preload="auto" onLoadedMetadata={fixMediaDuration} />
               ) : cameraLive ? (
-                <video ref={liveRef} className="studio-video studio-video--mirror" autoPlay muted playsInline />
+                mode === 'cv' ? (
+                  <>
+                    <canvas ref={compositeRef} className="studio-video studio-video--contain" />
+                    <video ref={camVideoRef} className="studio-camhidden" autoPlay muted playsInline />
+                  </>
+                ) : (
+                  <video ref={liveRef} className="studio-video studio-video--mirror" autoPlay muted playsInline />
+                )
               ) : (
                 <div className="studio-consent">
                   {phase === 'error' ? (
@@ -332,7 +452,25 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', onClose, onSave
                   <span className="studio-rec-target"> / {t.target} {fmt(script.target)}</span>
                 </div>
               )}
+              {mode === 'cv' && cameraLive && pageCount > 1 && (
+                <div className="studio-pagenav">
+                  <button onClick={() => setPageIdx(i => Math.max(0, i - 1))} disabled={pageIdx === 0}>‹</button>
+                  <span>{t.page} {pageIdx + 1}/{pageCount}</span>
+                  <button onClick={() => setPageIdx(i => Math.min(pageCount - 1, i + 1))} disabled={pageIdx >= pageCount - 1}>›</button>
+                </div>
+              )}
             </div>
+
+            {/* What to record: CV + face composite, or just the webcam */}
+            {(phase === 'consent' || phase === 'ready') && (
+              <div className="studio-mode">
+                <span className="studio-mode-label">{t.recMode}</span>
+                <div className="studio-mode-pills">
+                  <button className={mode === 'cv' ? 'active' : ''} onClick={() => setMode('cv')}>{t.withCv}</button>
+                  <button className={mode === 'me' ? 'active' : ''} onClick={() => setMode('me')}>{t.justMe}</button>
+                </div>
+              </div>
+            )}
 
             {/* Firefox etc. can only record webm → warn about Safari viewers */}
             {!mp4Ok && (phase === 'consent' || phase === 'ready' || phase === 'error') && (

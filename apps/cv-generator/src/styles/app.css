@@ -2631,6 +2631,7 @@ textarea.cv-field {
 }
 .studio-video { width: 100%; height: 100%; object-fit: cover; display: block; }
 .studio-video--mirror { transform: scaleX(-1); }
+.studio-video--contain { object-fit: contain; background: #000; }
 .studio-overlay {
   position: absolute; inset: 0; display: flex; flex-direction: column;
   align-items: center; justify-content: center; gap: 12px; text-align: center; padding: 20px;
@@ -2768,6 +2769,32 @@ textarea.cv-field {
   background: rgba(230,160,40,0.14); border: 1px solid rgba(230,160,40,0.35);
   border-radius: 8px; padding: 8px 12px;
 }
+/* Hidden webcam source that the composite canvas draws from (must stay
+   attached & playing, so hide it without display:none). */
+.studio-camhidden { position: absolute; width: 2px; height: 2px; opacity: 0; pointer-events: none; }
+/* "What to record" toggle */
+.studio-mode { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.studio-mode-label {
+  font-size: 0.58rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase;
+  color: rgba(255,255,255,0.4);
+}
+.studio-mode-pills { display: flex; gap: 6px; background: rgba(255,255,255,0.06); border-radius: 8px; padding: 3px; }
+.studio-mode-pills button {
+  background: none; border: none; color: rgba(255,255,255,0.7); font-family: inherit;
+  font-size: 0.8rem; font-weight: 600; padding: 6px 14px; border-radius: 6px; cursor: pointer;
+}
+.studio-mode-pills button.active { background: var(--accent); color: #fff; }
+/* CV page navigation while recording the composite */
+.studio-pagenav {
+  position: absolute; top: 10px; left: 10px; display: flex; align-items: center; gap: 8px;
+  background: rgba(0,0,0,0.6); border-radius: 20px; padding: 4px 10px;
+  font-size: 0.72rem; font-weight: 700; color: #fff;
+}
+.studio-pagenav button {
+  background: rgba(255,255,255,0.16); border: none; color: #fff; border-radius: 5px;
+  width: 22px; height: 22px; font-size: 0.9rem; cursor: pointer; padding: 0;
+}
+.studio-pagenav button:disabled { opacity: 0.35; cursor: default; }
 .studio-controls { display: flex; justify-content: center; gap: 12px; }
 .studio-btn {
   border: none; border-radius: 8px; font-family: inherit; font-size: 0.85rem; font-weight: 700;
