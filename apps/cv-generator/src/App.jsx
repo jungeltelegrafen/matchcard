@@ -5,6 +5,7 @@ import { deriveTailoredCv, variantFromPlan } from '@lib/cv/tailor'
 import { extractText } from './utils/extractText'
 import { parseWithClaude, translateCv, tailorCv } from './utils/parseWithClaude'
 import { loadDraft, saveDraft, clearDraft, draftHasContent } from './utils/draftStorage'
+import { applyPatches } from './utils/applyPatches'
 import {
   emptyMeta,
   markUserEdit,
@@ -123,6 +124,20 @@ export default function App() {
     ? Object.fromEntries(LANGS.map(l => [l, deriveTailoredCv(cvByLang[l], activeVariant, l)]))
     : cvByLang
 
+  // What the chat/AI operates on. With a variant active it sees the tailored
+  // summary + re-angled descriptions (so it edits what the user is looking at),
+  // but over the master's structure so patch indices still line up with facts.
+  const chatCv = activeVariant
+    ? {
+        ...masterCv,
+        personal: { ...masterCv.personal, summary: activeVariant.overrides?.[contentLang]?.summary || masterCv.personal.summary },
+        experience: (masterCv.experience || []).map(e => {
+          const od = activeVariant.overrides?.[contentLang]?.expDesc?.[e._id]
+          return od ? { ...e, description: od } : e
+        }),
+      }
+    : masterCv
+
   const activeHasContent = cvHasContent(masterCv)
   // Other content languages that already hold a CV — translation sources/targets.
   const filledOthers     = LANGS.filter(l => l !== contentLang && cvHasContent(cvByLang[l]))
@@ -146,10 +161,33 @@ export default function App() {
     setChatChangedSections(prev => { const n = new Set(prev); n.delete(key); return n })
   }
 
-  async function handleGenerate(files, rawText, directCv = null) {
-    // Generation and chat always build the MASTER (facts). applyAiResult
-    // normalizes, correlates item ids, and preserves user edits.
+  async function handleGenerate(files, rawText, directCv = null, patches = null) {
+    // Generation and file/text parsing always build the MASTER facts.
     if (directCv) {
+      // Chat while a variant is active: route summary + experience-description
+      // edits to the variant's overrides (what the user sees), and everything
+      // else to the master — mirroring manual editing in a tailored view.
+      if (activeVariant && patches?.length) {
+        const factPatches = []
+        for (const p of patches) {
+          if (!p?.op || !p.path) continue
+          if (p.op === 'replace' && p.path === 'personal.summary') { handleVariantSummary(p.value); continue }
+          const em = /^experience\.(\d+)\.description$/.exec(p.path)
+          if (p.op === 'replace' && em) {
+            const exp = masterCv.experience?.[Number(em[1])]
+            if (exp?._id) { handleVariantExpDesc(exp._id, p.value); continue }
+          }
+          factPatches.push(p)
+        }
+        if (factPatches.length) {
+          const patchedMaster = applyPatches(masterCv, factPatches)
+          setChatChangedSections(diffCvSections(masterCv, patchedMaster))
+          const { cv: nextCv, meta: nextMeta } = applyAiResult(meta, masterCv, patchedMaster)
+          setActiveCv(nextCv)
+          setActiveMeta(nextMeta)
+        }
+        return
+      }
       setChatChangedSections(diffCvSections(masterCv, directCv))
       const { cv: nextCv, meta: nextMeta } = applyAiResult(meta, masterCv, directCv)
       setActiveCv(nextCv)
@@ -418,7 +456,7 @@ export default function App() {
       )}
 
       <InputPanel
-        cv={masterCv}
+        cv={chatCv}
         lang={contentLang}
         onGenerate={handleGenerate}
         generating={generating}

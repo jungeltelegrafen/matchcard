@@ -50,8 +50,11 @@ export default function InputPanel({ cv, lang, onGenerate, generating, error, wa
       })
       setMessages([...next, { role: 'assistant', content: reply || 'Done.' }])
       if (patches?.length > 0) {
+        // Pass both the applied CV (used when editing the master directly) and
+        // the raw patches (so a tailored view can route summary/description
+        // edits to its overrides).
         const patchedCv = applyPatches(cv, patches)
-        onGenerate([], '', patchedCv)
+        onGenerate([], '', patchedCv, patches)
       }
     } catch (err) {
       const errMsg = err.message || 'Something went wrong. Please try again.'
