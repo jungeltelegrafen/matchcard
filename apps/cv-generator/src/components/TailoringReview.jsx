@@ -184,6 +184,11 @@ export default function TailoringReview({
         items={master.portfolio || []}
         labelFn={p => p.label || p.url || '—'}
       />
+      <SimpleSection
+        title={lb.videos || 'Videos'}
+        items={master.videos || []}
+        labelFn={v => v.title || (no ? 'Uten tittel' : 'Untitled')}
+      />
     </aside>
   )
 }

@@ -2,10 +2,23 @@
 import './share.css'
 import { useState } from 'react'
 
+// Turn a stored playback URL into an embeddable src (or null → external link).
+function videoEmbed(url) {
+  if (!url) return null
+  if (url.includes('videodelivery.net') || url.includes('cloudflarestream.com')) return url
+  const vimeo = url.match(/vimeo\.com\/(\d+)/)
+  if (vimeo) return `https://player.vimeo.com/video/${vimeo[1]}?autoplay=1`
+  const yt = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&]+)/)
+  if (yt) return `https://www.youtube.com/embed/${yt[1]}?autoplay=1`
+  return null
+}
+const isDirectVideo = url => /\.(mp4|webm|mov|m4v)(\?|$)/i.test(url || '')
+
 // Read-only share view. Field names follow the canonical CV schema in
 // lib/cv/schema.js — if a section or field is added there, add it here too.
 export default function ShareCV({ cv, lang = 'en' }) {
   const [copied, setCopied] = useState(false)
+  const [playing, setPlaying] = useState(null)
 
   const {
     personal = {},
@@ -18,7 +31,9 @@ export default function ShareCV({ cv, lang = 'en' }) {
     positions = {},
     competences = {},
     portfolio = [],
+    videos = [],
   } = cv
+  const videoItems = (videos || []).filter(v => v.title || v.playbackUrl)
 
   const no = lang === 'no'
   const fullName = [personal.firstName, personal.lastName].filter(Boolean).join(' ')
@@ -76,6 +91,49 @@ export default function ShareCV({ cv, lang = 'en' }) {
           <section className="cv-section">
             <h2 className="cv-section-title">{no ? 'Profil' : 'Profile'}</h2>
             <p className="cv-summary-text">{personal.summary}</p>
+          </section>
+        )}
+
+        {videoItems.length > 0 && (
+          <section className="cv-section">
+            <h2 className="cv-section-title">
+              {no ? 'Videopresentasjoner' : lang === 'es' ? 'Presentaciones en vídeo' : 'Video Presentations'}
+            </h2>
+            <div className="cv-share-videos">
+              {videoItems.map((v, i) => {
+                const embed = videoEmbed(v.playbackUrl)
+                const active = playing === i
+                return (
+                  <div key={i} className="cv-share-video">
+                    <div className="cv-share-video-info">
+                      <span className="cv-share-video-title">{v.title || (no ? 'Video' : 'Video')}</span>
+                      {v.description && <p className="cv-share-video-desc">{v.description}</p>}
+                    </div>
+                    {active && embed ? (
+                      <iframe
+                        className="cv-share-video-frame"
+                        src={embed}
+                        allow="autoplay; fullscreen; picture-in-picture"
+                        allowFullScreen
+                        title={v.title || 'video'}
+                      />
+                    ) : active && isDirectVideo(v.playbackUrl) ? (
+                      <video className="cv-share-video-frame" src={v.playbackUrl} controls autoPlay />
+                    ) : v.playbackUrl ? (
+                      embed || isDirectVideo(v.playbackUrl) ? (
+                        <button className="cv-share-video-play" onClick={() => setPlaying(i)}>
+                          {no ? '▶ Se video' : lang === 'es' ? '▶ Ver vídeo' : '▶ Watch video'}
+                        </button>
+                      ) : (
+                        <a className="cv-share-video-play" href={v.playbackUrl} target="_blank" rel="noopener noreferrer">
+                          {no ? '▶ Se video ↗' : lang === 'es' ? '▶ Ver vídeo ↗' : '▶ Watch video ↗'}
+                        </a>
+                      )
+                    ) : null}
+                  </div>
+                )
+              })}
+            </div>
           </section>
         )}
 

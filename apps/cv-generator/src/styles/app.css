@@ -239,34 +239,98 @@ html {
   gap: 16px;
 }
 
-/* Top row: drop zone + raw text paste */
-.input-top-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-  align-items: stretch;
-}
-.input-drop-col {
+/* Step scaffold (① feed everything, ② refine by chatting) */
+.input-step {
   display: flex;
   flex-direction: column;
+  gap: 12px;
 }
-.input-raw-col {
+.input-step-header {
   display: flex;
-  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
 }
-.input-raw-box {
-  flex: 1;
+.input-step-num {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 800;
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1px;
+}
+.input-step-heading { display: flex; flex-direction: column; gap: 4px; }
+.input-step-title {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+  margin: 0;
+}
+.input-step-sub {
+  font-size: 0.82rem;
+  color: rgba(255,255,255,0.72);
+  line-height: 1.5;
+  margin: 0;
+}
+.input-step-checklist {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 2px 0 0;
+  padding: 0;
+}
+.input-step-checklist li {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.85);
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 20px;
+  padding: 3px 10px;
+}
+.input-step-checklist li::before { content: '✓ '; color: var(--accent); font-weight: 800; }
+
+/* One intake surface: drop files (left) + paste text (right) */
+.input-intake-card {
   border: 1.5px dashed rgba(255,255,255,0.3);
   border-radius: 10px;
   background: rgba(255,255,255,0.04);
   overflow: hidden;
   transition: border-color 0.2s, background 0.2s;
 }
-.input-raw-box:focus-within {
+.input-intake-card:focus-within,
+.input-intake-card.dragging {
   border-color: var(--accent);
-  background: rgba(201,123,75,0.06);
+  background: rgba(201,123,75,0.08);
+}
+.input-top-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: stretch;
+}
+.input-drop-col {
+  display: flex;
+  flex-direction: column;
+  padding: 6px;
+}
+.input-raw-col {
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid rgba(255,255,255,0.14);
+}
+.input-raw-box {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 .input-raw-box-header {
   display: flex;
@@ -309,10 +373,9 @@ html {
   gap: 12px;
 }
 
-/* Drop zone */
+/* Drop zone (lives inside the shared intake card) */
 .input-drop-zone {
-  border: 1.5px dashed rgba(255,255,255,0.3);
-  border-radius: 10px;
+  border-radius: 7px;
   padding: 18px 20px;
   cursor: pointer;
   display: flex;
@@ -321,17 +384,11 @@ html {
   justify-content: center;
   gap: 5px;
   text-align: center;
-  transition: border-color 0.2s, background 0.2s;
-  background: rgba(255,255,255,0.04);
+  transition: background 0.2s;
   flex: 1;
 }
 .input-drop-zone:hover {
-  border-color: var(--accent);
-  background: rgba(201,123,75,0.08);
-}
-.input-drop-zone.dragging {
-  border-color: var(--accent);
-  background: rgba(201,123,75,0.15);
+  background: rgba(255,255,255,0.05);
 }
 .input-drop-icon {
   font-size: 1.5rem;
@@ -496,6 +553,9 @@ html {
   flex-direction: column;
   gap: 10px;
 }
+/* Cold start: chat is guarded until a CV exists — de-emphasize the input,
+   but keep the step header/guidance fully legible. */
+.input-chat--waiting .input-chat-input-row { opacity: 0.5; }
 .input-chat-title {
   font-size: 0.86rem;
   font-weight: 700;
@@ -2431,6 +2491,53 @@ textarea.cv-field {
   font-size: 0.58rem;
 }
 
+/* ─── Editable video presentations section ─── */
+.cv-videos-section { display: flex; flex-direction: column; gap: 10px; }
+.cv-video-card {
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: 8px;
+  background: var(--surface);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.cv-video-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.cv-video-placement {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-family: inherit;
+  cursor: pointer;
+}
+.cv-video-watch {
+  background: var(--accent-lt);
+  color: var(--accent);
+  border: 1px solid rgba(201,123,75,0.3);
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  font-family: inherit;
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.cv-video-watch:hover { background: rgba(201,123,75,0.18); }
+.cv-video-nourl { font-size: 0.68rem; font-style: italic; color: var(--muted); }
+.cv-video-title-field { font-size: 0.9rem; font-weight: 700; color: var(--primary); }
+.cv-video-desc-field { font-size: 0.78rem; color: var(--text); }
+.cv-video-url-field { font-size: 0.72rem; color: var(--muted); }
+
 /* ─── Video Profile modal ─── */
 .vidpro-modal {
   background: var(--surface);
@@ -3277,7 +3384,7 @@ textarea.cv-field {
    add/remove/reorder buttons, checkboxes, selects, and non-field inputs — are
    disabled, since add/remove/reorder is a Master-only operation. */
 .cv-page--variant { position: relative; }
-.cv-page--variant button:not(.cv-comp-level-dot),
+.cv-page--variant button:not(.cv-comp-level-dot):not(.cv-video-watch),
 .cv-page--variant select,
 .cv-page--variant input:not(.cv-field),
 .cv-page--variant textarea:not(.cv-field),

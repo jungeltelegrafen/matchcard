@@ -288,3 +288,47 @@ body {
   color: inherit;
   text-decoration: underline;
 }
+
+/* ── Video presentations ─────────────────────────────────────────── */
+.cv-share-videos {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.cv-share-video {
+  border: 1px solid #e8e4e0;
+  border-left: 3px solid #1a1714;
+  border-radius: 8px;
+  padding: 12px 14px;
+  background: #fff;
+}
+.cv-share-video-info { display: flex; flex-direction: column; gap: 3px; }
+.cv-share-video-title { font-weight: 700; color: #1a1714; }
+.cv-share-video-desc { color: #555; font-size: 0.92em; }
+.cv-share-video-play {
+  display: inline-block;
+  margin-top: 10px;
+  background: #1a1714;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 8px 16px;
+  cursor: pointer;
+  text-decoration: none;
+}
+.cv-share-video-play:hover { opacity: 0.9; }
+.cv-share-video-frame {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border: none;
+  border-radius: 8px;
+  margin-top: 10px;
+  background: #000;
+}
+
+@media print {
+  .cv-share-video-play, .cv-share-video-frame { display: none; }
+}

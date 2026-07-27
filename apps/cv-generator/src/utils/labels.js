@@ -61,6 +61,13 @@ export const L = {
     addSkillGroup:       '+ Add skill group',
     addLanguageBtn:      '+ Add',
     managementBadge:     'Management',
+    videos:              'Video Presentations',
+    addVideo:            '+ Add video',
+    watchVideo:          '▶ Watch video',
+    videoTitlePlaceholder: 'Video title — e.g. "Why I fit this role"',
+    videoDescPlaceholder:  'Why watch this? One line shown on the card.',
+    videoUrlPlaceholder:   'Paste video link (Cloudflare, Vimeo, YouTube…)',
+    videoNoUrl:          'No video link yet',
   },
 
   no: {
@@ -125,6 +132,13 @@ export const L = {
     addSkillGroup:       '+ Legg til kompetansegruppe',
     addLanguageBtn:      '+ Legg til',
     managementBadge:     'Ledelse',
+    videos:              'Videopresentasjoner',
+    addVideo:            '+ Legg til video',
+    watchVideo:          '▶ Se video',
+    videoTitlePlaceholder: 'Videotittel — f.eks. «Hvorfor jeg passer til rollen»',
+    videoDescPlaceholder:  'Hvorfor se denne? Én linje som vises på kortet.',
+    videoUrlPlaceholder:   'Lim inn videolenke (Cloudflare, Vimeo, YouTube…)',
+    videoNoUrl:          'Ingen videolenke ennå',
   },
 
   es: {
@@ -189,6 +203,13 @@ export const L = {
     addSkillGroup:       '+ Añadir grupo de habilidades',
     addLanguageBtn:      '+ Añadir',
     managementBadge:     'Dirección',
+    videos:              'Presentaciones en vídeo',
+    addVideo:            '+ Añadir vídeo',
+    watchVideo:          '▶ Ver vídeo',
+    videoTitlePlaceholder: 'Título del vídeo — p. ej. «Por qué encajo en este puesto»',
+    videoDescPlaceholder:  '¿Por qué verlo? Una línea que se muestra en la tarjeta.',
+    videoUrlPlaceholder:   'Pega el enlace del vídeo (Cloudflare, Vimeo, YouTube…)',
+    videoNoUrl:          'Aún no hay enlace de vídeo',
   },
 }
 

@@ -68,74 +68,104 @@ export default function InputPanel({ cv, lang, onGenerate, generating, error, wa
     <div className="input-panel">
       <div className="input-panel-inner">
 
-        {/* ── Top row: drop zone + raw text ── */}
-        <div className="input-top-row">
-
-          {/* Left: file drop zone */}
-          <div className="input-drop-col">
-            <div
-              className={`input-drop-zone${dragging ? ' dragging' : ''}`}
-              onDragOver={e => { e.preventDefault(); setDragging(true) }}
-              onDragLeave={() => setDragging(false)}
-              onDrop={e => { e.preventDefault(); setDragging(false); addFiles(e.dataTransfer.files) }}
-              onClick={() => inputRef.current?.click()}
-            >
-              <input ref={inputRef} type="file" accept={ACCEPT} multiple style={{ display: 'none' }}
-                onChange={e => { addFiles(e.target.files); e.target.value = '' }} />
-              <span className="input-drop-icon">⊕</span>
-              <span className="input-drop-label">Drop files or click to browse</span>
-              <span className="input-drop-hint">PDF, DOCX or TXT — CV, LinkedIn export, project notes…</span>
-            </div>
-            {files.length > 0 && (
-              <ul className="input-file-list">
-                {files.map(f => (
-                  <li key={f.name} className="input-file-item">
-                    <span className="input-file-name">{f.name}</span>
-                    <button className="input-file-remove"
-                      onClick={() => setFiles(prev => prev.filter(x => x.name !== f.name))}>×</button>
-                  </li>
-                ))}
+        {/* ── Step ① — feed everything ── */}
+        <section className="input-step">
+          <div className="input-step-header">
+            <span className="input-step-num">1</span>
+            <div className="input-step-heading">
+              <h2 className="input-step-title">Add everything about your career</h2>
+              <p className="input-step-sub">
+                The more raw material you give it, the better the CV. Drop files or paste anything relevant:
+              </p>
+              <ul className="input-step-checklist">
+                <li>Old CVs</li>
+                <li>LinkedIn export</li>
+                <li>Certificates</li>
+                <li>References &amp; attestations</li>
+                <li>Project notes</li>
               </ul>
-            )}
-          </div>
-
-          {/* Right: raw text paste */}
-          <div className="input-raw-col">
-            <div className="input-raw-box">
-              <div className="input-raw-box-header">
-                <span className="input-raw-box-title">Paste raw text</span>
-                <span className="input-raw-box-hint">email, job posting, notes…</span>
-              </div>
-              <textarea
-                className="input-raw-textarea"
-                value={rawText}
-                onChange={e => setRawText(e.target.value)}
-                placeholder={'Paste email threads, job descriptions, project summaries, LinkedIn bios… Combined with your files when generating.'}
-              />
             </div>
           </div>
-        </div>
 
-        {/* ── Generate button ── */}
-        <div className="input-generate-row">
-          {error && <p className="input-error">{error}</p>}
-          {warning && <p className="input-warning">{warning}</p>}
-          <button
-            className="input-generate-btn"
-            onClick={() => onGenerate(files, rawText, null)}
-            disabled={generating}
-          >
-            {generating
-              ? <><span className="spinner-sm" /> Generating…</>
-              : (files.length > 0 || rawText.trim()) ? 'Generate CV →' : 'Re-apply →'}
-          </button>
-        </div>
+          {/* One intake surface: drop files (left) and/or paste text (right) */}
+          <div className={`input-intake-card${dragging ? ' dragging' : ''}`}>
+            <div className="input-top-row">
 
-        {/* ── Chat section ── */}
-        <div className="input-chat">
-          <div className="input-chat-title">Refine with AI</div>
-          <div className="input-chat-subtitle">
-            Ask me to improve, rewrite, or tailor any part of your CV. All changes are based on your actual data — nothing will be invented.
+              {/* Left: file drop zone */}
+              <div className="input-drop-col">
+                <div
+                  className="input-drop-zone"
+                  onDragOver={e => { e.preventDefault(); setDragging(true) }}
+                  onDragLeave={() => setDragging(false)}
+                  onDrop={e => { e.preventDefault(); setDragging(false); addFiles(e.dataTransfer.files) }}
+                  onClick={() => inputRef.current?.click()}
+                >
+                  <input ref={inputRef} type="file" accept={ACCEPT} multiple style={{ display: 'none' }}
+                    onChange={e => { addFiles(e.target.files); e.target.value = '' }} />
+                  <span className="input-drop-icon">⊕</span>
+                  <span className="input-drop-label">Drop files or click to browse</span>
+                  <span className="input-drop-hint">PDF, DOCX or TXT</span>
+                </div>
+                {files.length > 0 && (
+                  <ul className="input-file-list">
+                    {files.map(f => (
+                      <li key={f.name} className="input-file-item">
+                        <span className="input-file-name">{f.name}</span>
+                        <button className="input-file-remove"
+                          onClick={() => setFiles(prev => prev.filter(x => x.name !== f.name))}>×</button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+
+              {/* Right: raw text paste */}
+              <div className="input-raw-col">
+                <div className="input-raw-box">
+                  <div className="input-raw-box-header">
+                    <span className="input-raw-box-title">…or paste raw text</span>
+                    <span className="input-raw-box-hint">email, job posting, notes…</span>
+                  </div>
+                  <textarea
+                    className="input-raw-textarea"
+                    value={rawText}
+                    onChange={e => setRawText(e.target.value)}
+                    placeholder={'Paste email threads, job descriptions, project summaries, LinkedIn bios… Combined with your files when generating.'}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* ── Generate button ── */}
+          <div className="input-generate-row">
+            {error && <p className="input-error">{error}</p>}
+            {warning && <p className="input-warning">{warning}</p>}
+            <button
+              className="input-generate-btn"
+              onClick={() => onGenerate(files, rawText, null)}
+              disabled={generating}
+            >
+              {generating
+                ? <><span className="spinner-sm" /> Generating…</>
+                : (files.length > 0 || rawText.trim()) ? 'Generate CV →' : 'Re-apply →'}
+            </button>
+          </div>
+        </section>
+
+        {/* ── Step ② — refine by chatting ── */}
+        <section className={`input-step input-chat${cvIsEmpty ? ' input-chat--waiting' : ''}`}>
+          <div className="input-step-header">
+            <span className="input-step-num">2</span>
+            <div className="input-step-heading">
+              <h2 className="input-step-title">Then refine by chatting</h2>
+              <p className="input-step-sub">
+                Edit any field just by asking — summary, experience, skills, competences.
+                {cvIsEmpty
+                  ? ' Generate your CV above first, then chat here.'
+                  : ' Changes apply across the whole CV, based only on your real data.'}
+              </p>
+            </div>
           </div>
 
           {messages.length > 0 && (
@@ -192,7 +222,7 @@ export default function InputPanel({ cv, lang, onGenerate, generating, error, wa
               {chatBusy ? <span className="spinner-sm" /> : 'Send →'}
             </button>
           </div>
-        </div>
+        </section>
 
       </div>
     </div>

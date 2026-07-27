@@ -7,6 +7,7 @@ import EducationSection from './cv/EducationSection'
 import CertsCourseSection from './cv/CertsCourseSection'
 import LanguagesSection from './cv/LanguagesSection'
 import PortfolioSection from './cv/PortfolioSection'
+import VideosSection from './cv/VideosSection'
 
 function SectionWrap({ sectionKey, hoveredSection, commentCounts, chatChangedSections, onDismissChatChange, children }) {
   const count      = commentCounts?.[sectionKey] || 0
@@ -115,6 +116,15 @@ export default function CVEditor({ cv, lang = 'en', meta, onFieldEdit, onAccept,
           onAccept={onAccept}
           onDismiss={onDismiss}
           onChange={items => onStructural('portfolio', items)}
+        />
+      </SectionWrap>
+
+      <SectionWrap {...wrap('videos')}>
+        <VideosSection
+          items={cv.videos || []}
+          {...shared}
+          candidateName={[cv.personal?.firstName, cv.personal?.lastName].filter(Boolean).join(' ')}
+          onChange={items => onStructural('videos', items)}
         />
       </SectionWrap>
     </div>
