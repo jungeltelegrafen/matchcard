@@ -13,6 +13,10 @@ function getEmbedUrl(url) {
   return null
 }
 
+// A file we can play directly in a <video> element: a local recording
+// (blob: URL) or a direct media file.
+const isDirectVideo = url => /^blob:/.test(url || '') || /\.(mp4|webm|mov|m4v)(\?|$)/i.test(url || '')
+
 export default function VideoProfileModal({ title, videoUrl, candidateName, lang, onClose }) {
   useEffect(() => {
     function onKey(e) { if (e.key === 'Escape') onClose() }
@@ -56,6 +60,8 @@ export default function VideoProfileModal({ title, videoUrl, candidateName, lang
                 </a>
               )}
             </div>
+          ) : isDirectVideo(videoUrl) ? (
+            <video src={videoUrl} className="vidpro-modal-iframe" controls playsInline />
           ) : embedUrl ? (
             <iframe
               src={embedUrl}

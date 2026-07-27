@@ -2491,52 +2491,282 @@ textarea.cv-field {
   font-size: 0.58rem;
 }
 
-/* ─── Editable video presentations section ─── */
-.cv-videos-section { display: flex; flex-direction: column; gap: 10px; }
-.cv-video-card {
-  border: 1px solid var(--border);
-  border-left: 3px solid var(--accent);
-  border-radius: 8px;
-  background: var(--surface);
-  padding: 10px 12px;
+/* ─── Video presentation cards (in the CV body) ─── */
+.cv-videos-section { display: flex; flex-direction: column; gap: 12px; }
+.cv-videocards { display: flex; flex-direction: column; gap: 12px; }
+.cv-videocard {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
+  gap: 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  padding: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
 }
-.cv-video-card-head {
+.cv-videocard-poster {
+  position: relative;
+  flex-shrink: 0;
+  width: 168px;
+  aspect-ratio: 16 / 9;
+  border: none;
+  border-radius: 9px;
+  overflow: hidden;
+  cursor: pointer;
+  background: #14110f center/cover no-repeat;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
+  justify-content: center;
 }
-.cv-video-placement {
-  font-size: 0.68rem;
-  font-weight: 600;
-  color: var(--text);
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 3px 8px;
-  font-family: inherit;
-  cursor: pointer;
+.cv-videocard-poster.empty { cursor: default; background: var(--bg); border: 1px dashed var(--border); }
+.cv-videocard-play {
+  color: #fff; font-size: 1rem; padding-left: 3px;
+  width: 42px; height: 42px; border-radius: 50%;
+  background: rgba(0,0,0,0.55); display: flex; align-items: center; justify-content: center;
+  transition: transform 0.15s, background 0.15s;
 }
-.cv-video-watch {
-  background: var(--accent-lt);
-  color: var(--accent);
-  border: 1px solid rgba(201,123,75,0.3);
-  border-radius: 6px;
-  font-size: 0.72rem;
-  font-weight: 700;
-  font-family: inherit;
-  padding: 4px 10px;
-  cursor: pointer;
-  transition: background 0.15s;
+.cv-videocard-poster:hover .cv-videocard-play { transform: scale(1.08); background: var(--accent); }
+.cv-videocard-poster.empty .cv-videocard-play { background: rgba(0,0,0,0.25); font-size: 0.85rem; width: 34px; height: 34px; }
+.cv-videocard-dur {
+  position: absolute; bottom: 6px; right: 6px;
+  background: rgba(0,0,0,0.75); color: #fff; font-size: 0.62rem; font-weight: 700;
+  border-radius: 4px; padding: 1px 5px;
 }
-.cv-video-watch:hover { background: rgba(201,123,75,0.18); }
-.cv-video-nourl { font-size: 0.68rem; font-style: italic; color: var(--muted); }
-.cv-video-title-field { font-size: 0.9rem; font-weight: 700; color: var(--primary); }
-.cv-video-desc-field { font-size: 0.78rem; color: var(--text); }
-.cv-video-url-field { font-size: 0.72rem; color: var(--muted); }
+.cv-videocard-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+.cv-videocard-tagrow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.cv-videocard-tag {
+  font-size: 0.58rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--accent); background: var(--accent-lt); border-radius: 20px; padding: 2px 9px;
+}
+.cv-video-badge {
+  font-size: 0.58rem; font-weight: 700; color: #b5720f;
+  background: rgba(230,160,40,0.14); border-radius: 20px; padding: 2px 8px;
+}
+.cv-videocard-title { font-size: 1rem; font-weight: 700; color: var(--primary); }
+.cv-videocard-desc { font-size: 0.82rem; color: var(--text); line-height: 1.5; }
+.cv-videocard-manage {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+  margin-top: 4px; padding-top: 8px; border-top: 1px dashed var(--border);
+}
+.cv-videocard-place {
+  font-size: 0.68rem; font-weight: 600; color: var(--muted);
+  background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+  padding: 3px 8px; font-family: inherit; cursor: pointer;
+}
+.cv-videocard-url { flex: 1; min-width: 120px; font-size: 0.72rem; color: var(--muted); }
+.cv-videocard-remove {
+  margin-left: auto; background: none; border: none; color: var(--muted);
+  font-size: 0.72rem; font-family: inherit; cursor: pointer; padding: 2px 4px;
+}
+.cv-videocard-remove:hover { color: #c0392b; }
+
+/* ─── Recording studio ─── */
+.studio {
+  background: #14110f;
+  color: #f0ece8;
+  border-radius: 14px;
+  width: 96vw;
+  max-width: 1320px;
+  height: 88vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.5);
+}
+.studio-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 18px; border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+.studio-title { font-size: 0.95rem; font-weight: 700; }
+.studio-header .modal-close { color: rgba(255,255,255,0.6); }
+.studio-header .modal-close:hover { color: #fff; }
+/* CV (real PDF) is the focus (left, larger); camera is the smaller right column. */
+.studio-body { flex: 1; display: grid; grid-template-columns: minmax(0, 1.75fr) minmax(360px, 0.9fr); gap: 0; min-height: 0; }
+.studio-cvpane {
+  background: #4a4640;
+  border-right: 1px solid rgba(0,0,0,0.3);
+  overflow: hidden;
+}
+.studio-pdf { width: 100%; height: 100%; border: none; display: block; }
+.studio-pdf-loading { height: 100%; display: flex; align-items: center; justify-content: center; }
+
+/* Web-preview CV — matches the shared CV look, legible and readable */
+.cvweb {
+  max-width: 640px; margin: 0 auto; background: #fff; color: #1a1714;
+  padding: 26px 30px 30px; border-radius: 6px; box-shadow: 0 1px 6px rgba(0,0,0,0.1);
+}
+.cvweb-head { border-bottom: 2px solid #1a1714; padding-bottom: 10px; }
+.cvweb-name { font-size: 1.55rem; font-weight: 800; line-height: 1.1; }
+.cvweb-title { font-size: 0.95rem; color: #b06a38; margin-top: 2px; }
+.cvweb-contacts { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 8px; font-size: 0.78rem; color: #666; }
+.cvweb-section { margin-top: 18px; }
+.cvweb-h2 {
+  font-size: 0.66rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase;
+  color: #999; border-bottom: 1px solid #e8e4e0; padding-bottom: 4px; margin-bottom: 9px;
+}
+.cvweb-summary { font-size: 0.9rem; line-height: 1.6; color: #333; }
+.cvweb-comps { display: flex; flex-direction: column; gap: 4px; }
+.cvweb-comp { display: flex; justify-content: space-between; gap: 10px; font-size: 0.85rem; }
+.cvweb-comp-name { font-weight: 600; }
+.cvweb-comp-level { color: #b06a38; font-weight: 700; }
+.cvweb-entry { margin-bottom: 12px; }
+.cvweb-entry--inline { margin-bottom: 6px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px; }
+.cvweb-entry-top { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px; }
+.cvweb-role { font-weight: 700; font-size: 0.92rem; }
+.cvweb-company { color: #555; font-size: 0.9rem; }
+.cvweb-dates { margin-left: auto; color: #888; font-size: 0.8rem; white-space: nowrap; }
+.cvweb-desc { font-size: 0.88rem; line-height: 1.55; color: #333; margin-top: 3px; }
+.cvweb-bullets { margin: 5px 0 0 18px; font-size: 0.88rem; line-height: 1.5; color: #333; }
+.cvweb-tech { font-size: 0.82rem; color: #666; margin-top: 4px; }
+.cvweb-skills { display: flex; flex-direction: column; gap: 5px; font-size: 0.88rem; }
+.cvweb-skillcat { font-weight: 700; margin-right: 6px; }
+.cvweb-langs { font-size: 0.88rem; color: #333; }
+
+.studio-stage {
+  padding: 18px 20px; display: flex; flex-direction: column; justify-content: center;
+  gap: 14px; min-width: 0; overflow-y: auto;
+}
+.studio-video-wrap {
+  position: relative; width: 100%; aspect-ratio: 16 / 9;
+  background: #000; border-radius: 10px; overflow: hidden;
+}
+.studio-video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.studio-video--mirror { transform: scaleX(-1); }
+.studio-overlay {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 12px; text-align: center; padding: 20px;
+}
+.studio-overlay--err { background: rgba(0,0,0,0.65); color: #ffb4b4; font-size: 0.85rem; }
+.studio-count {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 4px;
+  font-size: 5rem; font-weight: 800; color: #fff; background: rgba(0,0,0,0.45);
+}
+.studio-count span { font-size: 0.9rem; font-weight: 600; color: rgba(255,255,255,0.8); }
+
+/* Consent gate — camera stays off until the user explicitly turns it on */
+.studio-consent {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; text-align: center; gap: 10px; padding: 28px;
+}
+.studio-consent-icon { font-size: 2.4rem; }
+.studio-consent h3 { font-size: 1.15rem; font-weight: 800; margin: 0; }
+.studio-consent-note { font-size: 0.85rem; line-height: 1.6; color: rgba(255,255,255,0.7); max-width: 440px; margin: 0 0 6px; }
+.studio-consent-err { font-size: 0.9rem; color: #ffb4b4; max-width: 440px; }
+
+/* Camera-on indicator (live, not recording) */
+.studio-camtag {
+  position: absolute; top: 10px; left: 10px; display: flex; align-items: center; gap: 6px;
+  background: rgba(0,0,0,0.55); border-radius: 20px; padding: 4px 11px; font-size: 0.7rem; font-weight: 700;
+}
+.studio-camtag-dot { width: 8px; height: 8px; border-radius: 50%; background: #6ad06a; }
+
+/* Recording state — unmissable */
+.studio-video-wrap.recording { box-shadow: inset 0 0 0 3px #ff4b4b; }
+.studio-rec.paused .studio-rec-dot { background: #ffcf4b; animation: none; }
+.studio-rec.paused { background: rgba(120,90,0,0.6); }
+
+/* ─── Right-panel video hub ─── */
+.video-hub { display: flex; flex-direction: column; gap: 10px; padding: 4px 2px 0; }
+.video-hub-empty {
+  display: flex; flex-direction: column; align-items: center; text-align: center; gap: 4px;
+  padding: 18px 12px; border: 1px dashed var(--border); border-radius: 10px; background: var(--bg);
+}
+.video-hub-empty-icon { font-size: 1.5rem; }
+.video-hub-empty-title { font-size: 0.85rem; font-weight: 700; color: var(--text); }
+.video-hub-empty-sub { font-size: 0.74rem; color: var(--muted); line-height: 1.45; }
+.video-hub-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.video-hub-item {
+  display: flex; align-items: center; gap: 10px;
+  border: 1px solid var(--border); border-radius: 9px; padding: 8px; background: var(--surface);
+}
+.video-hub-thumb {
+  position: relative; flex-shrink: 0; width: 68px; height: 44px; border-radius: 6px;
+  border: none; padding: 0; cursor: pointer; overflow: hidden;
+  background: #14110f center/cover no-repeat;
+  display: flex; align-items: center; justify-content: center;
+}
+.video-hub-thumb.empty { cursor: default; background: var(--bg); border: 1px dashed var(--border); }
+.video-hub-thumb-play {
+  color: #fff; font-size: 0.8rem; width: 22px; height: 22px; border-radius: 50%;
+  background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; padding-left: 2px;
+}
+.video-hub-thumb.empty .video-hub-thumb-play { display: none; }
+.video-hub-meta { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.video-hub-item-title {
+  font-size: 0.82rem; font-weight: 700; color: var(--primary);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.video-hub-tags { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; }
+.video-hub-tag {
+  font-size: 0.58rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
+  color: var(--accent); background: var(--accent-lt); border-radius: 20px; padding: 2px 7px;
+}
+.video-hub-badge {
+  font-size: 0.58rem; font-weight: 700; color: #b5720f;
+  background: rgba(230,160,40,0.14); border-radius: 20px; padding: 2px 7px;
+}
+.video-hub-remove {
+  flex-shrink: 0; background: none; border: none; color: var(--muted);
+  font-size: 1.1rem; line-height: 1; cursor: pointer; padding: 0 2px;
+}
+.video-hub-remove:hover { color: #c0392b; }
+.video-hub-record {
+  background: var(--primary); color: #fff; border: none; border-radius: 8px;
+  font-family: inherit; font-size: 0.85rem; font-weight: 700; padding: 11px 14px;
+  cursor: pointer; transition: opacity 0.15s; margin-top: 2px;
+}
+.video-hub-record:hover { opacity: 0.9; }
+.studio-rec {
+  position: absolute; top: 10px; left: 10px;
+  display: flex; align-items: center; gap: 6px;
+  background: rgba(0,0,0,0.55); border-radius: 20px; padding: 4px 12px;
+  font-size: 0.72rem; font-weight: 700;
+}
+.studio-rec-dot { width: 9px; height: 9px; border-radius: 50%; background: #ff4b4b; animation: pulse 1s infinite; }
+.studio-rec-target { color: rgba(255,255,255,0.55); font-weight: 500; }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+.studio-teleprompt {
+  background: rgba(201,123,75,0.12);
+  border: 1px solid rgba(201,123,75,0.35);
+  border-radius: 10px;
+  padding: 12px 16px;
+}
+.studio-tp-label {
+  font-size: 0.58rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase;
+  color: rgba(255,255,255,0.5);
+}
+.studio-tp-current { font-size: 1.3rem; font-weight: 700; color: #fff; margin: 5px 0 3px; line-height: 1.3; }
+.studio-tp-next { font-size: 0.95rem; color: rgba(255,255,255,0.55); margin: 0; }
+.studio-tp-nav { display: flex; align-items: center; gap: 12px; margin-top: 8px; font-size: 0.75rem; color: rgba(255,255,255,0.6); }
+.studio-tp-nav button {
+  background: rgba(255,255,255,0.14); border: none; color: #fff; border-radius: 6px;
+  font-family: inherit; font-size: 0.75rem; padding: 4px 10px; cursor: pointer;
+}
+.studio-tp-nav button:disabled { opacity: 0.35; cursor: default; }
+.studio-scripts { display: flex; flex-direction: column; gap: 6px; }
+.studio-scripts-label {
+  font-size: 0.58rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase;
+  color: rgba(255,255,255,0.4);
+}
+.studio-scripts-row { display: flex; flex-wrap: wrap; gap: 7px; }
+.studio-script-pill {
+  background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.16);
+  color: rgba(255,255,255,0.85); border-radius: 20px; font-family: inherit;
+  font-size: 0.76rem; font-weight: 600; padding: 5px 12px; cursor: pointer; transition: all 0.15s;
+}
+.studio-script-pill.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+.studio-review-note { font-size: 0.78rem; color: rgba(255,255,255,0.6); margin: 0; }
+.studio-controls { display: flex; justify-content: center; gap: 12px; }
+.studio-btn {
+  border: none; border-radius: 8px; font-family: inherit; font-size: 0.85rem; font-weight: 700;
+  padding: 10px 22px; cursor: pointer; transition: opacity 0.15s;
+}
+.studio-btn:disabled { opacity: 0.4; cursor: default; }
+.studio-btn--record { background: #ff4b4b; color: #fff; }
+.studio-btn--stop { background: #fff; color: #14110f; }
+.studio-btn--primary { background: var(--accent); color: #fff; }
+.studio-btn--ghost { background: rgba(255,255,255,0.12); color: #fff; }
+.studio-btn:hover:not(:disabled) { opacity: 0.9; }
 
 /* ─── Video Profile modal ─── */
 .vidpro-modal {
@@ -3384,7 +3614,7 @@ textarea.cv-field {
    add/remove/reorder buttons, checkboxes, selects, and non-field inputs — are
    disabled, since add/remove/reorder is a Master-only operation. */
 .cv-page--variant { position: relative; }
-.cv-page--variant button:not(.cv-comp-level-dot):not(.cv-video-watch),
+.cv-page--variant button:not(.cv-comp-level-dot):not(.cv-videocard-poster),
 .cv-page--variant select,
 .cv-page--variant input:not(.cv-field),
 .cv-page--variant textarea:not(.cv-field),

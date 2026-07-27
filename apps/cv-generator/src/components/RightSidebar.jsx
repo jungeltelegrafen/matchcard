@@ -1,20 +1,27 @@
 import VideoPanel from './VideoPanel'
 
-export default function RightSidebar({ lang }) {
+export default function RightSidebar({ lang, contentLang, videos, cv, onVideosChange }) {
+  const no = lang === 'no', es = lang === 'es'
   return (
     <aside className="side-panel side-panel--right">
       <div className="side-panel-header">
         <h2 className="side-panel-title">
-          {lang === 'no' ? 'Videopresentasjon' : 'Video Presentation'}
+          {no ? 'Videopresentasjon' : es ? 'Presentación en vídeo' : 'Video Presentation'}
         </h2>
         <p className="side-panel-sub">
-          {lang === 'no'
-            ? 'Ta opp og knytt videoer til CVen din'
+          {no ? 'Ta opp og knytt videoer til CVen din'
+            : es ? 'Graba y adjunta vídeos a tu CV'
             : 'Record and attach videos to your CV'}
         </p>
       </div>
 
-      <VideoPanel lang={lang} />
+      <VideoPanel
+        videos={videos}
+        cv={cv}
+        uiLang={lang}
+        contentLang={contentLang}
+        onChange={onVideosChange}
+      />
     </aside>
   )
 }

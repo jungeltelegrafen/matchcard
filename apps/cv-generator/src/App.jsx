@@ -247,6 +247,12 @@ export default function App() {
     setMetaByLang(prev => ({ ...prev, [contentLang]: remapMeta(prev[contentLang], masterCv, next) }))
     setCvByLang(prev => ({ ...prev, [contentLang]: next }))
   }
+  // Videos always attach to the master (a shared fact), even from a tailored
+  // view — the right-panel hub edits them directly here, bypassing the variant
+  // guard on handleStructural.
+  function setMasterVideos(items) {
+    setCvByLang(prev => ({ ...prev, [contentLang]: ensureIds({ ...prev[contentLang], videos: items }) }))
+  }
   function handleCvTypeChange(type) {
     setCvByLang(prev => Object.fromEntries(LANGS.map(l => [l, { ...prev[l], cvType: type }])))
   }
@@ -466,7 +472,13 @@ export default function App() {
             />
           </div>
 
-          <RightSidebar lang={uiLang} />
+          <RightSidebar
+            lang={uiLang}
+            contentLang={contentLang}
+            cv={masterCv}
+            videos={masterCv.videos || []}
+            onVideosChange={setMasterVideos}
+          />
         </div>
 
         {/* In a tailored view the left sidebar is the tailoring panel, so agent

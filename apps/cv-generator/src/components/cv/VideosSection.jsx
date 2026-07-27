@@ -11,66 +11,85 @@ const emptyItem = {
 
 const PLACEMENTS = ['intro', 'motivation', 'experience', 'general']
 
-// Editable "video presentations" section. Each item is a text card describing a
-// recorded clip (title + why-watch + link) that plays inline. Videos live on the
-// master CV; the tailoring panel decides which ones a given variant shows.
+// Video presentations shown in the CV body as polished, clickable media cards —
+// the representation a hiring manager clicks to watch. Editable inline (title,
+// why-watch, link); recording happens in the right-hand video panel.
 export default function VideosSection({
   items = [], lang = 'en', meta, onFieldEdit, onAccept, onDismiss, onChange, candidateName,
 }) {
   const lb = getL(lang)
   const [openIdx, setOpenIdx] = useState(null)
+  const no = lang === 'no', es = lang === 'es'
+  const sessionOnly = no ? 'Kun denne økten' : es ? 'Solo esta sesión' : 'This session only'
+  const durationTxt = d => d || ''
+
+  const placementLabel = pl => ({
+    intro:      no ? 'Introduksjon' : es ? 'Introducción' : 'Introduction',
+    motivation: no ? 'Motivasjon'   : es ? 'Motivación'   : 'Motivation',
+    experience: no ? 'Erfaring'      : es ? 'Experiencia'  : 'Experience',
+    general:    no ? 'Generell'      : es ? 'General'       : 'General',
+  }[pl] || pl)
 
   const setField = (i, key, val) =>
     onChange(items.map((it, idx) => (idx === i ? { ...it, [key]: val } : it)))
-
-  const placementLabel = p => ({
-    intro:      lang === 'no' ? 'Introduksjon' : lang === 'es' ? 'Introducción' : 'Introduction',
-    motivation: lang === 'no' ? 'Motivasjon'   : lang === 'es' ? 'Motivación'   : 'Motivation',
-    experience: lang === 'no' ? 'Erfaring'      : lang === 'es' ? 'Experiencia'  : 'Experience',
-    general:    lang === 'no' ? 'Generell'      : lang === 'es' ? 'General'       : 'General',
-  }[p] || p)
 
   return (
     <section className="cv-section cv-videos-section">
       <div className="cv-section-heading"><span>{lb.videos}</span></div>
 
-      {items.map((item, i) => (
-        <div key={i} className="cv-video-card">
-          <div className="cv-video-card-head">
-            <select
-              className="cv-video-placement"
-              value={item.placement || 'general'}
-              onChange={e => setField(i, 'placement', e.target.value)}
+      <div className="cv-videocards">
+        {items.map((item, i) => (
+          <div key={item._id || i} className="cv-videocard">
+            <button
+              className={`cv-videocard-poster${item.playbackUrl ? '' : ' empty'}`}
+              style={item.thumbnailUrl ? { backgroundImage: `url(${item.thumbnailUrl})` } : undefined}
+              onClick={() => item.playbackUrl && setOpenIdx(i)}
+              title={item.playbackUrl ? lb.watchVideo : undefined}
             >
-              {PLACEMENTS.map(p => <option key={p} value={p}>{placementLabel(p)}</option>)}
-            </select>
-            {item.playbackUrl
-              ? <button className="cv-video-watch" onClick={() => setOpenIdx(i)}>{lb.watchVideo}</button>
-              : <span className="cv-video-nourl">{lb.videoNoUrl}</span>}
+              <span className="cv-videocard-play">▶</span>
+              {item.duration && <span className="cv-videocard-dur">{durationTxt(item.duration)}</span>}
+            </button>
+
+            <div className="cv-videocard-body">
+              <div className="cv-videocard-tagrow">
+                <span className="cv-videocard-tag">{placementLabel(item.placement)}</span>
+                {item.provider === 'local' && <span className="cv-video-badge">● {sessionOnly}</span>}
+              </div>
+              <CVField
+                value={item.title} path={`videos.${i}.title`}
+                meta={meta} onEdit={onFieldEdit} onAccept={onAccept} onDismiss={onDismiss}
+                className="cv-videocard-title" placeholder={lb.videoTitlePlaceholder}
+              />
+              <CVField
+                value={item.description} path={`videos.${i}.description`}
+                meta={meta} onEdit={onFieldEdit} onAccept={onAccept} onDismiss={onDismiss}
+                as="textarea" rows={2}
+                className="cv-videocard-desc" placeholder={lb.videoDescPlaceholder}
+              />
+
+              <div className="cv-videocard-manage">
+                <select
+                  className="cv-videocard-place"
+                  value={item.placement || 'general'}
+                  onChange={e => setField(i, 'placement', e.target.value)}
+                >
+                  {PLACEMENTS.map(pl => <option key={pl} value={pl}>{placementLabel(pl)}</option>)}
+                </select>
+                {item.provider !== 'local' && (
+                  <CVField
+                    value={item.playbackUrl} path={`videos.${i}.playbackUrl`}
+                    meta={meta} onEdit={onFieldEdit} onAccept={onAccept} onDismiss={onDismiss}
+                    className="cv-videocard-url" placeholder={lb.videoUrlPlaceholder}
+                  />
+                )}
+                <button className="cv-videocard-remove" onClick={() => onChange(items.filter((_, idx) => idx !== i))}>
+                  {lb.remove}
+                </button>
+              </div>
+            </div>
           </div>
-
-          <CVField
-            value={item.title} path={`videos.${i}.title`}
-            meta={meta} onEdit={onFieldEdit} onAccept={onAccept} onDismiss={onDismiss}
-            className="cv-video-title-field" placeholder={lb.videoTitlePlaceholder}
-          />
-          <CVField
-            value={item.description} path={`videos.${i}.description`}
-            meta={meta} onEdit={onFieldEdit} onAccept={onAccept} onDismiss={onDismiss}
-            as="textarea" rows={2}
-            className="cv-video-desc-field" placeholder={lb.videoDescPlaceholder}
-          />
-          <CVField
-            value={item.playbackUrl} path={`videos.${i}.playbackUrl`}
-            meta={meta} onEdit={onFieldEdit} onAccept={onAccept} onDismiss={onDismiss}
-            className="cv-video-url-field" placeholder={lb.videoUrlPlaceholder}
-          />
-
-          <button className="cv-btn-remove-item" onClick={() => onChange(items.filter((_, idx) => idx !== i))}>
-            {lb.remove}
-          </button>
-        </div>
-      ))}
+        ))}
+      </div>
 
       <button className="cv-btn-add" onClick={() => onChange([...items, { ...emptyItem }])}>
         {lb.addVideo}
