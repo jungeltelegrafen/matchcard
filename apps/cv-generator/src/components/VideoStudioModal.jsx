@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { renderPdfBlob } from '../utils/renderPdf'
+import { hostRecording } from '../utils/uploadVideo'
 
 // ── Teleprompter scripts (private cues, per language) ────────────────────────
 // Selecting a script pre-fills the saved card's title/kind/placement. The cues
@@ -38,19 +39,25 @@ const T = {
         turnOn: 'Turn on camera', turnOff: 'Turn off camera', camOn: 'Camera on', camErr: 'Could not access camera or microphone. Check browser permissions.',
         record: 'Record', pause: 'Pause', resume: 'Resume', stop: 'Stop', retake: 'Re-take', use: 'Use this recording',
         recording: 'REC', paused: 'Paused', review: 'Review your recording', target: 'Target', starts: 'Recording in',
-        next: 'Next ›', prev: '‹ Prev', notUploaded: 'Saved to this session. Hosting (so it plays for others) comes next.' },
+        next: 'Next ›', prev: '‹ Prev', uploading: 'Uploading…',
+        mp4Warn: 'Heads up: your browser records in a format that may not play for viewers on Safari. For best compatibility, record in Chrome, Edge, or Safari.',
+        notUploaded: 'Saved to this session only (video hosting isn’t set up yet).' },
   no: { studio: 'Innspillingsstudio', yourCV: 'Din CV', script: 'Manus', cues: 'Stikkord — kun du ser disse',
         consentTitle: 'Klar når du er', consentNote: 'Kameraet er av til du slår det på nedenfor. Ingenting tas opp før du trykker Ta opp — et rødt ● REC-merke vises hele tiden mens du tar opp.',
         turnOn: 'Slå på kamera', turnOff: 'Slå av kamera', camOn: 'Kamera på', camErr: 'Fikk ikke tilgang til kamera eller mikrofon. Sjekk tillatelser.',
         record: 'Ta opp', pause: 'Pause', resume: 'Fortsett', stop: 'Stopp', retake: 'Ta opp på nytt', use: 'Bruk dette opptaket',
         recording: 'REC', paused: 'Pauset', review: 'Se gjennom opptaket', target: 'Mål', starts: 'Opptak om',
-        next: 'Neste ›', prev: '‹ Forrige', notUploaded: 'Lagret for denne økten. Hosting (så andre kan se) kommer snart.' },
+        next: 'Neste ›', prev: '‹ Forrige', uploading: 'Laster opp…',
+        mp4Warn: 'Merk: nettleseren din tar opp i et format som kanskje ikke spilles av for seere på Safari. For best kompatibilitet, ta opp i Chrome, Edge eller Safari.',
+        notUploaded: 'Lagret kun for denne økten (videohosting er ikke satt opp ennå).' },
   es: { studio: 'Estudio de grabación', yourCV: 'Tu CV', script: 'Guion', cues: 'Notas — solo tú las ves',
         consentTitle: 'Cuando quieras', consentNote: 'La cámara está apagada hasta que la enciendas abajo. No se graba nada hasta que pulses Grabar — verás una insignia roja ● REC todo el tiempo que grabes.',
         turnOn: 'Encender cámara', turnOff: 'Apagar cámara', camOn: 'Cámara encendida', camErr: 'No se pudo acceder a la cámara o el micrófono. Revisa los permisos.',
         record: 'Grabar', pause: 'Pausar', resume: 'Reanudar', stop: 'Detener', retake: 'Regrabar', use: 'Usar esta grabación',
         recording: 'REC', paused: 'En pausa', review: 'Revisa tu grabación', target: 'Objetivo', starts: 'Grabando en',
-        next: 'Siguiente ›', prev: '‹ Anterior', notUploaded: 'Guardado para esta sesión. El alojamiento (para que otros lo vean) llega pronto.' },
+        next: 'Siguiente ›', prev: '‹ Anterior', uploading: 'Subiendo…',
+        mp4Warn: 'Aviso: tu navegador graba en un formato que puede no reproducirse para quienes usan Safari. Para mayor compatibilidad, graba en Chrome, Edge o Safari.',
+        notUploaded: 'Guardado solo para esta sesión (el alojamiento de vídeo aún no está configurado).' },
 }
 
 const MAX_SECONDS = 300 // hard cap so a recording can never run silently forever
@@ -60,9 +67,22 @@ function fmt(sec) {
   return `${m}:${String(s).padStart(2, '0')}`
 }
 
+// Prefer MP4 (H.264) — it plays on every modern browser incl. Safari, so a
+// raw-served R2 file works universally. Falls back to webm (Firefox, older
+// Chrome), which is the combo that can fail for Safari viewers.
 function pickMime() {
-  const opts = ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm', 'video/mp4']
+  const opts = [
+    'video/mp4;codecs=h264,aac', 'video/mp4',
+    'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm',
+  ]
   return opts.find(m => typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported(m)) || ''
+}
+
+// True when the browser can record MP4 (universal playback). When false
+// (notably Firefox), we warn that Safari viewers may not be able to watch.
+function canRecordMp4() {
+  return typeof MediaRecorder !== 'undefined' &&
+    (MediaRecorder.isTypeSupported('video/mp4;codecs=h264,aac') || MediaRecorder.isTypeSupported('video/mp4'))
 }
 
 // Grab a poster frame from a recorded clip → small JPEG data URL.
@@ -87,6 +107,7 @@ function makeThumb(url) {
 export default function VideoStudioModal({ cv = {}, lang = 'en', onClose, onSave }) {
   const t = T[lang] || T.en
   const scripts = SCRIPTS[lang] || SCRIPTS.en
+  const mp4Ok = canRecordMp4()
 
   const [scriptId, setScriptId] = useState(scripts[0].id)
   const [phase, setPhase]       = useState('consent') // consent | ready | countdown | recording | paused | review | error
@@ -96,11 +117,13 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', onClose, onSave
   const [recordedUrl, setRecordedUrl] = useState(null)
   const [errMsg, setErrMsg]     = useState('')
   const [pdfUrl, setPdfUrl]     = useState(null)
+  const [uploadPct, setUploadPct] = useState(0)
 
   const liveRef   = useRef(null)
   const streamRef = useRef(null)
   const recRef    = useRef(null)
   const chunksRef = useRef([])
+  const blobRef   = useRef(null)
   const timerRef  = useRef(null)
   const savedRef  = useRef(false)
   const cdRef     = useRef(null)
@@ -192,6 +215,7 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', onClose, onSave
     mr.ondataavailable = e => { if (e.data.size) chunksRef.current.push(e.data) }
     mr.onstop = () => {
       const blob = new Blob(chunksRef.current, { type: chunksRef.current[0]?.type || 'video/webm' })
+      blobRef.current = blob
       setRecordedUrl(URL.createObjectURL(blob))
       stopStream()          // camera OFF the instant recording ends
       setPhase('review')
@@ -220,16 +244,26 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', onClose, onSave
 
   async function useRecording() {
     const thumb = recordedUrl ? await makeThumb(recordedUrl) : ''
+    // Try to host on Cloudflare; if not configured or it fails, keep the local
+    // session clip so the recording is never lost.
+    setUploadPct(0); setPhase('uploading')
+    let hosted = null
+    try {
+      hosted = await hostRecording(blobRef.current, { durationSeconds: elapsed, onProgress: setUploadPct })
+    } catch { hosted = null }
     savedRef.current = true
     onSave({
       title: script.title, kind: script.kind, placement: script.placement, description: '',
-      provider: 'local', assetId: '', playbackUrl: recordedUrl || '', thumbnailUrl: thumb,
+      provider: hosted ? 'cloudflare' : 'local',
+      assetId: hosted?.uid || '',
+      playbackUrl: hosted?.playbackUrl || recordedUrl || '',
+      thumbnailUrl: thumb, // local poster frame — instant and reliable
       duration: fmt(elapsed), recordedAt: new Date().toISOString(),
     })
     onClose()
   }
 
-  const busy = phase === 'recording' || phase === 'paused'
+  const busy = phase === 'recording' || phase === 'paused' || phase === 'uploading'
 
   return (
     <div className="modal-overlay" onClick={busy ? undefined : onClose}>
@@ -258,7 +292,7 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', onClose, onSave
           {/* Right — camera + teleprompter */}
           <div className="studio-stage">
             <div className={`studio-video-wrap${phase === 'recording' ? ' recording' : ''}`}>
-              {phase === 'review' ? (
+              {phase === 'review' || phase === 'uploading' ? (
                 <video className="studio-video" src={recordedUrl} controls playsInline />
               ) : cameraLive ? (
                 <video ref={liveRef} className="studio-video studio-video--mirror" autoPlay muted playsInline />
@@ -284,6 +318,13 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', onClose, onSave
                 <div className="studio-camtag"><span className="studio-camtag-dot" />{t.camOn}</div>
               )}
               {phase === 'countdown' && <div className="studio-count">{count}<span>{t.starts}</span></div>}
+              {phase === 'uploading' && (
+                <div className="studio-uploading">
+                  <span className="spinner-preview" />
+                  <span>{t.uploading} {Math.round(uploadPct * 100)}%</span>
+                  <div className="studio-uploadbar"><div style={{ width: `${Math.round(uploadPct * 100)}%` }} /></div>
+                </div>
+              )}
               {(phase === 'recording' || phase === 'paused') && (
                 <div className={`studio-rec${phase === 'paused' ? ' paused' : ''}`}>
                   <span className="studio-rec-dot" />
@@ -292,6 +333,11 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', onClose, onSave
                 </div>
               )}
             </div>
+
+            {/* Firefox etc. can only record webm → warn about Safari viewers */}
+            {!mp4Ok && (phase === 'consent' || phase === 'ready' || phase === 'error') && (
+              <p className="studio-warn">⚠️ {t.mp4Warn}</p>
+            )}
 
             {/* Private teleprompter — below the camera, readable, only you see it */}
             {(phase === 'recording' || phase === 'paused') && (
@@ -328,7 +374,11 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', onClose, onSave
 
             {/* Controls */}
             <div className="studio-controls">
-              {phase === 'review' ? (
+              {phase === 'uploading' ? (
+                <button className="studio-btn studio-btn--primary" disabled>
+                  ↑ {t.uploading} {Math.round(uploadPct * 100)}%
+                </button>
+              ) : phase === 'review' ? (
                 <>
                   <button className="studio-btn studio-btn--ghost" onClick={retake}>↺ {t.retake}</button>
                   <button className="studio-btn studio-btn--primary" onClick={useRecording}>✓ {t.use}</button>
