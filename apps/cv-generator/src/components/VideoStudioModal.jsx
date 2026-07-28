@@ -57,6 +57,7 @@ const T = {
         recording: 'REC', paused: 'Paused', review: 'Review your recording', target: 'Target', starts: 'Recording in',
         next: 'Next ›', prev: '‹ Prev', uploading: 'Uploading…',
         recMode: 'What to record', withCv: '📄 CV + me', justMe: '👤 Just me', page: 'Page',
+        scrollHint: 'Scroll over your CV to move through it while you talk — your cursor is highlighted so viewers follow along.',
         mp4Warn: 'Heads up: your browser records in a format that may not play for viewers on Safari. For best compatibility, record in Chrome, Edge, or Safari.',
         notUploaded: 'Saved to this session only (video hosting isn’t set up yet).' },
   no: { studio: 'Innspillingsstudio', yourCV: 'Din CV', script: 'Manus', cues: 'Stikkord — kun du ser disse',
@@ -66,6 +67,7 @@ const T = {
         recording: 'REC', paused: 'Pauset', review: 'Se gjennom opptaket', target: 'Mål', starts: 'Opptak om',
         next: 'Neste ›', prev: '‹ Forrige', uploading: 'Laster opp…',
         recMode: 'Hva skal tas opp', withCv: '📄 CV + meg', justMe: '👤 Bare meg', page: 'Side',
+        scrollHint: 'Bla over CV-en for å bevege deg gjennom den mens du snakker — markøren din er uthevet så seerne følger med.',
         mp4Warn: 'Merk: nettleseren din tar opp i et format som kanskje ikke spilles av for seere på Safari. For best kompatibilitet, ta opp i Chrome, Edge eller Safari.',
         notUploaded: 'Lagret kun for denne økten (videohosting er ikke satt opp ennå).' },
   es: { studio: 'Estudio de grabación', yourCV: 'Tu CV', script: 'Guion', cues: 'Notas — solo tú las ves',
@@ -75,6 +77,7 @@ const T = {
         recording: 'REC', paused: 'En pausa', review: 'Revisa tu grabación', target: 'Objetivo', starts: 'Grabando en',
         next: 'Siguiente ›', prev: '‹ Anterior', uploading: 'Subiendo…',
         recMode: 'Qué grabar', withCv: '📄 CV + yo', justMe: '👤 Solo yo', page: 'Página',
+        scrollHint: 'Desplázate sobre tu CV para recorrerlo mientras hablas — tu cursor se resalta para que los espectadores te sigan.',
         mp4Warn: 'Aviso: tu navegador graba en un formato que puede no reproducirse para quienes usan Safari. Para mayor compatibilidad, graba en Chrome, Edge o Safari.',
         notUploaded: 'Guardado solo para esta sesión (el alojamiento de vídeo aún no está configurado).' },
 }
@@ -146,6 +149,9 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', onClose, onSave
   const compositeRef = useRef(null)  // canvas we draw + record in CV mode
   const pagesRef  = useRef([])       // CV pages rendered to canvases
   const pageIdxRef = useRef(0)
+  const scrollRef = useRef(0)        // vertical scroll offset (dest px) into the CV page
+  const scrollMaxRef = useRef(0)     // max scrollable distance, computed each frame
+  const cursorRef = useRef({ x: 0, y: 0, active: false }) // highlighted pointer on the recording
   const rafRef    = useRef(0)
   const compStreamRef = useRef(null)
   const streamRef = useRef(null)
@@ -225,7 +231,7 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', onClose, onSave
     return () => { cancelled = true; if (url) URL.revokeObjectURL(url) }
   }, [cv, lang])
 
-  useEffect(() => { pageIdxRef.current = pageIdx }, [pageIdx])
+  useEffect(() => { pageIdxRef.current = pageIdx; scrollRef.current = 0 }, [pageIdx])
 
   // Attach the webcam stream to the right element: a hidden source in CV mode
   // (the composite draws from it), or the visible video in "just me" mode.
@@ -247,12 +253,28 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', onClose, onSave
       if (stop) return
       const W = canvas.width, H = canvas.height
       ctx.fillStyle = '#14110f'; ctx.fillRect(0, 0, W, H)
+      // CV page rendered fit-to-WIDTH so it's large and readable, scrolled
+      // vertically by scrollRef — this is what lets you scroll the CV while
+      // talking (Loom-style). Only the visible slice lands in the frame.
       const page = pagesRef.current[pageIdxRef.current]
       if (page && page.width) {
-        const s = Math.min(W / page.width, H / page.height)
-        const w = page.width * s, h = page.height * s, x = (W - w) / 2, y = (H - h) / 2
-        ctx.fillStyle = '#fff'; ctx.fillRect(x, y, w, h)
-        ctx.drawImage(page, x, y, w, h)
+        const s = W / page.width
+        const drawW = W, drawH = page.height * s
+        const maxScroll = Math.max(0, drawH - H)
+        scrollMaxRef.current = maxScroll
+        if (scrollRef.current > maxScroll) scrollRef.current = maxScroll
+        if (scrollRef.current < 0) scrollRef.current = 0
+        const y = -scrollRef.current
+        ctx.fillStyle = '#fff'; ctx.fillRect(0, y, drawW, drawH)
+        ctx.drawImage(page, 0, y, drawW, drawH)
+        // Subtle scroll indicator on the right edge when there's more below/above.
+        if (maxScroll > 0) {
+          const trackY = 12, trackH = H - 24
+          const thumbH = Math.max(36, trackH * (H / drawH))
+          const thumbY = trackY + (trackH - thumbH) * (scrollRef.current / maxScroll)
+          ctx.fillStyle = 'rgba(20,17,15,0.12)'; roundRect(ctx, W - 9, trackY, 4, trackH, 2); ctx.fill()
+          ctx.fillStyle = 'rgba(201,123,75,0.75)'; roundRect(ctx, W - 9, thumbY, 4, thumbH, 2); ctx.fill()
+        }
       }
       const v = camVideoRef.current
       if (v && v.readyState >= 2 && v.videoWidth) {
@@ -268,11 +290,50 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', onClose, onSave
         ctx.strokeStyle = 'rgba(255,255,255,0.92)'; ctx.lineWidth = 3
         roundRect(ctx, px, py, pipW, pipH, 14); ctx.stroke()
       }
+      // Highlighted cursor (drawn last, on top) so viewers can follow where the
+      // candidate is pointing as they talk through the CV.
+      const cur = cursorRef.current
+      if (cur.active) {
+        ctx.beginPath(); ctx.arc(cur.x, cur.y, 27, 0, Math.PI * 2)
+        ctx.fillStyle = 'rgba(255,179,71,0.22)'; ctx.fill()
+        ctx.beginPath(); ctx.arc(cur.x, cur.y, 16, 0, Math.PI * 2)
+        ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(201,123,75,0.95)'; ctx.stroke()
+        ctx.beginPath(); ctx.arc(cur.x, cur.y, 5.5, 0, Math.PI * 2)
+        ctx.fillStyle = '#C97B4B'; ctx.fill()
+      }
       rafRef.current = requestAnimationFrame(draw)
     }
     draw()
     return () => { stop = true; cancelAnimationFrame(rafRef.current) }
   }, [mode, cameraLive])
+
+  // Wheel over the composite scrolls the CV (captured in the recording). Native
+  // listener with passive:false so we can preventDefault the page from scrolling.
+  useEffect(() => {
+    if (mode !== 'cv' || !cameraLive) return
+    const canvas = compositeRef.current
+    if (!canvas) return
+    const onWheel = e => {
+      e.preventDefault()
+      scrollRef.current = Math.max(0, Math.min(scrollMaxRef.current, scrollRef.current + e.deltaY))
+    }
+    canvas.addEventListener('wheel', onWheel, { passive: false })
+    return () => canvas.removeEventListener('wheel', onWheel)
+  }, [mode, cameraLive])
+
+  // Track the pointer over the composite so the draw loop can render a
+  // highlighted cursor at that spot (in the recorded canvas coordinate space).
+  function onCanvasPointer(e) {
+    const canvas = compositeRef.current
+    if (!canvas) return
+    const rect = canvas.getBoundingClientRect()
+    cursorRef.current = {
+      x: (e.clientX - rect.left) * (canvas.width / rect.width),
+      y: (e.clientY - rect.top) * (canvas.height / rect.height),
+      active: true,
+    }
+  }
+  function onCanvasLeave() { cursorRef.current = { ...cursorRef.current, active: false } }
 
   useEffect(() => {
     function onKey(e) { if (e.key === 'Escape' && phase !== 'recording' && phase !== 'paused') onClose() }
@@ -415,7 +476,8 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', onClose, onSave
                         composite PiP after a few seconds). The opaque canvas
                         covers it. */}
                     <video ref={camVideoRef} className="studio-camunder" autoPlay muted playsInline />
-                    <canvas ref={compositeRef} className="studio-video studio-video--composite" />
+                    <canvas ref={compositeRef} className="studio-video studio-video--composite"
+                      onMouseMove={onCanvasPointer} onMouseLeave={onCanvasLeave} />
                   </>
                 ) : (
                   <video ref={liveRef} className="studio-video studio-video--mirror" autoPlay muted playsInline />
@@ -464,6 +526,11 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', onClose, onSave
                 </div>
               )}
             </div>
+
+            {/* Loom-style hint: scroll the CV + highlighted cursor */}
+            {mode === 'cv' && cameraLive && (
+              <p className="studio-scrollhint">🖱️ {t.scrollHint}</p>
+            )}
 
             {/* What to record: CV + face composite, or just the webcam */}
             {(phase === 'consent' || phase === 'ready') && (

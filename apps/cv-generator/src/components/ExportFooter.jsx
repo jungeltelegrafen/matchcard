@@ -210,16 +210,23 @@ export default function ExportFooter({ cvByLang, contentLang, uiLang, filename, 
 
       {/* ── Share URL bar (appears after generating link) ── */}
       {shareUrl && (
-        <div className="export-share-bar">
-          <span className="export-share-bar-label">{no ? 'Delingslenke' : 'Share link'}</span>
-          <span className="export-share-bar-url">{shareUrl}</span>
-          <button className="export-share-bar-copy" onClick={handleCopyLink}>
-            {copied ? (no ? '✓ Kopiert' : '✓ Copied') : (no ? '⎘ Kopier' : '⎘ Copy')}
-          </button>
-          <a href={shareUrl} target="_blank" rel="noopener noreferrer" className="export-share-bar-open">
-            {no ? 'Åpne ↗' : 'Open ↗'}
-          </a>
-          <button className="export-share-bar-close" onClick={() => setShareUrl('')}>×</button>
+        <div className="export-share-bar-wrap">
+          <div className="export-share-bar">
+            <span className="export-share-bar-label">{no ? 'Delingslenke' : 'Share link'}</span>
+            <span className="export-share-bar-url">{shareUrl}</span>
+            <button className="export-share-bar-copy" onClick={handleCopyLink}>
+              {copied ? (no ? '✓ Kopiert' : '✓ Copied') : (no ? '⎘ Kopier' : '⎘ Copy')}
+            </button>
+            <a href={shareUrl} target="_blank" rel="noopener noreferrer" className="export-share-bar-open">
+              {no ? 'Åpne ↗' : 'Open ↗'}
+            </a>
+            <button className="export-share-bar-close" onClick={() => setShareUrl('')}>×</button>
+          </div>
+          <p className="export-share-bar-note">
+            {no
+              ? '📌 Lenken er et øyeblikksbilde av CV-en akkurat nå. Har du tatt opp en ny video eller endret noe? Klikk «↻ Ny lenke» for å dele oppdateringen — den gamle lenken beholder forrige versjon.'
+              : '📌 This link is a snapshot of your CV as it is right now. Recorded a new video or made edits? Click “↻ New link” to share the update — the old link keeps the previous version.'}
+          </p>
         </div>
       )}
 

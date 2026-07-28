@@ -1,12 +1,23 @@
-/* ── Share page ──────────────────────────────────────────────────── */
+/* ── Share page ──────────────────────────────────────────────────────
+   Styled to mirror the live PDF export (see src/theme/index.js):
+   navy #1A1A2E headings, terracotta #C97B4B accent rules, Helvetica.   */
+:root {
+  --navy:   #1A1A2E;   /* headings, name — matches theme.colors.primary */
+  --accent: #C97B4B;   /* section rules, links — matches theme.colors.accent */
+  --text:   #2B2B2B;   /* body */
+  --muted:  #6B6B6B;   /* dates, secondary */
+  --border: #E0E0E0;
+}
+
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  background: #f0ece8;
-  color: #1a1714;
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  background: #ece7e1;
+  color: var(--text);
   font-size: 14px;
   line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
 }
 
 /* ── Top bar ─────────────────────────────────────────────────────── */
@@ -18,15 +29,15 @@ body {
   align-items: center;
   justify-content: space-between;
   padding: 12px 24px;
-  background: #1a1714;
-  border-bottom: 1px solid #333;
+  background: var(--navy);
+  border-bottom: 2px solid var(--accent);
 }
 
 .share-brand {
   font-size: 0.95rem;
   font-weight: 700;
   letter-spacing: 0.08em;
-  color: #d9cfc7;
+  color: #fff;
   text-transform: uppercase;
 }
 
@@ -51,12 +62,12 @@ body {
 
 .share-topbar-btn--copy {
   background: rgba(255,255,255,0.1);
-  color: rgba(255,255,255,0.75);
-  border: 1px solid rgba(255,255,255,0.15);
+  color: rgba(255,255,255,0.85);
+  border: 1px solid rgba(255,255,255,0.2);
 }
 .share-topbar-btn--pdf {
-  background: #d9cfc7;
-  color: #1a1714;
+  background: var(--accent);
+  color: #fff;
 }
 
 /* ── CV sheet ────────────────────────────────────────────────────── */
@@ -65,68 +76,69 @@ body {
 }
 
 .cv-sheet {
-  max-width: 780px;
+  max-width: 800px;
   margin: 32px auto;
   background: #fff;
   border-radius: 4px;
-  box-shadow: 0 2px 16px rgba(0,0,0,0.10);
-  padding: 56px 64px;
+  box-shadow: 0 4px 24px rgba(26,26,46,0.12);
+  padding: 56px 60px;
 }
 
-/* ── Header block ────────────────────────────────────────────────── */
+/* ── Header block (mirrors PDF CVHeader: 2px accent rule) ─────────── */
 .cv-sheet-head {
-  margin-bottom: 32px;
-  padding-bottom: 24px;
-  border-bottom: 2px solid #1a1714;
+  margin-bottom: 28px;
+  padding-bottom: 14px;
+  border-bottom: 2px solid var(--accent);
 }
 
 .cv-sheet-name {
   font-size: 2rem;
-  font-weight: 800;
-  letter-spacing: -0.02em;
+  font-weight: 700;
+  letter-spacing: -0.01em;
   line-height: 1.1;
-  color: #1a1714;
+  color: var(--navy);
   margin-bottom: 4px;
 }
 
 .cv-sheet-title {
-  font-size: 1rem;
-  color: #555;
-  margin-bottom: 10px;
+  font-size: 1.05rem;
+  color: var(--accent);
+  font-weight: 600;
+  margin-bottom: 12px;
 }
 
 .cv-sheet-contacts {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px 16px;
-  font-size: 0.82rem;
-  color: #444;
+  gap: 4px 16px;
+  font-size: 0.8rem;
+  color: var(--muted);
 }
 
 .cv-sheet-contacts a {
-  color: #2563eb;
+  color: var(--accent);
   text-decoration: none;
 }
 .cv-sheet-contacts a:hover { text-decoration: underline; }
 
-/* ── Sections ────────────────────────────────────────────────────── */
+/* ── Sections (mirrors PDF SectionHeading: navy bold + 1px accent rule) ─ */
 .cv-section {
-  margin-bottom: 28px;
+  margin-bottom: 24px;
 }
 
 .cv-section-title {
-  font-size: 0.65rem;
-  font-weight: 800;
-  letter-spacing: 0.12em;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
   text-transform: uppercase;
-  color: #888;
+  color: var(--navy);
   margin-bottom: 12px;
-  padding-bottom: 4px;
-  border-bottom: 1px solid #e8e4e0;
+  padding-bottom: 3px;
+  border-bottom: 1px solid var(--accent);
 }
 
 .cv-summary-text {
-  color: #333;
+  color: var(--text);
   line-height: 1.65;
 }
 
@@ -156,28 +168,28 @@ body {
 
 .cv-entry-role {
   font-weight: 700;
-  color: #1a1714;
+  color: var(--navy);
 }
 
 .cv-entry-sep {
-  color: #ccc;
+  color: #c9c2ba;
   font-size: 0.75rem;
 }
 
 .cv-entry-company {
-  color: #555;
+  color: var(--muted);
 }
 
 .cv-entry-dates {
   margin-left: auto;
   font-size: 0.78rem;
-  color: #888;
+  color: var(--muted);
   white-space: nowrap;
 }
 
 .cv-entry-bullets {
   padding-left: 18px;
-  color: #333;
+  color: var(--text);
 }
 
 .cv-entry-bullets li {
@@ -200,14 +212,14 @@ body {
 
 .cv-skills-group {
   font-weight: 700;
-  color: #1a1714;
+  color: var(--navy);
   white-space: nowrap;
   min-width: 100px;
   font-size: 0.82rem;
 }
 
 .cv-skills-items {
-  color: #444;
+  color: var(--text);
   font-size: 0.82rem;
 }
 
@@ -220,7 +232,7 @@ body {
 
 .cv-lang-item {
   font-size: 0.85rem;
-  color: #333;
+  color: var(--text);
 }
 
 /* ── Print ───────────────────────────────────────────────────────── */
@@ -258,34 +270,37 @@ body {
   font-size: 0.72rem;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  opacity: 0.6;
+  color: var(--muted);
+  font-weight: 700;
   padding: 4px 10px 4px 0;
-  border-bottom: 1px solid rgba(0,0,0,0.15);
+  border-bottom: 1px solid var(--accent);
 }
 .cv-comp-table td {
   padding: 6px 10px 6px 0;
   border-bottom: 1px solid rgba(0,0,0,0.07);
   vertical-align: top;
+  color: var(--text);
 }
-.cv-comp-name { font-weight: 600; }
+.cv-comp-name { font-weight: 600; color: var(--navy); }
 
 /* ── Experience extras ─────────────────────────────────────── */
 .cv-entry-desc {
   margin: 4px 0 6px;
   font-size: 0.88rem;
   line-height: 1.5;
+  color: var(--text);
 }
 .cv-entry-tech {
   margin: 4px 0 0;
   font-size: 0.8rem;
-  opacity: 0.75;
+  color: var(--muted);
 }
-.cv-entry-tech-label { font-weight: 600; }
+.cv-entry-tech-label { font-weight: 600; color: var(--navy); }
 
 /* ── Portfolio ─────────────────────────────────────────────── */
 .cv-portfolio-link {
   font-weight: 600;
-  color: inherit;
+  color: var(--accent);
   text-decoration: underline;
 }
 
@@ -296,19 +311,19 @@ body {
   gap: 12px;
 }
 .cv-share-video {
-  border: 1px solid #e8e4e0;
-  border-left: 3px solid #1a1714;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
   border-radius: 8px;
   padding: 12px 14px;
   background: #fff;
 }
 .cv-share-video-info { display: flex; flex-direction: column; gap: 3px; }
-.cv-share-video-title { font-weight: 700; color: #1a1714; }
-.cv-share-video-desc { color: #555; font-size: 0.92em; }
+.cv-share-video-title { font-weight: 700; color: var(--navy); }
+.cv-share-video-desc { color: var(--muted); font-size: 0.92em; }
 .cv-share-video-play {
   display: inline-block;
   margin-top: 10px;
-  background: #1a1714;
+  background: var(--accent);
   color: #fff;
   border: none;
   border-radius: 6px;
