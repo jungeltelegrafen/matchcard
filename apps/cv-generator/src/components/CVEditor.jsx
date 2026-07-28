@@ -59,7 +59,6 @@ export default function CVEditor({ cv, lang = 'en', meta, onFieldEdit, onAccept,
         <VideosSection
           items={cv.videos || []}
           {...shared}
-          cv={cv}
           candidateName={[cv.personal?.firstName, cv.personal?.lastName].filter(Boolean).join(' ')}
           onChange={items => onStructural('videos', items)}
         />
