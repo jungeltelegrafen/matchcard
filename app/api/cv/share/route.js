@@ -19,8 +19,7 @@ export async function POST(req) {
     return NextResponse.json({ id, url: `${base}/cv/${id}` })
   } catch (err) {
     console.error('[cv/share:POST]', err)
-    // TEMP DIAGNOSTIC: surface the real cause to debug prod DB connectivity.
-    return NextResponse.json({ error: 'Failed to create share link', detail: err.message, code: err.code }, { status: 500 })
+    return NextResponse.json({ error: 'Failed to create share link' }, { status: 500 })
   }
 }
 
