@@ -10,7 +10,6 @@ import CVEducation from './CVEducation'
 import CVCertsCourses from './CVCertsCourses'
 import CVLanguages from './CVLanguages'
 import SectionHeading from './SectionHeading'
-import CVVideoProfiles from './CVVideoProfiles'
 import CVVideos from './CVVideos'
 import CVPortfolio from './CVPortfolio'
 
@@ -42,12 +41,6 @@ export default function CVDocument({ data, lang = 'en' }) {
       <Page size={theme.pageSize} style={styles.page}>
 
         <CVHeader personal={data.personal} lang={lang} />
-
-        <CVVideoProfiles
-          videoProfile={data.videoProfile}
-          projectVideoProfile={data.projectVideoProfile}
-          lang={lang}
-        />
 
         {data.personal.summary ? (
           <View style={{ marginBottom: theme.spacing.sectionGap }}>

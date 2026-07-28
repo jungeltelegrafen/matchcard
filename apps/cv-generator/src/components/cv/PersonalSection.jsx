@@ -1,8 +1,7 @@
 import CVField from './CVField'
-import VideoProfileSection from './VideoProfileSection'
 import { getL } from '../../utils/labels'
 
-export default function PersonalSection({ data, videoProfile, projectVideoProfile, meta, onFieldEdit, onAccept, onDismiss, lang = 'en' }) {
+export default function PersonalSection({ data, meta, onFieldEdit, onAccept, onDismiss, lang = 'en' }) {
   const lb = getL(lang)
   const p = 'personal'
   const fp = key => `${p}.${key}`
@@ -81,13 +80,6 @@ export default function PersonalSection({ data, videoProfile, projectVideoProfil
       </div>
 
       <div className="cv-header-rule" />
-
-      <VideoProfileSection
-        videoProfile={videoProfile}
-        projectVideoProfile={projectVideoProfile}
-        candidateName={[data.firstName, data.lastName].filter(Boolean).join(' ')}
-        lang={lang}
-      />
 
       <div className="cv-section-heading" style={{ marginBottom: 6 }}>
         <span>{lb.summary}</span>

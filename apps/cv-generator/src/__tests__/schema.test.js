@@ -19,7 +19,7 @@ describe('emptyCv', () => {
     expect(cv.personal.showContactInfo).toBe(true)
     expect(cv.experience).toEqual([])
     expect(cv.positions).toEqual({ enabled: false, useProjectFormat: false, items: [] })
-    expect(cv.videoProfile.title).toBe('Professional Introduction')
+    expect(cv.videos).toEqual([])
   })
 })
 
@@ -52,7 +52,6 @@ describe('mergeAiCv', () => {
   it('keeps client-only sections and explicitly kept sections from the current cv', () => {
     const current = emptyCv()
     current.cvType = 'management'
-    current.videoProfile.enabled = true
     current.competences = { enabled: true, projectLabel: 'Tender X', items: [{ requirement: 'K8s' }] }
 
     const merged = mergeAiCv(current, {
@@ -62,7 +61,6 @@ describe('mergeAiCv', () => {
     }, { keep: ['competences'] })
 
     expect(merged.cvType).toBe('management')
-    expect(merged.videoProfile.enabled).toBe(true)
     expect(merged.competences.projectLabel).toBe('Tender X')
     expect(merged.personal.firstName).toBe('Ada')
   })
@@ -133,13 +131,11 @@ describe('buildCvJsonSchema', () => {
     expect(schema.properties.personal).toBeDefined()
     expect(schema.properties.portfolio).toBeDefined()
     expect(schema.properties.competences).toBeUndefined()
-    expect(schema.properties.videoProfile).toBeUndefined()
     expect(schema.properties.cvType).toBeUndefined()
   })
 
   it('includes everything with aiOnly: false and closes objects to unknown keys', () => {
     const schema = buildCvJsonSchema({ aiOnly: false })
-    expect(schema.properties.videoProfile).toBeDefined()
     expect(schema.properties.cvType.enum).toEqual(['technical', 'management'])
     expect(schema.additionalProperties).toBe(false)
     expect(schema.properties.personal.additionalProperties).toBe(false)

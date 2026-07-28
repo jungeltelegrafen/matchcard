@@ -52,7 +52,7 @@ export default function CVEditor({ cv, lang = 'en', meta, onFieldEdit, onAccept,
   return (
     <div className="cv-editor">
       <SectionWrap {...wrap('summary')}>
-        <PersonalSection data={cv.personal} videoProfile={cv.videoProfile} projectVideoProfile={cv.projectVideoProfile} {...shared} />
+        <PersonalSection data={cv.personal} {...shared} />
       </SectionWrap>
 
       <SectionWrap {...wrap('videos')}>
