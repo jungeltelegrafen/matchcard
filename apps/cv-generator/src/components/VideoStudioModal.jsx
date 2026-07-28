@@ -449,21 +449,10 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', onClose, onSave
 
         <div className="studio-body">
 
-          {/* Left — the CV as its real PDF (exactly what a hiring manager sees) */}
+          {/* Left (big) — the recorded view. The CV you look at, scroll through,
+              and point at IS exactly what gets recorded, with your webcam in the
+              corner. One CV — no separate, disconnected reference. */}
           <div className="studio-cvpane">
-            {pdfUrl ? (
-              <iframe
-                className="studio-pdf"
-                src={`${pdfUrl}#toolbar=0&navpanes=0&view=FitH`}
-                title={t.yourCV}
-              />
-            ) : (
-              <div className="studio-pdf-loading"><span className="spinner-preview" /></div>
-            )}
-          </div>
-
-          {/* Right — camera + teleprompter */}
-          <div className="studio-stage">
             <div className={`studio-video-wrap${phase === 'recording' ? ' recording' : ''}`}>
               {phase === 'review' || phase === 'uploading' ? (
                 <video className="studio-video studio-video--contain" src={recordedUrl} controls playsInline
@@ -526,6 +515,10 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', onClose, onSave
                 </div>
               )}
             </div>
+          </div>
+
+          {/* Right — controls + teleprompter */}
+          <div className="studio-stage">
 
             {/* Loom-style hint: scroll the CV + highlighted cursor */}
             {mode === 'cv' && cameraLive && (
