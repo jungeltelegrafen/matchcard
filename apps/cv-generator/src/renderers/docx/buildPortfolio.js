@@ -1,6 +1,7 @@
 import { ExternalHyperlink, Paragraph, TextRun } from 'docx'
 import { theme } from '../../theme'
 import { hex, sectionHeading } from './buildUtils'
+import { getL } from '../../utils/labels'
 
 const PLATFORM_LABELS = {
   github:        'GitHub',
@@ -15,7 +16,7 @@ const PLATFORM_LABELS = {
 export function buildPortfolio(items, lang = 'en') {
   if (!items?.length) return []
 
-  const heading = lang === 'no' ? 'Portefølje & lenker' : 'Portfolio & Links'
+  const heading = getL(lang).portfolio
   const result  = [sectionHeading(heading)]
 
   for (const item of items) {

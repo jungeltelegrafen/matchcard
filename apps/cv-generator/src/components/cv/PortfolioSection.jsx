@@ -1,4 +1,5 @@
 import CVField from './CVField'
+import { getL } from '../../utils/labels'
 
 const PLATFORMS = [
   { value: 'github',        label: 'GitHub' },
@@ -13,10 +14,11 @@ const PLATFORMS = [
 const emptyItem = { platform: 'github', label: '', url: '', description: '' }
 
 export default function PortfolioSection({ items = [], lang = 'en', meta, onFieldEdit, onChange, onAccept, onDismiss }) {
+  const lb = getL(lang)
   return (
     <section className="cv-section">
       <div className="cv-section-heading">
-        <span>{lang === 'no' ? 'Portefølje & lenker' : 'Portfolio & Links'}</span>
+        <span>{lb.portfolio}</span>
       </div>
 
       {items.map((item, i) => (
@@ -67,7 +69,7 @@ export default function PortfolioSection({ items = [], lang = 'en', meta, onFiel
             className="cv-btn-remove-item"
             onClick={() => onChange(items.filter((_, idx) => idx !== i))}
           >
-            {lang === 'no' ? 'Fjern' : 'Remove'}
+            {lb.remove}
           </button>
         </div>
       ))}
@@ -76,7 +78,7 @@ export default function PortfolioSection({ items = [], lang = 'en', meta, onFiel
         className="cv-btn-add"
         onClick={() => onChange([...items, { ...emptyItem }])}
       >
-        {lang === 'no' ? '+ Legg til lenke' : '+ Add link'}
+        {lb.addLink}
       </button>
     </section>
   )

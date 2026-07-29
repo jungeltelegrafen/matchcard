@@ -105,25 +105,25 @@ export default function CVCompetences({ competences, lang = 'en' }) {
           <View style={styles.metaBlock}>
             {item.level ? (
               <View style={styles.metaGroup}>
-                <Text style={styles.metaLabel}>Level</Text>
+                <Text style={styles.metaLabel}>{lb.levelLabel}</Text>
                 <LevelDots level={item.level} />
               </View>
             ) : null}
             {item.lastUsed ? (
               <View style={styles.metaGroup}>
-                <Text style={styles.metaLabel}>Last used</Text>
+                <Text style={styles.metaLabel}>{lb.lastUsed}</Text>
                 <Text style={styles.metaValue}>{item.lastUsed}</Text>
               </View>
             ) : null}
             {item.yearsRelevant ? (
               <View style={styles.metaGroup}>
-                <Text style={styles.metaLabel}>Total years</Text>
+                <Text style={styles.metaLabel}>{lb.totalYears}</Text>
                 <Text style={styles.metaValue}>{item.yearsRelevant}</Text>
               </View>
             ) : null}
             {item.projects ? (
               <View style={[styles.metaGroup, { flex: 1 }]}>
-                <Text style={styles.metaLabel}>Projects</Text>
+                <Text style={styles.metaLabel}>{lb.projects}</Text>
                 <Text style={styles.metaValue}>{item.projects}</Text>
               </View>
             ) : null}

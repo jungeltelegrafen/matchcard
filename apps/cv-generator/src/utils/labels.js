@@ -70,6 +70,7 @@ export const L = {
     videoDescPlaceholder:  'Why watch this? One line shown on the card.',
     videoUrlPlaceholder:   'Paste video link (Cloudflare, Vimeo, YouTube…)',
     videoNoUrl:          'No video link yet',
+    addLink:             '+ Add link',
   },
 
   no: {
@@ -143,6 +144,7 @@ export const L = {
     videoDescPlaceholder:  'Hvorfor se denne? Én linje som vises på kortet.',
     videoUrlPlaceholder:   'Lim inn videolenke (Cloudflare, Vimeo, YouTube…)',
     videoNoUrl:          'Ingen videolenke ennå',
+    addLink:             '+ Legg til lenke',
   },
 
   es: {
@@ -216,6 +218,7 @@ export const L = {
     videoDescPlaceholder:  '¿Por qué verlo? Una línea que se muestra en la tarjeta.',
     videoUrlPlaceholder:   'Pega el enlace del vídeo (Cloudflare, Vimeo, YouTube…)',
     videoNoUrl:          'Aún no hay enlace de vídeo',
+    addLink:             '+ Añadir enlace',
   },
 }
 

@@ -1,6 +1,7 @@
 import { View, Text, Link, StyleSheet } from '@react-pdf/renderer'
 import { theme } from '../../theme'
 import SectionHeading from './SectionHeading'
+import { getL } from '../../utils/labels'
 
 const PLATFORM_LABELS = {
   github:        'GitHub',
@@ -52,7 +53,7 @@ const styles = StyleSheet.create({
 export default function CVPortfolio({ items, lang = 'en' }) {
   if (!items?.length) return null
 
-  const heading = lang === 'no' ? 'Portefølje & lenker' : 'Portfolio & Links'
+  const heading = getL(lang).portfolio
 
   return (
     <View style={{ marginBottom: theme.spacing.sectionGap }}>
