@@ -32,15 +32,21 @@ import './styles/app.css'
 const slug = s => (s || '').replace(/[^a-z0-9]+/gi, '_').replace(/^_+|_+$/g, '') || 'version'
 
 // CV key → SectionWrap key mapping for chat diff
+// Maps a CV data key to the editor SectionWrap key it should highlight after a
+// chat edit. Keys without a visual anchor (competences, positions, certs,
+// courses) map to themselves and degrade gracefully to no highlight — but must
+// NOT borrow another section's anchor, or an edit highlights the wrong section.
 const CV_SECTION_MAP = {
   personal:       'summary',
   skills:         'skills',
+  competences:    'competences',
+  videos:         'videos',
   experience:     'experience',
+  positions:      'positions',
   education:      'education',
   languages:      'languages',
   certifications: 'certifications',
-  courses:        'certifications',
-  positions:      'experience',
+  courses:        'courses',
   portfolio:      'portfolio',
 }
 

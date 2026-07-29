@@ -20,7 +20,6 @@ export const L = {
     result:         'Result',
 
     // ── Personal meta ─────────────────────────────────────────────
-    birthYear:        'Born',
     address:          'Address',
     educationSummary: 'Education',
     itSince:          'IT experience since',
@@ -94,7 +93,6 @@ export const L = {
     result:         'Resultat',
 
     // ── Personal meta ─────────────────────────────────────────────
-    birthYear:        'Fødselsår',
     address:          'Adresse',
     educationSummary: 'Utdanning',
     itSince:          'IT-erfaring siden',
@@ -168,7 +166,6 @@ export const L = {
     result:         'Resultado',
 
     // ── Personal meta ─────────────────────────────────────────────
-    birthYear:        'Nacimiento',
     address:          'Dirección',
     educationSummary: 'Educación',
     itSince:          'Experiencia en TI desde',
