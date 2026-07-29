@@ -5,6 +5,10 @@ import { checkRateLimit, rateLimitedResponse, LIMITS } from '@/lib/rateLimit'
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
+// Sonnet + large CV tool schema exceeds the default serverless limit; raise it
+// so Vercel doesn't kill the request mid-run. 60s is the Hobby-plan max.
+export const maxDuration = 60
+
 // Forced tool use — the model must return a CV matching the shared schema.
 // `competences` is excluded: the matrix is hand-curated per bid, never parsed.
 // Note: no `strict: true` here — the full CV schema exceeds the API's strict-

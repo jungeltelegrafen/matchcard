@@ -453,6 +453,7 @@ export default function App() {
                     : `⇄ Translate from ${LANG_ENDONYM[src]}`)}
             </button>
           ))}
+          {genError && !translating && <span className="translate-banner-err">{genError}</span>}
         </div>
       )}
 

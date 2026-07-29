@@ -5,6 +5,11 @@ import { checkRateLimit, rateLimitedResponse, LIMITS } from '@/lib/rateLimit'
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
+// Full-CV translation with Sonnet + the large tool schema takes well over the
+// default serverless limit; without this Vercel kills the function mid-run and
+// the client hangs on "Translating…". 60s is the Hobby-plan max.
+export const maxDuration = 60
+
 // Full schema (including client-only sections like video profiles) so
 // translation returns the complete CV shape, guaranteed by forced tool use.
 // Note: no `strict: true` here — the full CV schema exceeds the API's strict-

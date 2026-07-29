@@ -4,11 +4,24 @@
 import { stripIds } from '@lib/cv/schema'
 
 async function apiFetch(path, body) {
-  const res = await fetch(path, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  })
+  // Abort after 70s (just above the routes' 60s maxDuration) so a stalled request
+  // surfaces a clear error instead of hanging the UI on "…" forever.
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), 70000)
+  let res
+  try {
+    res = await fetch(path, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    })
+  } catch (e) {
+    if (e.name === 'AbortError') throw new Error('Request timed out. Please try again.')
+    throw e
+  } finally {
+    clearTimeout(timer)
+  }
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: res.statusText }))
     throw new Error(err.error || `API error ${res.status}`)
