@@ -1,5 +1,9 @@
 import { getL } from '../utils/labels'
 
+// Localized names for the language a variant was tailored in (for the note below).
+const LANG_NAME_NO = { en: 'engelsk', no: 'norsk', es: 'spansk' }
+const LANG_NAME_EN = { en: 'English', no: 'Norwegian', es: 'Spanish' }
+
 // Shown in the left column while a job variant is active. Everything here is
 // non-destructive: it curates how the master is presented (include/exclude,
 // order, re-emphasized text). Facts live in the master and are edited there.
@@ -73,8 +77,8 @@ export default function TailoringReview({
       {differentLang && (
         <p className="tr-lang-note">
           {no
-            ? `Tilpasset på ${variant.tailoredInLang === 'no' ? 'norsk' : 'engelsk'}. Sammendrag/beskrivelser vises fra master til du oversetter denne versjonen.`
-            : `Tailored in ${variant.tailoredInLang === 'no' ? 'Norwegian' : 'English'}. Summary/descriptions show master text here until you translate this version.`}
+            ? `Tilpasset på ${LANG_NAME_NO[variant.tailoredInLang] || variant.tailoredInLang}. Sammendrag/beskrivelser vises fra master til du oversetter denne versjonen.`
+            : `Tailored in ${LANG_NAME_EN[variant.tailoredInLang] || variant.tailoredInLang}. Summary/descriptions show master text here until you translate this version.`}
         </p>
       )}
 
@@ -191,17 +195,22 @@ export default function TailoringReview({
         labelFn={c => [c.name, c.issuer].filter(Boolean).join(' · ') || '—'}
       />
       <SimpleSection
-        title={no ? 'Kurs' : 'Courses'}
+        title={lb.courses || 'Courses'}
         items={master.courses || []}
         labelFn={c => [c.name, c.institution].filter(Boolean).join(' · ') || '—'}
       />
       <SimpleSection
-        title={no ? 'Verv' : 'Positions'}
-        items={master.positions?.items || []}
+        title={lb.positions || 'Positions'}
+        items={master.positions?.enabled ? (master.positions.items || []) : []}
         labelFn={p => [p.title, p.company].filter(Boolean).join(' · ') || '—'}
       />
       <SimpleSection
-        title={no ? 'Portefølje' : 'Portfolio'}
+        title={lb.languages || 'Languages'}
+        items={master.languages || []}
+        labelFn={l => [l.language, l.proficiency].filter(Boolean).join(' — ') || '—'}
+      />
+      <SimpleSection
+        title={lb.portfolio || 'Portfolio'}
         items={master.portfolio || []}
         labelFn={p => p.label || p.url || '—'}
       />

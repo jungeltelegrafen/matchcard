@@ -329,9 +329,13 @@ export default function App() {
       // the stored order stays a complete, self-consistent list.
       const stored = (v.order[section] || []).filter(x => ids.includes(x))
       const base = [...stored, ...ids.filter(x => !stored.includes(x))]
+      const excluded = new Set(v.excludedIds || [])
       const i = base.indexOf(id)
       if (i < 0) return v
-      const j = dir === 'up' ? i - 1 : i + 1
+      // Swap with the nearest VISIBLE neighbour, skipping excluded (hidden) items,
+      // so a move always changes the visible order (no dead clicks past a hidden row).
+      let j = dir === 'up' ? i - 1 : i + 1
+      while (j >= 0 && j < base.length && excluded.has(base[j])) j += dir === 'up' ? -1 : 1
       if (j < 0 || j >= base.length) return v
       const next = [...base]; [next[i], next[j]] = [next[j], next[i]]
       return { ...v, order: { ...v.order, [section]: next } }
