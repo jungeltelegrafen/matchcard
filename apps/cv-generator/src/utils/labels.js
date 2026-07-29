@@ -8,6 +8,8 @@ export const L = {
     languages:      'Languages',
     competences:    'Key Competences',
     summary:        'Summary',
+    portfolio:      'Portfolio & Links',
+    present:        'Present',
 
     // ── Experience field labels ───────────────────────────────────
     role:           'Role(s)',
@@ -79,6 +81,8 @@ export const L = {
     languages:      'Språkkunnskap',
     competences:    'Spesifikk kompetansematch',
     summary:        'Oppsummering',
+    portfolio:      'Portefølje og lenker',
+    present:        'Nå',
 
     // ── Experience field labels ───────────────────────────────────
     role:           'Rolle(r)',
@@ -150,6 +154,8 @@ export const L = {
     languages:      'Idiomas',
     competences:    'Competencias Clave',
     summary:        'Resumen',
+    portfolio:      'Portafolio y enlaces',
+    present:        'Presente',
 
     // ── Experience field labels ───────────────────────────────────
     role:           'Rol(es)',
@@ -221,16 +227,16 @@ export function getL(lang) {
 // Display names for the structured section keys agents return
 // (FEEDBACK_SECTION_KEYS in @lib/cv/schema).
 export const FEEDBACK_SECTION_LABELS = {
-  summary:        { en: 'Summary',        no: 'Sammendrag' },
-  skills:         { en: 'Skills',         no: 'Ferdigheter' },
-  competences:    { en: 'Competences',    no: 'Kompetanse' },
-  experience:     { en: 'Experience',     no: 'Erfaring' },
-  positions:      { en: 'Positions',      no: 'Verv' },
-  education:      { en: 'Education',      no: 'Utdanning' },
-  certifications: { en: 'Certifications', no: 'Sertifiseringer' },
-  languages:      { en: 'Languages',      no: 'Språk' },
-  portfolio:      { en: 'Portfolio',      no: 'Portefølje' },
-  general:        { en: 'General',        no: 'Generelt' },
+  summary:        { en: 'Summary',        no: 'Sammendrag',      es: 'Resumen' },
+  skills:         { en: 'Skills',         no: 'Ferdigheter',     es: 'Habilidades' },
+  competences:    { en: 'Competences',    no: 'Kompetanse',      es: 'Competencias' },
+  experience:     { en: 'Experience',     no: 'Erfaring',        es: 'Experiencia' },
+  positions:      { en: 'Positions',      no: 'Verv',            es: 'Cargos' },
+  education:      { en: 'Education',      no: 'Utdanning',       es: 'Educación' },
+  certifications: { en: 'Certifications', no: 'Sertifiseringer', es: 'Certificaciones' },
+  languages:      { en: 'Languages',      no: 'Språk',           es: 'Idiomas' },
+  portfolio:      { en: 'Portfolio',      no: 'Portefølje',      es: 'Portafolio' },
+  general:        { en: 'General',        no: 'Generelt',        es: 'General' },
 }
 
 export function feedbackSectionLabel(key, lang = 'en') {
