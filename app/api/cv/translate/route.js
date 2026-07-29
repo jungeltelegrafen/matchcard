@@ -18,10 +18,12 @@ const BATCH = { experience: 3, competences: 4, positions: 3 }
 const DEFAULT_BATCH = 8
 const CONCURRENCY = 5       // simultaneous Anthropic calls — bounded to avoid rate limits
 const CALL_TIMEOUT = 40000  // per-chunk hard cap (ms)
+const GLOBAL_DEADLINE = 50000 // overall cap: stragglers abort → fall back → return < 60s
 
 // Translate one fragment (only `sections` populated) via forced tool use scoped
-// to just those sections, so output stays small. Bounded time + few retries.
-async function translateChunk(fragment, sections, langName) {
+// to just those sections, so output stays small. Bounded time + few retries, and
+// an overall abort signal so no chunk outlives the global deadline.
+async function translateChunk(fragment, sections, langName, signal) {
   const tool = {
     name: 'save_translation',
     description: 'Save the translated fields.',
@@ -38,7 +40,7 @@ async function translateChunk(fragment, sections, langName) {
 
 ${JSON.stringify(fragment)}`,
     }],
-  }, { timeout: CALL_TIMEOUT, maxRetries: 1 })
+  }, { timeout: CALL_TIMEOUT, maxRetries: 1, signal })
   const toolUse = msg.content.find(b => b.type === 'tool_use')
   if (!toolUse) throw new Error('Model did not return a translation')
   return toolUse.input
@@ -91,7 +93,16 @@ export async function POST(request) {
       }
     }
 
-    const results = await mapLimit(fragments, CONCURRENCY, f => translateChunk(f.payload, f.sections, langName))
+    // Global deadline: abort any in-flight/queued chunk at 50s so the whole
+    // request always returns under the 60s cap — stragglers fall back below.
+    const ac = new AbortController()
+    const deadline = setTimeout(() => ac.abort(), GLOBAL_DEADLINE)
+    let results
+    try {
+      results = await mapLimit(fragments, CONCURRENCY, f => translateChunk(f.payload, f.sections, langName, ac.signal))
+    } finally {
+      clearTimeout(deadline)
+    }
 
     // Reassemble, starting from the originals so any failed chunk falls back.
     const merged = { ...cv, cvType: cv.cvType }
