@@ -141,15 +141,12 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', onClose, onSave
   const [pdfUrl, setPdfUrl]     = useState(null)
   const [uploadPct, setUploadPct] = useState(0)
   const [mode, setMode]         = useState('cv')  // 'cv' = CV + face composite, 'me' = webcam only
-  const [pageCount, setPageCount] = useState(0)
-  const [pageIdx, setPageIdx]   = useState(0)
 
   const liveRef   = useRef(null)
   const camVideoRef = useRef(null)   // hidden webcam source for the composite
   const compositeRef = useRef(null)  // canvas we draw + record in CV mode
   const pagesRef  = useRef([])       // CV pages rendered to canvases
-  const pageIdxRef = useRef(0)
-  const scrollRef = useRef(0)        // vertical scroll offset (dest px) into the CV page
+  const scrollRef = useRef(0)        // vertical scroll offset (dest px) into the CV strip
   const scrollMaxRef = useRef(0)     // max scrollable distance, computed each frame
   const cursorRef = useRef({ x: 0, y: 0, active: false }) // highlighted pointer on the recording
   const rafRef    = useRef(0)
@@ -225,13 +222,10 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', onClose, onSave
         }
         if (cancelled) return
         pagesRef.current = pages
-        setPageCount(pages.length)
       } catch { /* composite falls back to camera-only if page render fails */ }
     })()
     return () => { cancelled = true; if (url) URL.revokeObjectURL(url) }
   }, [cv, lang])
-
-  useEffect(() => { pageIdxRef.current = pageIdx; scrollRef.current = 0 }, [pageIdx])
 
   // Attach the webcam stream to the right element: a hidden source in CV mode
   // (the composite draws from it), or the visible video in "just me" mode.
@@ -240,13 +234,15 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', onClose, onSave
     if (el && streamRef.current && cameraLive) el.srcObject = streamRef.current
   }, [phase, cameraLive, mode])
 
-  // Composite draw loop (CV mode): current CV page as the frame + webcam PiP in
-  // the corner. This canvas is what gets recorded, so the CV is in the video.
+  // Composite draw loop (CV mode): the full CV (all pages stacked) as a
+  // scrollable frame + webcam PiP in the corner. This canvas is what gets
+  // recorded, so the CV is in the video.
   useEffect(() => {
     if (mode !== 'cv' || !cameraLive) { cancelAnimationFrame(rafRef.current); return }
     const canvas = compositeRef.current
     if (!canvas) return
     canvas.width = 1280; canvas.height = 720
+    scrollRef.current = 0 // start each take at the top of the CV
     const ctx = canvas.getContext('2d')
     let stop = false
     const draw = () => {
@@ -256,21 +252,33 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', onClose, onSave
       // CV page rendered fit-to-WIDTH so it's large and readable, scrolled
       // vertically by scrollRef — this is what lets you scroll the CV while
       // talking (Loom-style). Only the visible slice lands in the frame.
-      const page = pagesRef.current[pageIdxRef.current]
-      if (page && page.width) {
-        const s = W / page.width
-        const drawW = W, drawH = page.height * s
-        const maxScroll = Math.max(0, drawH - H)
+      // All CV pages stacked into one continuous vertical strip, fit-to-width,
+      // scrolled by scrollRef — so wheel scrolling runs through the ENTIRE CV
+      // (every page), not just page 1. Only on-screen slices are drawn.
+      const pages = pagesRef.current
+      if (pages.length && pages[0].width) {
+        const s = W / pages[0].width
+        const gap = 14 // dark seam between stacked pages
+        let totalH = 0
+        for (const p of pages) totalH += p.height * s
+        totalH += gap * (pages.length - 1)
+        const maxScroll = Math.max(0, totalH - H)
         scrollMaxRef.current = maxScroll
         if (scrollRef.current > maxScroll) scrollRef.current = maxScroll
         if (scrollRef.current < 0) scrollRef.current = 0
-        const y = -scrollRef.current
-        ctx.fillStyle = '#fff'; ctx.fillRect(0, y, drawW, drawH)
-        ctx.drawImage(page, 0, y, drawW, drawH)
+        let yTop = -scrollRef.current
+        for (const p of pages) {
+          const ph = p.height * s
+          if (yTop + ph > 0 && yTop < H) {
+            ctx.fillStyle = '#fff'; ctx.fillRect(0, yTop, W, ph)
+            ctx.drawImage(p, 0, yTop, W, ph)
+          }
+          yTop += ph + gap
+        }
         // Subtle scroll indicator on the right edge when there's more below/above.
         if (maxScroll > 0) {
           const trackY = 12, trackH = H - 24
-          const thumbH = Math.max(36, trackH * (H / drawH))
+          const thumbH = Math.max(36, trackH * (H / totalH))
           const thumbY = trackY + (trackH - thumbH) * (scrollRef.current / maxScroll)
           ctx.fillStyle = 'rgba(20,17,15,0.12)'; roundRect(ctx, W - 9, trackY, 4, trackH, 2); ctx.fill()
           ctx.fillStyle = 'rgba(201,123,75,0.75)'; roundRect(ctx, W - 9, thumbY, 4, thumbH, 2); ctx.fill()
@@ -505,13 +513,6 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', onClose, onSave
                   <span className="studio-rec-dot" />
                   {phase === 'paused' ? t.paused : t.recording} {fmt(elapsed)}
                   <span className="studio-rec-target"> / {t.target} {fmt(script.target)}</span>
-                </div>
-              )}
-              {mode === 'cv' && cameraLive && pageCount > 1 && (
-                <div className="studio-pagenav">
-                  <button onClick={() => setPageIdx(i => Math.max(0, i - 1))} disabled={pageIdx === 0}>‹</button>
-                  <span>{t.page} {pageIdx + 1}/{pageCount}</span>
-                  <button onClick={() => setPageIdx(i => Math.min(pageCount - 1, i + 1))} disabled={pageIdx >= pageCount - 1}>›</button>
                 </div>
               )}
             </div>
