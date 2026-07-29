@@ -7,7 +7,7 @@
 // master, per role) and the `activeVariantId` currently in view. v2 stored both
 // language versions; v1 was single-language. Older drafts migrate forward.
 
-import { normalizeCv, ensureIds, emptyCv, cvHasContent, newId } from '@lib/cv/schema'
+import { normalizeCv, ensureIds, emptyCv, cvHasContent, newId, resyncLangIds } from '@lib/cv/schema'
 import { LANGS, toLang } from '@lib/cv/lang'
 
 const KEY = 'cv-generator:draft:v3'
@@ -90,6 +90,11 @@ function parseV3(draft) {
   const base = baseFromV2Shape(draft)
   const variants = normalizeVariants(draft.variants)
   const activeVariantId = variants.some(v => v.id === draft.activeVariantId) ? draft.activeVariantId : null
+  // Older drafts were translated before ids were shared across languages, so a
+  // variant only applied in the language it was made in. Re-align every slice's
+  // ids to the active language (best-effort, only where structures match) so
+  // existing variants apply across languages too.
+  base.cvByLang = resyncLangIds(base.cvByLang, base.contentLang)
   return { ...base, variants, activeVariantId }
 }
 

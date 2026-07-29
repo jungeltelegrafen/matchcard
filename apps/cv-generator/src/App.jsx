@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { emptyCv, ensureIds, stripIds, cvHasContent, PARSE_CHAR_LIMIT } from '@lib/cv/schema'
+import { emptyCv, ensureIds, stripIds, alignIds, cvHasContent, PARSE_CHAR_LIMIT } from '@lib/cv/schema'
 import { LANGS, LANG_ENDONYM } from '@lib/cv/lang'
 import { deriveTailoredCv, variantFromPlan } from '@lib/cv/tailor'
 import { extractText } from './utils/extractText'
@@ -234,10 +234,14 @@ export default function App() {
     setGenError('')
     try {
       const translated = await translateCv(cvByLang[sourceLang], targetLang)
-      const { cv: nextCv, meta: nextMeta } = applyAiResult(
+      const { cv: applied, meta: nextMeta } = applyAiResult(
         metaByLang[targetLang], cvByLang[targetLang], translated
       )
-      nextCv.cvType = cvByLang[sourceLang].cvType
+      applied.cvType = cvByLang[sourceLang].cvType
+      // Share item ids with the source language slice so a tailored variant
+      // (keyed by _id) applies in this language too. Translation preserves item
+      // order, so a positional copy is exact.
+      const nextCv = alignIds(cvByLang[sourceLang], applied)
       setCvByLang(prev => ({ ...prev, [targetLang]: nextCv }))
       setMetaByLang(prev => ({ ...prev, [targetLang]: nextMeta }))
       setContentLang(targetLang)

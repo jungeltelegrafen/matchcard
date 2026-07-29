@@ -8,6 +8,8 @@ import {
   ensureIds,
   stripIds,
   correlateIds,
+  alignIds,
+  resyncLangIds,
   buildCvJsonSchema,
 } from '@lib/cv/schema'
 
@@ -122,6 +124,43 @@ describe('correlateIds', () => {
     expect(next.education[0]._id).toBe(keptId)
     expect(next.education[1]._id).toBeTruthy()
     expect(next.education[1]._id).not.toBe(keptId)
+  })
+})
+
+describe('alignIds', () => {
+  it('copies ids positionally so translated slices share item identity', () => {
+    const en = ensureIds(normalizeCv({ experience: [{ company: 'Acme' }, { company: 'Globex' }] }))
+    const [id0, id1] = en.experience.map(e => e._id)
+    // Same structure/order, translated text (companies differ) — positional copy.
+    const no = alignIds(en, normalizeCv({ experience: [{ company: 'Acme AS' }, { company: 'Globex AS' }] }))
+    expect(no.experience[0]._id).toBe(id0)
+    expect(no.experience[1]._id).toBe(id1)
+  })
+
+  it('mints fresh ids for positions beyond the source length', () => {
+    const en = ensureIds(normalizeCv({ education: [{ institution: 'NTNU' }] }))
+    const no = alignIds(en, normalizeCv({ education: [{ institution: 'NTNU' }, { institution: 'UiO' }] }))
+    expect(no.education[0]._id).toBe(en.education[0]._id)
+    expect(no.education[1]._id).toBeTruthy()
+    expect(no.education[1]._id).not.toBe(en.education[0]._id)
+  })
+})
+
+describe('resyncLangIds', () => {
+  it('aligns diverged slices to the canonical language where counts match', () => {
+    const en = ensureIds(normalizeCv({ experience: [{ company: 'Acme' }] }))
+    const no = ensureIds(normalizeCv({ experience: [{ company: 'Acme AS' }] }))
+    expect(no.experience[0]._id).not.toBe(en.experience[0]._id)
+    const out = resyncLangIds({ en, no }, 'en')
+    expect(out.no.experience[0]._id).toBe(en.experience[0]._id)
+  })
+
+  it('leaves sections with mismatched item counts untouched', () => {
+    const en = ensureIds(normalizeCv({ experience: [{ company: 'A' }] }))
+    const no = ensureIds(normalizeCv({ experience: [{ company: 'A' }, { company: 'B' }] }))
+    const keptId = no.experience[0]._id
+    const out = resyncLangIds({ en, no }, 'en')
+    expect(out.no.experience[0]._id).toBe(keptId)
   })
 })
 
