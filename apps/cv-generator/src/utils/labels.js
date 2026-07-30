@@ -28,7 +28,7 @@ export const L = {
     linkedin:         'LinkedIn',
     availableFrom:    'Available from',
     workPreference:   'Work preference',
-    hideContact:      'Include contact info in exports',
+    hideContact:      'Include contact info in exports · all languages',
 
     // ── Competence table ──────────────────────────────────────────
     competencesFor:      'Relevant competences for',
@@ -101,7 +101,7 @@ export const L = {
     linkedin:         'LinkedIn',
     availableFrom:    'Ledig fra',
     workPreference:   'Arbeidspreferanse',
-    hideContact:      'Inkluder kontaktinfo i eksport',
+    hideContact:      'Inkluder kontaktinfo i eksport · alle språk',
 
     // ── Competence table ──────────────────────────────────────────
     competencesFor:      'Relevante kompetanser for',
@@ -174,7 +174,7 @@ export const L = {
     linkedin:         'LinkedIn',
     availableFrom:    'Disponible desde',
     workPreference:   'Preferencia de trabajo',
-    hideContact:      'Incluir información de contacto en las exportaciones',
+    hideContact:      'Incluir contacto en exportaciones · todos los idiomas',
 
     // ── Competence table ──────────────────────────────────────────
     competencesFor:      'Competencias relevantes para',

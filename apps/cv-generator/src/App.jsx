@@ -264,6 +264,14 @@ export default function App() {
   // shared fact and edits the master. View→master index remapping keeps edits
   // pointed at the right item even though the view is filtered/reordered.
   function handleFieldEdit(path, value) {
+    // Contact-info visibility is a display preference for the same person, not
+    // translatable content — apply it to EVERY language version (like cvType),
+    // so hiding contacts on one language hides them on all exports.
+    if (path === 'personal.showContactInfo') {
+      setCvByLang(prev => Object.fromEntries(LANGS.map(l => [l, setValueAtPath(prev[l], path, value)])))
+      setMetaByLang(prev => Object.fromEntries(LANGS.map(l => [l, markUserEdit(prev[l], path)])))
+      return
+    }
     if (activeVariant) {
       if (path === 'personal.summary') { handleVariantSummary(value); return }
       const expMatch = /^experience\.(\d+)\.description$/.exec(path)
