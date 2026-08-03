@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { normalizeCv } from '@lib/cv/schema'
-import { applyPatches } from '../utils/applyPatches'
+import { applyPatches, applyPatchesReport } from '../utils/applyPatches'
 
 const base = () => normalizeCv({
   personal: { summary: 'Old summary' },
@@ -55,5 +55,60 @@ describe('applyPatches', () => {
   it('returns the same cv for empty patch lists', () => {
     const cv = base()
     expect(applyPatches(cv, [])).toBe(cv)
+  })
+})
+
+describe('applyPatchesReport', () => {
+  it('reports applied patches', () => {
+    const { applied, skipped } = applyPatchesReport(base(), [
+      { op: 'replace', path: 'personal.summary', value: 'New' },
+      { op: 'append', path: 'education', value: { institution: 'MIT' } },
+      { op: 'remove', path: 'education.0' },
+    ])
+    expect(applied).toHaveLength(3)
+    expect(skipped).toHaveLength(0)
+  })
+
+  it('reports a replace to a non-existent array index as skipped, not applied', () => {
+    const { applied, skipped } = applyPatchesReport(base(), [
+      { op: 'replace', path: 'experience.5.result', value: 'x' },
+    ])
+    expect(applied).toHaveLength(0)
+    expect(skipped).toHaveLength(1)
+    expect(skipped[0].reason).toBe('target not found')
+  })
+
+  it('reports remove of an out-of-range index as skipped', () => {
+    const { applied, skipped } = applyPatchesReport(base(), [
+      { op: 'remove', path: 'education.9' },
+    ])
+    expect(applied).toHaveLength(0)
+    expect(skipped[0].reason).toBe('item not found')
+  })
+
+  it('reports malformed and unknown-op patches as skipped', () => {
+    const { applied, skipped } = applyPatchesReport(base(), [
+      { op: 'replace' },
+      { op: 'frobnicate', path: 'personal.summary', value: 'x' },
+    ])
+    expect(applied).toHaveLength(0)
+    expect(skipped).toHaveLength(2)
+  })
+
+  it('reports append to a non-list target as skipped', () => {
+    const { applied, skipped } = applyPatchesReport(base(), [
+      { op: 'append', path: 'personal.summary', value: 'x' },
+    ])
+    expect(applied).toHaveLength(0)
+    expect(skipped[0].reason).toBe('target is not a list')
+  })
+
+  it('separates applied from skipped in a mixed batch', () => {
+    const { applied, skipped } = applyPatchesReport(base(), [
+      { op: 'replace', path: 'personal.summary', value: 'ok' },
+      { op: 'replace', path: 'experience.0.result', value: 'nope' },
+    ])
+    expect(applied).toHaveLength(1)
+    expect(skipped).toHaveLength(1)
   })
 })

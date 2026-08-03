@@ -112,6 +112,8 @@ export default function App() {
   const [previewOpen, setPreviewOpen] = useState(false)
   const [hoveredSection, setHoveredSection] = useState(null)
   const [changedPaths, setChangedPaths] = useState(new Set())
+  // One-level undo for the last chat edit — snapshot of the slices it touched.
+  const [chatUndo, setChatUndo] = useState(null)
   const [showRestored, setShowRestored] = useState(() => draftHasContent(draft))
   const [showFeedbackCta, setShowFeedbackCta] = useState(true)
 
@@ -167,9 +169,35 @@ export default function App() {
     })
   }
 
+  // Revert the last chat edit by restoring the snapshot taken just before it.
+  function undoChatChange() {
+    const s = chatUndo
+    if (!s) return
+    setCvByLang(prev => ({ ...prev, [s.contentLang]: s.cv }))
+    setMetaByLang(prev => ({ ...prev, [s.contentLang]: s.meta }))
+    if (s.variant) setVariants(prev => prev.map(v => (v.id === s.variantId ? s.variant : v)))
+    setChangedPaths(new Set())
+    setChatUndo(null)
+  }
+
+  // Keep the change, just clear the highlight + retire the undo.
+  function dismissChatChange() {
+    setChangedPaths(new Set())
+    setChatUndo(null)
+  }
+
   async function handleGenerate(files, rawText, directCv = null, patches = null) {
     // Generation and file/text parsing always build the MASTER facts.
     if (directCv) {
+      // Snapshot the slices this chat edit can touch, so it can be undone in one
+      // click. Only reached when at least one patch actually applied.
+      setChatUndo({
+        contentLang,
+        cv: structuredClone(masterCv),
+        meta: structuredClone(meta),
+        variantId: activeVariantId,
+        variant: activeVariant ? structuredClone(activeVariant) : null,
+      })
       // Chat while a variant is active: route summary + experience-description
       // edits to the variant's overrides (what the user sees), and everything
       // else to the master — mirroring manual editing in a tailored view.
@@ -227,6 +255,8 @@ export default function App() {
       const { cv: nextCv, meta: nextMeta } = applyAiResult(meta, masterCv, newCv, { keepSections: ['competences'] })
       setActiveCv(nextCv)
       setActiveMeta(nextMeta)
+      setChangedPaths(new Set())
+      setChatUndo(null)
     } catch (err) {
       setGenError(err.message || 'Something went wrong. Please try again.')
     } finally {
@@ -264,6 +294,9 @@ export default function App() {
   // shared fact and edits the master. View→master index remapping keeps edits
   // pointed at the right item even though the view is filtered/reordered.
   function handleFieldEdit(path, value) {
+    // A manual edit retires the chat-undo — undoing after further hand-edits
+    // would silently discard them.
+    setChatUndo(prev => (prev ? null : prev))
     // Contact-info visibility is a display preference for the same person, not
     // translatable content — apply it to EVERY language version (like cvType),
     // so hiding contacts on one language hides them on all exports.
@@ -299,6 +332,7 @@ export default function App() {
     // Structural changes (add/remove/reorder whole items) are Master-only — in a
     // tailored view those controls are disabled, so this is a no-op guard.
     if (activeVariant) return
+    setChatUndo(prev => (prev ? null : prev))
     const next = ensureIds({ ...masterCv, [sectionKey]: newData })
     setMetaByLang(prev => ({ ...prev, [contentLang]: remapMeta(prev[contentLang], masterCv, next) }))
     setCvByLang(prev => ({ ...prev, [contentLang]: next }))
@@ -393,6 +427,7 @@ export default function App() {
     setActiveVariantId(null)
     setTailorOpen(false)
     setChangedPaths(new Set())
+    setChatUndo(null)
     setGenWarning('')
     setShowRestored(false)
   }
@@ -510,6 +545,27 @@ export default function App() {
           reviewLang={contentLang}
           onFeedback={items => setActiveFeedback(prev => [...items, ...prev])}
         />
+
+        {chatUndo && (
+          <div className="chat-change-bar">
+            <span className="chat-change-bar-label">
+              <span className="chat-change-bar-mark">✎</span>
+              {changedPaths.size > 0
+                ? (uiLang === 'no'
+                    ? `Chat oppdaterte ${changedPaths.size} felt`
+                    : `Chat updated ${changedPaths.size} field${changedPaths.size !== 1 ? 's' : ''}`)
+                : (uiLang === 'no' ? 'Chat oppdaterte CV-en' : 'Chat updated your CV')}
+            </span>
+            <div className="chat-change-bar-actions">
+              <button className="chat-change-bar-btn" onClick={undoChatChange}>
+                {uiLang === 'no' ? '↶ Angre' : '↶ Undo'}
+              </button>
+              <button className="chat-change-bar-btn chat-change-bar-btn--ghost" onClick={dismissChatChange}>
+                {uiLang === 'no' ? 'Lukk' : 'Dismiss'}
+              </button>
+            </div>
+          </div>
+        )}
 
         <div className="cv-columns">
           {activeVariant ? (

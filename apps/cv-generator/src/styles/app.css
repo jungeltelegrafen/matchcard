@@ -689,6 +689,31 @@ html {
   color: rgba(255,255,255,0.5);
   font-style: italic;
 }
+
+/* One message + its optional change-receipt, stacked. */
+.input-chat-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+/* Ground-truth "what actually changed" under an assistant reply. */
+.chat-receipt {
+  align-self: flex-start;
+  max-width: 88%;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-left: 3px;
+}
+.chat-receipt-line {
+  display: flex;
+  gap: 5px;
+  font-size: 0.7rem;
+  line-height: 1.4;
+}
+.chat-receipt-mark { flex-shrink: 0; font-weight: 700; }
+.chat-receipt-line--ok   { color: #86efac; }
+.chat-receipt-line--warn { color: #fcd34d; }
 .input-chat-examples {
   display: flex;
   align-items: center;
@@ -3422,6 +3447,43 @@ textarea.cv-field {
   cursor: pointer;
 }
 .variant-notice-btn:hover { opacity: 0.9; }
+
+/* ── Chat-change bar — undo/dismiss the last chat edit (ties to the field
+   highlights) ── */
+.chat-change-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin: 0 auto 10px;
+  padding: 6px 14px;
+  font-size: 0.78rem;
+  color: #2563EB;
+  background: #EFF6FF;
+  border: 1px solid #BFDBFE;
+  border-radius: 8px;
+  width: fit-content;
+}
+.chat-change-bar-label { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; }
+.chat-change-bar-mark { font-weight: 700; }
+.chat-change-bar-actions { display: flex; gap: 6px; }
+.chat-change-bar-btn {
+  font-family: inherit;
+  font-size: 0.76rem;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 6px;
+  border: 1px solid #3B82F6;
+  background: #3B82F6;
+  color: #fff;
+  cursor: pointer;
+}
+.chat-change-bar-btn:hover { opacity: 0.9; }
+.chat-change-bar-btn--ghost {
+  background: transparent;
+  color: #2563EB;
+  border-color: #BFDBFE;
+}
 
 /* ── Locked editor while viewing a tailored variant ── */
 /* Tailored view: text fields stay editable (they edit the master fact, or the

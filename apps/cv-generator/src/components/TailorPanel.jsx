@@ -114,7 +114,7 @@ export default function TailorPanel({ lang, busy, error, onCancel, onCreate }) {
           <UrlFetchField
             lang={lang}
             disabled={working}
-            placeholder={no ? '…eller lim inn lenke til stillingsannonsen' : '…or paste a link to the job ad'}
+            placeholder={no ? '…eller lim inn en annonse-lenke' : '…or paste a job-ad link'}
             hint={no
               ? 'Offentlige sider (uten innlogging/betalingsmur). Teksten legges til over for gjennomgang.'
               : 'Public pages only (no login/paywall). The fetched text is added above for review.'}

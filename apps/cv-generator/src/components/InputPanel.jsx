@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { chatWithClaude } from '../utils/parseWithClaude'
-import { applyPatches } from '../utils/applyPatches'
+import { applyPatchesReport } from '../utils/applyPatches'
+import { buildReceipt } from '../utils/patchLabels'
 import UrlFetchField from './UrlFetchField'
 
 const ACCEPT = '.pdf,.docx,.txt'
@@ -49,13 +50,17 @@ export default function InputPanel({ cv, lang, onGenerate, generating, error, wa
         lang,
         onDelta: partial => setMessages([...next, { role: 'assistant', content: partial }]),
       })
-      setMessages([...next, { role: 'assistant', content: reply || 'Done.' }])
-      if (patches?.length > 0) {
-        // Pass both the applied CV (used when editing the master directly) and
-        // the raw patches (so a tailored view can route summary/description
-        // edits to its overrides).
-        const patchedCv = applyPatches(cv, patches)
-        onGenerate([], '', patchedCv, patches)
+      // Ground-truth reconciliation: apply against the CV the model saw and see
+      // what actually landed. The receipt (shown under the reply) reflects the
+      // real result, so the prose can't silently claim a change that failed.
+      const { cv: patchedCv, applied, skipped } = applyPatchesReport(cv, patches)
+      const receipt = (applied.length || skipped.length) ? buildReceipt(applied, skipped) : null
+      setMessages([...next, { role: 'assistant', content: reply || 'Done.', receipt }])
+      if (applied.length > 0) {
+        // Pass the applied CV (used when editing the master directly) and the
+        // applied patches (so a tailored view can route summary/description
+        // edits to its overrides). Only the patches that really landed.
+        onGenerate([], '', patchedCv, applied)
       }
     } catch (err) {
       const errMsg = err.message || 'Something went wrong. Please try again.'
@@ -139,8 +144,8 @@ export default function InputPanel({ cv, lang, onGenerate, generating, error, wa
                   <UrlFetchField
                     lang="en"
                     disabled={generating}
-                    placeholder="…or paste a public link to fetch (your profile, portfolio, a page)"
-                    hint="Public pages only (no login/paywall). The fetched text is added below for you to review."
+                    placeholder="…or paste a public link to fetch"
+                    hint="Your public profile, portfolio or page (no login/paywall). Fetched text is added above to review."
                     onText={t => setRawText(prev => (prev ? prev + t : t.replace(/^\n+/, '')))}
                   />
                 </div>
@@ -184,12 +189,30 @@ export default function InputPanel({ cv, lang, onGenerate, generating, error, wa
               {messages.map((m, i) => {
                 const isThinking = chatBusy && i === messages.length - 1
                   && m.role === 'assistant' && !m.content
+                const r = m.receipt
                 return (
-                  <div
-                    key={i}
-                    className={`input-chat-bubble input-chat-bubble--${m.role}${isThinking ? ' input-chat-bubble--thinking' : ''}`}
-                  >
-                    {isThinking ? <><span className="spinner-sm" /> Thinking…</> : m.content}
+                  <div key={i} className="input-chat-row">
+                    <div
+                      className={`input-chat-bubble input-chat-bubble--${m.role}${isThinking ? ' input-chat-bubble--thinking' : ''}`}
+                    >
+                      {isThinking ? <><span className="spinner-sm" /> Thinking…</> : m.content}
+                    </div>
+                    {r && (r.changed.length > 0 || r.failed.length > 0) && (
+                      <div className="chat-receipt">
+                        {r.changed.length > 0 && (
+                          <div className="chat-receipt-line chat-receipt-line--ok">
+                            <span className="chat-receipt-mark">✓</span>
+                            Updated: {r.changed.join(', ')}
+                          </div>
+                        )}
+                        {r.failed.length > 0 && (
+                          <div className="chat-receipt-line chat-receipt-line--warn">
+                            <span className="chat-receipt-mark">⚠</span>
+                            {r.changed.length === 0 ? 'No changes applied' : 'Couldn’t apply'}: {r.failed.map(f => `${f.label} (${f.reason})`).join(', ')}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )
               })}
