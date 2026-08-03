@@ -3240,6 +3240,72 @@ textarea.cv-field {
   color: #cfe0ef;
   border: 1px solid rgba(125,170,203,0.4);
 }
+.export-btn--branding {
+  background: rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.72);
+  border: 1px solid rgba(255,255,255,0.18);
+}
+
+/* ── Branding header/footer in the editor CV card (WYSIWYG, page-1 only) ── */
+.cv-branding-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+  position: relative;
+}
+.cv-brand-logo, .cv-brand-photo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.cv-brand-logo { height: 44px; max-width: 180px; }
+.cv-brand-logo img { max-height: 44px; max-width: 180px; object-fit: contain; }
+.cv-brand-photo { width: 68px; height: 68px; border-radius: 50%; background: #f2ede8; }
+.cv-brand-photo img { width: 68px; height: 68px; object-fit: cover; }
+.cv-brand-slot {
+  font-size: 0.7rem;
+  color: #b7a996;
+  border: 1px dashed #d9cfc4;
+  border-radius: 8px;
+  padding: 8px 12px;
+  white-space: nowrap;
+}
+.cv-brand-photo .cv-brand-slot { border-radius: 50%; width: 68px; height: 68px; display: flex; align-items: center; justify-content: center; text-align: center; padding: 0; }
+.cv-brand-photo-remove {
+  position: absolute; top: -6px; right: -6px;
+  width: 18px; height: 18px; border-radius: 50%;
+  border: none; background: rgba(0,0,0,0.55); color: #fff; font-size: 0.7rem; cursor: pointer; line-height: 1;
+}
+.cv-branding-footer {
+  margin-top: 28px;
+  padding-top: 12px;
+  border-top: 2px solid var(--accent);
+  font-size: 0.66rem;
+  color: var(--muted);
+  cursor: pointer;
+}
+.cv-bf-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+.cv-bf-top { font-weight: 600; }
+.cv-bf-left { text-align: left; }
+.cv-bf-center { text-align: center; }
+.cv-bf-right { text-align: right; }
+
+/* Branding modal logo picker */
+.branding-logo-row { display: flex; align-items: center; gap: 14px; }
+.branding-logo-preview {
+  width: 160px; height: 60px;
+  border: 1px dashed #d9cfc4; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; overflow: hidden; background: #fff; flex-shrink: 0;
+}
+.branding-logo-preview img { max-width: 156px; max-height: 56px; object-fit: contain; }
+.branding-logo-empty { font-size: 0.72rem; color: #b7a996; }
+.branding-logo-actions { display: flex; gap: 8px; }
 
 /* ── Offer (Tilbudsformat) modal ─────────────────────────────────── */
 .offer-box { max-width: 640px; width: 92vw; }

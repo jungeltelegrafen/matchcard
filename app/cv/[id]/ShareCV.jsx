@@ -2,6 +2,7 @@
 import './share.css'
 import { useState, Fragment } from 'react'
 import { getL, videoPlacement } from '@/apps/cv-generator/src/utils/labels'
+import { hasCompanyFooter } from '@/apps/cv-generator/src/utils/branding'
 
 // Turn a stored playback URL into an embeddable src (or null → external link).
 function videoEmbed(url) {
@@ -38,8 +39,10 @@ export default function ShareCV({ cv, lang = 'en' }) {
     portfolio = [],
     videos = [],
     cvType = 'technical',
+    branding = {},
   } = cv
 
+  const showBrandFooter = hasCompanyFooter(branding)
   const mgmt = cvType === 'management'
   const showContact = personal.showContactInfo !== false
   const fullName = [personal.firstName, personal.lastName].filter(Boolean).join(' ')
@@ -95,6 +98,18 @@ export default function ShareCV({ cv, lang = 'en' }) {
 
       {/* CV sheet */}
       <main className="cv-sheet">
+
+        {/* Branding header — logo left, profile photo right */}
+        {(branding.logo || branding.profilePicture) && (
+          <div className="cv-sheet-brand">
+            {branding.logo
+              ? <img className="cv-sheet-logo" src={branding.logo} alt="" />
+              : <span />}
+            {branding.profilePicture
+              ? <img className="cv-sheet-photo" src={branding.profilePicture} alt="" />
+              : <span />}
+          </div>
+        )}
 
         {/* Header */}
         <div className="cv-sheet-head">
@@ -340,6 +355,23 @@ export default function ShareCV({ cv, lang = 'en' }) {
               )
             })}
           </section>
+        )}
+
+        {/* Branding footer — company info. HTML can't pin this to physical
+            page 1, so it renders once at the sheet bottom. */}
+        {showBrandFooter && (
+          <div className="cv-sheet-footer">
+            <div className="cv-sheet-footer-row">
+              <span className="cv-sf-left">{branding.companyName || ''}</span>
+              <span className="cv-sf-center">{branding.companyAddress || ''}</span>
+              <span className="cv-sf-right">{branding.companyWebsite || ''}</span>
+            </div>
+            <div className="cv-sheet-footer-row">
+              <span className="cv-sf-left" />
+              <span className="cv-sf-center">{branding.companyEmail || ''}</span>
+              <span className="cv-sf-right">{branding.companyPhone || ''}</span>
+            </div>
+          </div>
         )}
 
       </main>

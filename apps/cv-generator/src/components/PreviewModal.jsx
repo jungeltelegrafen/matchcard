@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { renderPdfBlob } from '../utils/renderPdf'
 
-export default function PreviewModal({ cv, lang = 'en', onClose }) {
+export default function PreviewModal({ cv, lang = 'en', branding, onClose }) {
   const [url, setUrl]       = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError]   = useState(null)
@@ -12,7 +12,7 @@ export default function PreviewModal({ cv, lang = 'en', onClose }) {
     setLoading(true)
     setError(null)
 
-    renderPdfBlob(cv, lang)
+    renderPdfBlob(cv, lang, branding)
       .then(blob => {
         if (cancelled) return
         if (urlRef.current) URL.revokeObjectURL(urlRef.current)
@@ -35,7 +35,7 @@ export default function PreviewModal({ cv, lang = 'en', onClose }) {
         urlRef.current = null
       }
     }
-  }, [cv, lang])
+  }, [cv, lang, branding])
 
   return (
     <div className="modal-overlay" onClick={onClose}>

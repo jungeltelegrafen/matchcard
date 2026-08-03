@@ -84,6 +84,43 @@ body {
   padding: 56px 60px;
 }
 
+/* ── Branding header (logo left, profile photo right) ─────────────── */
+.cv-sheet-brand {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.cv-sheet-logo {
+  max-height: 48px;
+  max-width: 180px;
+  object-fit: contain;
+}
+.cv-sheet-photo {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+/* ── Branding footer (company info; mirrors PDF first-page footer) ── */
+.cv-sheet-footer {
+  margin-top: 32px;
+  padding-top: 8px;
+  border-top: 1px solid var(--accent);
+  font-size: 0.68rem;
+}
+.cv-sheet-footer-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  margin-top: 2px;
+}
+.cv-sf-left   { text-align: left;   color: var(--navy); font-weight: 700; }
+.cv-sf-center { text-align: center; color: var(--muted); }
+.cv-sf-right  { text-align: right;  color: var(--muted); }
+
 /* ── Header block (mirrors PDF CVHeader: 2px accent rule) ─────────── */
 .cv-sheet-head {
   margin-bottom: 28px;

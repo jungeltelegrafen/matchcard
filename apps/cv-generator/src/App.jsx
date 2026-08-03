@@ -5,6 +5,7 @@ import { deriveTailoredCv, variantFromPlan, anonymousVariant } from '@lib/cv/tai
 import { extractText } from './utils/extractText'
 import { parseWithClaude, translateCv, tailorCv, anonymizeCvText } from './utils/parseWithClaude'
 import { emptyOffer } from './utils/offer'
+import { loadCompanyBranding, saveCompanyBranding } from './utils/branding'
 import { loadDraft, saveDraft, clearDraft, draftHasContent } from './utils/draftStorage'
 import { applyPatches } from './utils/applyPatches'
 import {
@@ -25,6 +26,7 @@ import LeftSidebar from './components/LeftSidebar'
 import RightSidebar from './components/RightSidebar'
 import PreviewModal from './components/PreviewModal'
 import OfferModal from './components/OfferModal'
+import BrandingModal from './components/BrandingModal'
 import ExportFooter from './components/ExportFooter'
 import TailorPanel from './components/TailorPanel'
 import TailoringReview from './components/TailoringReview'
@@ -98,6 +100,11 @@ export default function App() {
   const [metaByLang, setMetaByLang]       = useState(() => draft?.metaByLang     ?? Object.fromEntries(LANGS.map(l => [l, emptyMeta()])))
   const [feedbackByLang, setFeedbackByLang] = useState(() => draft?.feedbackByLang ?? Object.fromEntries(LANGS.map(l => [l, []])))
   const [offerByLang, setOfferByLang]     = useState(() => draft?.offerByLang   ?? Object.fromEntries(LANGS.map(l => [l, emptyOffer()])))
+  // Company branding is set once and reused for every consultant (its own store);
+  // the profile photo is per-CV (in the draft).
+  const [companyBranding, setCompanyBranding] = useState(loadCompanyBranding)
+  const [profilePicture, setProfilePicture]   = useState(() => draft?.profilePicture ?? '')
+  const [brandingOpen, setBrandingOpen]       = useState(false)
   const [uiLang, setUiLang]               = useState(() => draft?.uiLang      ?? 'en')
   const [contentLang, setContentLang]     = useState(() => draft?.contentLang ?? 'en')
 
@@ -154,11 +161,17 @@ export default function App() {
   // Debounced autosave — master (both languages), toggles, and variants
   useEffect(() => {
     const t = setTimeout(
-      () => saveDraft({ cvByLang, metaByLang, feedbackByLang, offerByLang, uiLang, contentLang, variants, activeVariantId }),
+      () => saveDraft({ cvByLang, metaByLang, feedbackByLang, offerByLang, profilePicture, uiLang, contentLang, variants, activeVariantId }),
       600
     )
     return () => clearTimeout(t)
-  }, [cvByLang, metaByLang, feedbackByLang, offerByLang, uiLang, contentLang, variants, activeVariantId])
+  }, [cvByLang, metaByLang, feedbackByLang, offerByLang, profilePicture, uiLang, contentLang, variants, activeVariantId])
+
+  // Company branding lives in its own store so it survives Reset / a new CV.
+  useEffect(() => { saveCompanyBranding(companyBranding) }, [companyBranding])
+
+  // What renderers receive: company branding + the per-CV profile photo.
+  const branding = { ...companyBranding, profilePicture }
 
   // ── active master-slot setters ──────────────────────────────────────────
   const setActiveCv   = next => setCvByLang(prev => ({ ...prev, [contentLang]: typeof next === 'function' ? next(prev[contentLang]) : next }))
@@ -470,6 +483,7 @@ export default function App() {
     setMetaByLang(Object.fromEntries(LANGS.map(l => [l, emptyMeta()])))
     setFeedbackByLang(Object.fromEntries(LANGS.map(l => [l, []])))
     setOfferByLang(Object.fromEntries(LANGS.map(l => [l, emptyOffer()])))
+    setProfilePicture('') // company branding intentionally persists across Reset
     setVariants([])
     setActiveVariantId(null)
     setTailorOpen(false)
@@ -655,6 +669,9 @@ export default function App() {
               commentCounts={commentCounts}
               changedPaths={changedPaths}
               onChangeSeen={markChangeSeen}
+              branding={branding}
+              onEditBranding={() => setBrandingOpen(true)}
+              onSetProfilePicture={setProfilePicture}
             />
           </div>
 
@@ -675,7 +692,16 @@ export default function App() {
       </main>
 
       {previewOpen && (
-        <PreviewModal cv={viewCv} lang={contentLang} onClose={() => setPreviewOpen(false)} />
+        <PreviewModal cv={viewCv} lang={contentLang} branding={branding} onClose={() => setPreviewOpen(false)} />
+      )}
+
+      {brandingOpen && (
+        <BrandingModal
+          branding={companyBranding}
+          onChange={setCompanyBranding}
+          uiLang={uiLang}
+          onClose={() => setBrandingOpen(false)}
+        />
       )}
 
       {offerOpen && (
@@ -705,9 +731,11 @@ export default function App() {
         uiLang={uiLang}
         filename={filename}
         offer={offerByLang[contentLang]}
+        branding={branding}
         onPreview={() => setPreviewOpen(true)}
         onContentLangChange={setContentLang}
         onOpenOffer={() => setOfferOpen(true)}
+        onOpenBranding={() => setBrandingOpen(true)}
       />
     </div>
   )

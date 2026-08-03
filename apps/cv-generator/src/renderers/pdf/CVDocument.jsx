@@ -1,6 +1,7 @@
 import { Document, Page, StyleSheet, View, Text } from '@react-pdf/renderer'
 import { theme } from '../../theme'
 import { getL } from '../../utils/labels'
+import { hasCompanyFooter } from '../../utils/branding'
 import CVHeader from './CVHeader'
 import CVSkills from './CVSkills'
 import CVCompetences from './CVCompetences'
@@ -30,17 +31,31 @@ const styles = StyleSheet.create({
     lineHeight: 1.5,
     marginBottom: theme.spacing.sectionGap,
   },
+  footer: {
+    position: 'absolute',
+    left: theme.spacing.pagePaddingX,
+    right: theme.spacing.pagePaddingX,
+    bottom: 16,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.accent,
+    paddingTop: 5,
+  },
+  footerRow: { flexDirection: 'row', marginTop: 2 },
+  footerLeft:   { flex: 1, fontSize: 7, textAlign: 'left', color: theme.colors.primary, fontFamily: theme.fonts.heading },
+  footerCenter: { flex: 1, fontSize: 7, textAlign: 'center', color: theme.colors.muted },
+  footerRight:  { flex: 1, fontSize: 7, textAlign: 'right', color: theme.colors.muted },
 })
 
-export default function CVDocument({ data, lang = 'en' }) {
+export default function CVDocument({ data, lang = 'en', branding = {} }) {
   const cvType = data.cvType || 'technical'
   const lb = getL(lang)
+  const showFooter = hasCompanyFooter(branding)
 
   return (
     <Document>
-      <Page size={theme.pageSize} style={styles.page}>
+      <Page size={theme.pageSize} style={[styles.page, showFooter && { paddingBottom: 68 }]}>
 
-        <CVHeader personal={data.personal} lang={lang} />
+        <CVHeader personal={data.personal} lang={lang} branding={branding} />
 
         {data.personal.summary ? (
           <View style={{ marginBottom: theme.spacing.sectionGap }}>
@@ -74,6 +89,27 @@ export default function CVDocument({ data, lang = 'en' }) {
         <CVLanguages items={data.languages} lang={lang} />
 
         <CVPortfolio items={data.portfolio} lang={lang} />
+
+        {showFooter && (
+          <View
+            fixed
+            style={styles.footer}
+            render={({ pageNumber }) => (pageNumber === 1 ? (
+              <View>
+                <View style={styles.footerRow}>
+                  <Text style={styles.footerLeft}>{branding.companyName || ''}</Text>
+                  <Text style={styles.footerCenter}>{branding.companyAddress || ''}</Text>
+                  <Text style={styles.footerRight}>{branding.companyWebsite || ''}</Text>
+                </View>
+                <View style={styles.footerRow}>
+                  <Text style={styles.footerLeft} />
+                  <Text style={styles.footerCenter}>{branding.companyEmail || ''}</Text>
+                  <Text style={styles.footerRight}>{branding.companyPhone || ''}</Text>
+                </View>
+              </View>
+            ) : null)}
+          />
+        )}
 
       </Page>
     </Document>

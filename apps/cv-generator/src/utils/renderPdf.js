@@ -10,9 +10,9 @@ import CVDocument from '../renderers/pdf/CVDocument'
 // Serializing render calls guarantees a single yoga instance.
 let queue = Promise.resolve()
 
-export function renderPdfBlob(cv, lang) {
+export function renderPdfBlob(cv, lang, branding) {
   const task = queue.then(() =>
-    pdf(React.createElement(CVDocument, { data: cv, lang })).toBlob()
+    pdf(React.createElement(CVDocument, { data: cv, lang, branding })).toBlob()
   )
   queue = task.catch(() => {})
   return task

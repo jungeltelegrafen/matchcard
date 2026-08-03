@@ -65,7 +65,7 @@ function barColor(pct) {
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
-export default function ExportFooter({ cvByLang, contentLang, uiLang, filename, offer, onPreview, onContentLangChange, onOpenOffer }) {
+export default function ExportFooter({ cvByLang, contentLang, uiLang, filename, offer, branding, onPreview, onContentLangChange, onOpenOffer, onOpenBranding }) {
   const [exporting,     setExporting]     = useState(false)
   const [emailOpen,     setEmailOpen]     = useState(false)
   const [exportStatus,  setExportStatus]  = useState('')
@@ -114,14 +114,14 @@ export default function ExportFooter({ cvByLang, contentLang, uiLang, filename, 
 
   function handlePdf() {
     run(no ? 'Klargjør PDF…' : 'Preparing PDF…', async () => {
-      const blob = await renderPdfBlob(outputCv(contentLang), contentLang)
+      const blob = await renderPdfBlob(outputCv(contentLang), contentLang, branding)
       saveAs(blob, `${fileFor(contentLang)}.pdf`)
     })
   }
 
   function handleDocx() {
     run(no ? 'Klargjør Word…' : 'Preparing Word…', () =>
-      downloadDocx(outputCv(contentLang), `${fileFor(contentLang)}.docx`, contentLang))
+      downloadDocx(outputCv(contentLang), `${fileFor(contentLang)}.docx`, contentLang, branding))
   }
 
   function handleEmail(attachFormat) {
@@ -143,7 +143,7 @@ export default function ExportFooter({ cvByLang, contentLang, uiLang, filename, 
       const res = await fetch('/api/cv/share', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cv: outputCv(contentLang), lang: contentLang, filename: fileFor(contentLang) }),
+        body: JSON.stringify({ cv: { ...outputCv(contentLang), branding }, lang: contentLang, filename: fileFor(contentLang) }),
       })
       if (!res.ok) throw new Error('Share failed')
       const { url } = await res.json()
@@ -226,6 +226,10 @@ export default function ExportFooter({ cvByLang, contentLang, uiLang, filename, 
 
           <button className="export-btn export-btn--preview" onClick={onPreview}>
             {no ? 'Forhåndsvis' : 'Preview'}
+          </button>
+
+          <button className="export-btn export-btn--branding" onClick={onOpenBranding}>
+            {no ? '❖ Merkevare' : '❖ Branding'}
           </button>
 
           <button className="export-btn export-btn--pdf" onClick={handlePdf} disabled={exporting}>

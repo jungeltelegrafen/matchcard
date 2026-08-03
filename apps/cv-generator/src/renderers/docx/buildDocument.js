@@ -1,4 +1,4 @@
-import { Document, Packer, Paragraph } from 'docx'
+import { Document, Packer, Paragraph, Header, Footer } from 'docx'
 import { saveAs } from 'file-saver'
 import { theme } from '../../theme'
 import { hex } from './buildUtils'
@@ -12,13 +12,14 @@ import { buildCertsCourses } from './buildCertsCourses'
 import { buildLanguages } from './buildLanguages'
 import { buildVideos } from './buildVideos'
 import { buildPortfolio } from './buildPortfolio'
+import { brandHeader, brandFooter } from './buildBranding'
 
 function section(paras) {
   if (!paras.length) return []
   return [new Paragraph({ children: [], spacing: { before: 0, after: 0 } }), ...paras]
 }
 
-function buildDoc(data, lang = 'en') {
+function buildDoc(data, lang = 'en', branding = {}) {
   const cvType = data.cvType || 'technical'
 
   return new Document({
@@ -32,8 +33,12 @@ function buildDoc(data, lang = 'en') {
     sections: [
       {
         properties: {
+          // titlePage → distinct first-page header/footer (branding on page 1 only).
+          titlePage: true,
           page: { margin: { top: 800, bottom: 800, left: 1000, right: 1000 } },
         },
+        headers: { first: brandHeader(branding), default: new Header({ children: [] }) },
+        footers: { first: brandFooter(branding), default: new Footer({ children: [] }) },
         children: [
           ...buildHeader(data.personal, lang),
           ...section(buildVideos(data.videos, lang)),
@@ -52,11 +57,11 @@ function buildDoc(data, lang = 'en') {
   })
 }
 
-export async function downloadDocx(data, filename = 'cv.docx', lang = 'en') {
-  const blob = await Packer.toBlob(buildDoc(data, lang))
+export async function downloadDocx(data, filename = 'cv.docx', lang = 'en', branding) {
+  const blob = await Packer.toBlob(buildDoc(data, lang, branding))
   saveAs(blob, filename)
 }
 
-export async function buildDocxBlob(data, lang = 'en') {
-  return Packer.toBlob(buildDoc(data, lang))
+export async function buildDocxBlob(data, lang = 'en', branding) {
+  return Packer.toBlob(buildDoc(data, lang, branding))
 }

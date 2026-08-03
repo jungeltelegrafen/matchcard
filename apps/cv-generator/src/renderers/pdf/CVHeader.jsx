@@ -44,9 +44,17 @@ const styles = StyleSheet.create({
     color: theme.colors.muted,
   },
   logo: {
-    width: 80,
+    maxWidth: 120,
     height: 40,
     objectFit: 'contain',
+    marginRight: 14,
+  },
+  photo: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    objectFit: 'cover',
+    marginLeft: 14,
   },
 })
 
@@ -60,12 +68,13 @@ function InfoRow({ label, value }) {
   )
 }
 
-export default function CVHeader({ personal, lang = 'en' }) {
+export default function CVHeader({ personal, lang = 'en', branding = {} }) {
   const lb = getL(lang)
   const showContact = personal.showContactInfo !== false
 
   return (
     <View style={styles.header}>
+      {branding.logo ? <Image style={styles.logo} src={branding.logo} /> : null}
       <View style={styles.left}>
         <Text style={styles.name}>
           {[personal.firstName, personal.lastName].filter(Boolean).join(' ')}
@@ -81,7 +90,7 @@ export default function CVHeader({ personal, lang = 'en' }) {
         <InfoRow label={lb.availableFrom}    value={personal.availableFrom} />
         <InfoRow label={lb.workPreference}   value={personal.workPreference} />
       </View>
-      <Image style={styles.logo} src={theme.logoPath} />
+      {branding.profilePicture ? <Image style={styles.photo} src={branding.profilePicture} /> : null}
     </View>
   )
 }

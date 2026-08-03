@@ -128,6 +128,7 @@ function baseFromV2Shape(draft) {
     metaByLang: objByLang(draft.metaByLang, m => (m && typeof m === 'object' ? m : {})),
     feedbackByLang: objByLang(draft.feedbackByLang, f => (Array.isArray(f) ? f : [])),
     offerByLang: objByLang(draft.offerByLang, normalizeOffer),
+    profilePicture: typeof draft.profilePicture === 'string' ? draft.profilePicture : '',
     uiLang: toLang(draft.uiLang),
     contentLang: toLang(draft.contentLang),
     savedAt: typeof draft.savedAt === 'number' ? draft.savedAt : null,
@@ -184,7 +185,7 @@ function migrateV1(draft) {
   }
 }
 
-export function saveDraft({ cvByLang, metaByLang, feedbackByLang, offerByLang, uiLang, contentLang, variants, activeVariantId }) {
+export function saveDraft({ cvByLang, metaByLang, feedbackByLang, offerByLang, profilePicture, uiLang, contentLang, variants, activeVariantId }) {
   try {
     localStorage.setItem(KEY, JSON.stringify({
       v: 4,
@@ -193,6 +194,7 @@ export function saveDraft({ cvByLang, metaByLang, feedbackByLang, offerByLang, u
       metaByLang,
       feedbackByLang,
       offerByLang,
+      profilePicture: profilePicture ?? '',
       uiLang,
       contentLang,
       variants: variants ?? [],
