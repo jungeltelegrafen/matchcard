@@ -42,6 +42,8 @@ export const L = {
     projects:            'Projects',
     addCompetence:       '+ Add competence',
     competenceEmpty:     'Add one card per competence requirement.',
+    simpleCompetence:    'Simple format',
+    competenceSimplePlaceholder: 'Describe this competence — relevant experience, and what you actually did and built…',
 
     // ── Buttons ───────────────────────────────────────────────────
     remove:              'Remove',
@@ -115,6 +117,8 @@ export const L = {
     projects:            'Prosjekter',
     addCompetence:       '+ Legg til kompetanse',
     competenceEmpty:     'Legg til ett kort per kompetansekrav.',
+    simpleCompetence:    'Enkelt format',
+    competenceSimplePlaceholder: 'Beskriv kompetansen — relevant erfaring, og hva du faktisk gjorde og bygde…',
 
     // ── Buttons ───────────────────────────────────────────────────
     remove:              'Fjern',
@@ -188,6 +192,8 @@ export const L = {
     projects:            'Proyectos',
     addCompetence:       '+ Añadir competencia',
     competenceEmpty:     'Añade una tarjeta por cada requisito de competencia.',
+    simpleCompetence:    'Formato simple',
+    competenceSimplePlaceholder: 'Describe esta competencia — experiencia relevante, y qué hiciste y construiste realmente…',
 
     // ── Buttons ───────────────────────────────────────────────────
     remove:              'Eliminar',

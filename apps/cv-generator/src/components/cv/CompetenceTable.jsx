@@ -82,7 +82,7 @@ function hasFilledItem(items) {
 
 export default function CompetenceTable({ data, lang = 'en', meta, onFieldEdit, onChange, onAccept, onDismiss, experiences }) {
   const lb = getL(lang)
-  const { enabled, projectLabel = '', items } = data
+  const { enabled, simpleFormat = false, projectLabel = '', items } = data
 
   // Auto-enable when AI imports competences with filled items
   const prevItemCount = useRef(items.length)
@@ -130,6 +130,17 @@ export default function CompetenceTable({ data, lang = 'en', meta, onFieldEdit, 
         </button>
       </div>
 
+      {enabled && (
+        <label className="cv-toggle-inline cv-toggle-sub">
+          <input
+            type="checkbox"
+            checked={!!simpleFormat}
+            onChange={e => onChange({ ...data, simpleFormat: e.target.checked })}
+          />
+          <span>{lb.simpleCompetence}</span>
+        </label>
+      )}
+
       <div className="cv-competence-project-row">
         <span className="cv-competence-project-prefix">{lb.forProject}</span>
         <CVField
@@ -161,6 +172,7 @@ export default function CompetenceTable({ data, lang = 'en', meta, onFieldEdit, 
               />
             </div>
 
+            {!simpleFormat && (
             <div className="cv-comp-card-meta">
               <div className="cv-comp-meta-top">
                 <div className="cv-comp-meta-group">
@@ -204,6 +216,7 @@ export default function CompetenceTable({ data, lang = 'en', meta, onFieldEdit, 
                 />
               </div>
             </div>
+            )}
 
             <div className="cv-comp-card-evidence">
               <CVField
@@ -212,8 +225,8 @@ export default function CompetenceTable({ data, lang = 'en', meta, onFieldEdit, 
                 meta={meta} onEdit={onFieldEdit} onAccept={onAccept} onDismiss={onDismiss}
                 as="textarea"
                 className="cv-comp-evidence-field"
-                placeholder="Evidence — describe what you did, where, and with what outcome…"
-                rows={3}
+                placeholder={simpleFormat ? lb.competenceSimplePlaceholder : 'Evidence — describe what you did, where, and with what outcome…'}
+                rows={simpleFormat ? 4 : 3}
               />
               <button className="cv-btn-remove-item" onClick={() => removeItem(i)}>{lb.remove}</button>
             </div>

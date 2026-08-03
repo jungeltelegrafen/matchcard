@@ -57,6 +57,7 @@ export default function ShareCV({ cv, lang = 'en' }) {
   const videoItems = (videos || []).filter(v => /^https?:\/\//.test(v.playbackUrl || ''))
   const positionItems = positions?.enabled ? (positions.items || []) : []
   const positionsFull = positions?.useProjectFormat
+  const competencesSimple = competences?.simpleFormat
   const competenceItems = competences?.enabled
     ? (competences.items || []).filter(c => c.requirement?.trim())
     : []
@@ -177,6 +178,7 @@ export default function ShareCV({ cv, lang = 'en' }) {
                 return (
                   <div key={i} className="cv-comp-card">
                     <div className="cv-comp-req">{c.requirement}</div>
+                    {!competencesSimple && (
                     <div className="cv-comp-meta">
                       {n > 0 && (
                         <span className="cv-comp-chip">
@@ -192,6 +194,7 @@ export default function ShareCV({ cv, lang = 'en' }) {
                       {c.yearsRelevant && <span className="cv-comp-chip"><span className="cv-comp-chip-label">{lb.totalYears}</span> {c.yearsRelevant}</span>}
                       {c.projects && <span className="cv-comp-chip"><span className="cv-comp-chip-label">{lb.projects}</span> {c.projects}</span>}
                     </div>
+                    )}
                     {c.detail && <p className="cv-comp-detail">{c.detail}</p>}
                   </div>
                 )

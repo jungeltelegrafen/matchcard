@@ -88,7 +88,7 @@ function LevelDots({ level }) {
 
 export default function CVCompetences({ competences, lang = 'en' }) {
   const lb = getL(lang)
-  const { projectLabel, items } = competences
+  const { projectLabel, items, simpleFormat } = competences
   if (!items?.length) return null
 
   const title = projectLabel ? `${lb.competences} — ${projectLabel}` : lb.competences
@@ -102,6 +102,7 @@ export default function CVCompetences({ competences, lang = 'en' }) {
 
           {item.requirement ? <Text style={styles.requirement}>{item.requirement}</Text> : null}
 
+          {!simpleFormat && (
           <View style={styles.metaBlock}>
             {item.level ? (
               <View style={styles.metaGroup}>
@@ -128,6 +129,7 @@ export default function CVCompetences({ competences, lang = 'en' }) {
               </View>
             ) : null}
           </View>
+          )}
 
           {item.detail ? <Text style={styles.detail}>{item.detail}</Text> : null}
 

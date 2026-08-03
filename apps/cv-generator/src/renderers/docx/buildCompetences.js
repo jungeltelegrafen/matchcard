@@ -16,6 +16,7 @@ function blankLine() {
 export function buildCompetences(competences, lang = 'en') {
   if (!competences?.enabled || !competences?.items?.length) return []
   const lb = getL(lang)
+  const simple = !!competences.simpleFormat
 
   const title = competences.projectLabel
     ? `${lb.competencesFor} ${competences.projectLabel}`
@@ -37,22 +38,22 @@ export function buildCompetences(competences, lang = 'en') {
         }))
       }
 
-      // Meta block (shaded): level, last used, years, projects
+      // Meta block (shaded): level, last used, years, projects — advanced only
       const metaRuns = []
-      if (item.level) {
+      if (!simple && item.level) {
         const n = parseInt(item.level) || 0
         metaRuns.push(new TextRun({ text: `${lb.levelLabel}: `, bold: true, size: 16, color: hex(theme.colors.muted), font: 'Calibri' }))
         metaRuns.push(new TextRun({ text: `${levelDots(n)}  `, size: 16, color: hex(theme.colors.accent), font: 'Calibri' }))
       }
-      if (item.lastUsed) {
+      if (!simple && item.lastUsed) {
         metaRuns.push(new TextRun({ text: `${lb.lastUsed}: `, bold: true, size: 16, color: hex(theme.colors.muted), font: 'Calibri' }))
         metaRuns.push(new TextRun({ text: `${item.lastUsed}  `, size: 16, font: 'Calibri' }))
       }
-      if (item.yearsRelevant) {
+      if (!simple && item.yearsRelevant) {
         metaRuns.push(new TextRun({ text: `${lb.totalYears}: `, bold: true, size: 16, color: hex(theme.colors.muted), font: 'Calibri' }))
         metaRuns.push(new TextRun({ text: `${item.yearsRelevant}  `, size: 16, font: 'Calibri' }))
       }
-      if (item.projects) {
+      if (!simple && item.projects) {
         metaRuns.push(new TextRun({ text: `${lb.projects}: `, bold: true, size: 16, color: hex(theme.colors.muted), font: 'Calibri' }))
         metaRuns.push(new TextRun({ text: item.projects, size: 16, font: 'Calibri' }))
       }
