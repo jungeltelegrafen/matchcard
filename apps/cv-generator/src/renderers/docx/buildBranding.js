@@ -6,11 +6,11 @@ import { dataUrlToBytes, dataUrlImageType, hasCompanyFooter } from '../../utils/
 // Printable width = A4 width (11906 twips) − left/right margins (1000 each), per
 // buildDocument's page.margin. Tab stops are measured from the left margin.
 const CONTENT_W = 11906 - 1000 - 1000  // 9906 twips
-// Middle column starts here (left tab); right column ends here (right tab).
-// NB: we use LEFT + RIGHT tabs only — Apple Pages drops CENTER tab stops in
-// footers, and tables inside headers/footers import as plain text in Pages.
-const MID_TAB = Math.round(CONTENT_W / 3)   // 3302
-const RIGHT_TAB = CONTENT_W - 120           // a hair inside the edge to avoid wrap
+// Apple Pages honours only RIGHT tab stops in footers (it drops LEFT/CENTER, and
+// imports footer tables as plain text). So both columns use RIGHT tabs: the
+// middle field right-aligns near the centre, the last field at the right edge.
+const MID_TAB = Math.round(CONTENT_W * 0.55)  // ~5448 — middle column
+const RIGHT_TAB = CONTENT_W - 120             // a hair inside the edge to avoid wrap
 
 // A real tab-advance run. A literal "\t" in text does NOT honour custom tab
 // stops (Word/Pages fall back to default stops), so every tab is a <w:tab/>.
@@ -55,7 +55,7 @@ export function brandFooter(branding) {
   const muted = hex(theme.colors.muted)
   const primary = hex(theme.colors.primary)
   const stops = [
-    { type: TabStopType.LEFT, position: MID_TAB },
+    { type: TabStopType.RIGHT, position: MID_TAB },
     { type: TabStopType.RIGHT, position: RIGHT_TAB },
   ]
   const run = (text, { bold = false, color = muted } = {}) =>
