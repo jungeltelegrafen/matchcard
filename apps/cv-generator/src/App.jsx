@@ -104,6 +104,7 @@ export default function App() {
   // the profile photo is per-CV (in the draft).
   const [companyBranding, setCompanyBranding] = useState(loadCompanyBranding)
   const [profilePicture, setProfilePicture]   = useState(() => draft?.profilePicture ?? '')
+  const [includeBranding, setIncludeBranding] = useState(() => draft?.includeBranding ?? true)
   const [brandingOpen, setBrandingOpen]       = useState(false)
   const [uiLang, setUiLang]               = useState(() => draft?.uiLang      ?? 'en')
   const [contentLang, setContentLang]     = useState(() => draft?.contentLang ?? 'en')
@@ -161,17 +162,21 @@ export default function App() {
   // Debounced autosave — master (both languages), toggles, and variants
   useEffect(() => {
     const t = setTimeout(
-      () => saveDraft({ cvByLang, metaByLang, feedbackByLang, offerByLang, profilePicture, uiLang, contentLang, variants, activeVariantId }),
+      () => saveDraft({ cvByLang, metaByLang, feedbackByLang, offerByLang, profilePicture, includeBranding, uiLang, contentLang, variants, activeVariantId }),
       600
     )
     return () => clearTimeout(t)
-  }, [cvByLang, metaByLang, feedbackByLang, offerByLang, profilePicture, uiLang, contentLang, variants, activeVariantId])
+  }, [cvByLang, metaByLang, feedbackByLang, offerByLang, profilePicture, includeBranding, uiLang, contentLang, variants, activeVariantId])
 
   // Company branding lives in its own store so it survives Reset / a new CV.
   useEffect(() => { saveCompanyBranding(companyBranding) }, [companyBranding])
 
-  // What renderers receive: company branding + the per-CV profile photo.
+  // What the editor receives (always, so branding can be edited/toggled there):
+  // company branding + the per-CV profile photo.
   const branding = { ...companyBranding, profilePicture }
+  // What exports/preview/share receive — an empty object (no logo/photo/footer)
+  // when the user has excluded branding, so renderers stay null-safe.
+  const exportBranding = includeBranding ? branding : {}
 
   // ── active master-slot setters ──────────────────────────────────────────
   const setActiveCv   = next => setCvByLang(prev => ({ ...prev, [contentLang]: typeof next === 'function' ? next(prev[contentLang]) : next }))
@@ -670,6 +675,9 @@ export default function App() {
               changedPaths={changedPaths}
               onChangeSeen={markChangeSeen}
               branding={branding}
+              uiLang={uiLang}
+              includeBranding={includeBranding}
+              onToggleBranding={setIncludeBranding}
               onEditBranding={() => setBrandingOpen(true)}
               onSetProfilePicture={setProfilePicture}
             />
@@ -692,7 +700,7 @@ export default function App() {
       </main>
 
       {previewOpen && (
-        <PreviewModal cv={viewCv} lang={contentLang} branding={branding} onClose={() => setPreviewOpen(false)} />
+        <PreviewModal cv={viewCv} lang={contentLang} branding={exportBranding} onClose={() => setPreviewOpen(false)} />
       )}
 
       {brandingOpen && (
@@ -731,11 +739,10 @@ export default function App() {
         uiLang={uiLang}
         filename={filename}
         offer={offerByLang[contentLang]}
-        branding={branding}
+        branding={exportBranding}
         onPreview={() => setPreviewOpen(true)}
         onContentLangChange={setContentLang}
         onOpenOffer={() => setOfferOpen(true)}
-        onOpenBranding={() => setBrandingOpen(true)}
       />
     </div>
   )

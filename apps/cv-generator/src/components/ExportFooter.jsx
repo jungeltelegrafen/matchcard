@@ -65,7 +65,7 @@ function barColor(pct) {
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
-export default function ExportFooter({ cvByLang, contentLang, uiLang, filename, offer, branding, onPreview, onContentLangChange, onOpenOffer, onOpenBranding }) {
+export default function ExportFooter({ cvByLang, contentLang, uiLang, filename, offer, branding, onPreview, onContentLangChange, onOpenOffer }) {
   const [exporting,     setExporting]     = useState(false)
   const [emailOpen,     setEmailOpen]     = useState(false)
   const [exportStatus,  setExportStatus]  = useState('')
@@ -226,10 +226,6 @@ export default function ExportFooter({ cvByLang, contentLang, uiLang, filename, 
 
           <button className="export-btn export-btn--preview" onClick={onPreview}>
             {no ? 'Forhåndsvis' : 'Preview'}
-          </button>
-
-          <button className="export-btn export-btn--branding" onClick={onOpenBranding}>
-            {no ? '❖ Merkevare' : '❖ Branding'}
           </button>
 
           <button className="export-btn export-btn--pdf" onClick={handlePdf} disabled={exporting}>

@@ -3240,11 +3240,55 @@ textarea.cv-field {
   color: #cfe0ef;
   border: 1px solid rgba(125,170,203,0.4);
 }
-.export-btn--branding {
-  background: rgba(255,255,255,0.08);
-  color: rgba(255,255,255,0.72);
-  border: 1px solid rgba(255,255,255,0.18);
+/* ── Branding toggle bar (top of the CV card) ── */
+.cv-branding-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px dashed var(--border);
 }
+.cv-branding-toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.72rem;
+  color: var(--muted);
+  cursor: pointer;
+  user-select: none;
+}
+.cv-branding-toggle-label input { accent-color: var(--accent); cursor: pointer; }
+.cv-branding-edit-link {
+  border: none;
+  background: none;
+  color: var(--accent);
+  font-size: 0.72rem;
+  cursor: pointer;
+  padding: 2px 4px;
+}
+.cv-branding-edit-link:hover { text-decoration: underline; }
+
+/* ── Page-break gutter in the editor (approximate print pagination) ── */
+.cv-page-break {
+  position: relative;
+  height: 0;
+  margin: 40px -60px;                 /* bleed into the sheet's side padding */
+  border-top: 2px dashed #d9cfc4;
+}
+.cv-page-break-label {
+  position: absolute;
+  top: -9px;
+  right: 60px;
+  background: var(--surface);
+  padding: 0 8px;
+  font-size: 0.62rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #b7a996;
+}
+.cv-page1-spacer { flex: none; }
 
 /* ── Branding header/footer in the editor CV card (WYSIWYG, page-1 only) ── */
 .cv-branding-header {
@@ -3282,7 +3326,7 @@ textarea.cv-field {
   border: none; background: rgba(0,0,0,0.55); color: #fff; font-size: 0.7rem; cursor: pointer; line-height: 1;
 }
 .cv-branding-footer {
-  margin-top: 28px;
+  margin-top: 0;
   padding-top: 12px;
   border-top: 2px solid var(--accent);
   font-size: 0.66rem;
@@ -3306,6 +3350,50 @@ textarea.cv-field {
 .branding-logo-preview img { max-width: 156px; max-height: 56px; object-fit: contain; }
 .branding-logo-empty { font-size: 0.72rem; color: #b7a996; }
 .branding-logo-actions { display: flex; gap: 8px; }
+
+/* ── Branding modal zones (fields laid out where they appear on the page) ── */
+.branding-zone {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #fbf8f4;
+}
+.branding-zone-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.branding-zone-title {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.branding-zone-hint { font-size: 0.7rem; color: var(--muted); }
+
+/* Footer card — mirrors the on-page footer: accent top rule, name left,
+   address/website across the top, email/phone across the bottom. */
+.branding-footer-card {
+  border-top: 2px solid var(--accent);
+  border-radius: 4px;
+  padding-top: 12px;
+}
+.branding-footer-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px 12px;
+}
+.branding-cell { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.branding-cell--blank { visibility: hidden; }   /* reserves row-2 left column */
+.branding-cell-label {
+  font-size: 0.66rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+.branding-footer-grid .branding-cell:nth-child(2) .branding-cell-label,
+.branding-footer-grid .branding-cell:nth-child(5) .branding-cell-label { text-align: center; }
+.branding-footer-grid .branding-cell:nth-child(3) .branding-cell-label,
+.branding-footer-grid .branding-cell:nth-child(6) .branding-cell-label { text-align: right; }
 
 /* ── Offer (Tilbudsformat) modal ─────────────────────────────────── */
 .offer-box { max-width: 640px; width: 92vw; }

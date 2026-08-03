@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useRef, useState, useLayoutEffect, Fragment } from 'react'
 import { ChatChangesContext } from './cv/ChatChangesContext'
 import { fileToDataUrl, hasCompanyFooter } from '../utils/branding'
 import PersonalSection from './cv/PersonalSection'
@@ -11,6 +11,20 @@ import CertsCourseSection from './cv/CertsCourseSection'
 import LanguagesSection from './cv/LanguagesSection'
 import PortfolioSection from './cv/PortfolioSection'
 import VideosSection from './cv/VideosSection'
+
+// A4 aspect ratio (height / width) — used to estimate where printed pages break
+// so the on-screen CV can show page gutters and pin the footer to page 1.
+const A4_RATIO = 297 / 210
+// Combined top+bottom padding of the .cv-page sheet (see app.css .cv-page).
+const SHEET_PAD_Y = 112
+
+// Outer height of an element including its vertical margins.
+function outerHeight(el) {
+  if (!el) return 0
+  const r = el.getBoundingClientRect()
+  const s = getComputedStyle(el)
+  return r.height + (parseFloat(s.marginTop) || 0) + (parseFloat(s.marginBottom) || 0)
+}
 
 // Branding header shown at the top of the CV card (page-1 only in exports):
 // company logo left (click to edit branding), profile photo right (per-CV upload).
@@ -41,9 +55,8 @@ function BrandingHeader({ branding, onEditBranding, onSetProfilePicture }) {
   )
 }
 
-// Company footer at the bottom of the CV card (page-1 only in exports).
+// Company footer, pinned to the bottom of page 1 (page-1 only in exports).
 function BrandingFooter({ branding, onEditBranding }) {
-  if (!hasCompanyFooter(branding)) return null
   return (
     <div className="cv-branding-footer" onClick={onEditBranding} title="Edit branding">
       <div className="cv-bf-row cv-bf-top">
@@ -56,6 +69,15 @@ function BrandingFooter({ branding, onEditBranding }) {
         <span className="cv-bf-center">{branding.companyEmail}</span>
         <span className="cv-bf-right">{branding.companyPhone}</span>
       </div>
+    </div>
+  )
+}
+
+// Visual gutter marking where a printed page ends and the next begins.
+function PageBreak({ page, no }) {
+  return (
+    <div className="cv-page-break" aria-hidden="true">
+      <span className="cv-page-break-label">{no ? `Side ${page}` : `Page ${page}`}</span>
     </div>
   )
 }
@@ -84,20 +106,31 @@ function SectionWrap({ sectionKey, hoveredSection, commentCounts, children }) {
   )
 }
 
-export default function CVEditor({ cv, lang = 'en', meta, onFieldEdit, onAccept, onDismiss, onStructural, hoveredSection, commentCounts, changedPaths, onChangeSeen, branding, onEditBranding, onSetProfilePicture }) {
+export default function CVEditor({ cv, lang = 'en', uiLang = 'en', meta, onFieldEdit, onAccept, onDismiss, onStructural, hoveredSection, commentCounts, changedPaths, onChangeSeen, branding, includeBranding = true, onToggleBranding, onEditBranding, onSetProfilePicture }) {
   const shared = { lang, meta, onFieldEdit, onAccept, onDismiss }
   const wrap = sectionKey => ({ sectionKey, hoveredSection, commentCounts })
+  const no = uiLang === 'no'
 
-  return (
-    <ChatChangesContext.Provider value={{ changedPaths, onChangeSeen }}>
-     <div className="cv-editor">
-      {branding && (
-        <BrandingHeader branding={branding} onEditBranding={onEditBranding} onSetProfilePicture={onSetProfilePicture} />
-      )}
+  const showHeader = Boolean(branding) && includeBranding
+  const showFooter = Boolean(branding) && includeBranding && hasCompanyFooter(branding)
+
+  // ── Estimated page pagination (screen guide, not the exact PDF layout) ──────
+  const containerRef = useRef(null)
+  const headerRef    = useRef(null)
+  const footerRef    = useRef(null)
+  const secRefs      = useRef([])
+  // { breaks: [{index, page}], page1End: number, spacer: number }
+  const [layout, setLayout] = useState({ breaks: [], page1End: -1, spacer: 0 })
+
+  // The ordered content sections. Each is measured to place page gutters and to
+  // pin the footer to the bottom of page 1.
+  const sections = [
+    { key: 'summary', node: (
       <SectionWrap {...wrap('summary')}>
         <PersonalSection data={cv.personal} {...shared} />
       </SectionWrap>
-
+    ) },
+    { key: 'videos', node: (
       <SectionWrap {...wrap('videos')}>
         <VideosSection
           items={cv.videos || []}
@@ -106,21 +139,24 @@ export default function CVEditor({ cv, lang = 'en', meta, onFieldEdit, onAccept,
           onChange={items => onStructural('videos', items)}
         />
       </SectionWrap>
-
+    ) },
+    { key: 'skills', node: (
       <SectionWrap {...wrap('skills')}>
         <SkillsSection
           items={cv.skills} {...shared}
           onSkillsChange={items => onStructural('skills', items)}
         />
       </SectionWrap>
-
+    ) },
+    { key: 'competences', node: (
       <CompetenceTable
         data={cv.competences}
         experiences={cv.experience}
         {...shared}
         onChange={newData => onStructural('competences', newData)}
       />
-
+    ) },
+    { key: 'experience', node: (
       <SectionWrap {...wrap('experience')}>
         <ExperienceSection
           items={cv.experience}
@@ -129,20 +165,23 @@ export default function CVEditor({ cv, lang = 'en', meta, onFieldEdit, onAccept,
           onChange={items => onStructural('experience', items)}
         />
       </SectionWrap>
-
+    ) },
+    { key: 'positions', node: (
       <PositionsSection
         data={cv.positions || { enabled: false, useProjectFormat: false, items: [] }}
         {...shared}
         onChange={newData => onStructural('positions', newData)}
       />
-
+    ) },
+    { key: 'education', node: (
       <SectionWrap {...wrap('education')}>
         <EducationSection
           items={cv.education} {...shared}
           onChange={items => onStructural('education', items)}
         />
       </SectionWrap>
-
+    ) },
+    { key: 'certs', node: (
       <CertsCourseSection
         certifications={cv.certifications || []}
         courses={cv.courses || []}
@@ -150,7 +189,8 @@ export default function CVEditor({ cv, lang = 'en', meta, onFieldEdit, onAccept,
         onCertsChange={items => onStructural('certifications', items)}
         onCoursesChange={items => onStructural('courses', items)}
       />
-
+    ) },
+    { key: 'languages', node: (
       <SectionWrap {...wrap('languages')}>
         <LanguagesSection
           items={cv.languages || []}
@@ -158,7 +198,8 @@ export default function CVEditor({ cv, lang = 'en', meta, onFieldEdit, onAccept,
           onChange={langs => onStructural('languages', langs)}
         />
       </SectionWrap>
-
+    ) },
+    { key: 'portfolio', node: (
       <SectionWrap {...wrap('portfolio')}>
         <PortfolioSection
           items={cv.portfolio || []}
@@ -170,8 +211,109 @@ export default function CVEditor({ cv, lang = 'en', meta, onFieldEdit, onAccept,
           onChange={items => onStructural('portfolio', items)}
         />
       </SectionWrap>
+    ) },
+  ]
 
-      {branding && <BrandingFooter branding={branding} onEditBranding={onEditBranding} />}
+  useLayoutEffect(() => {
+    const container = containerRef.current
+    if (!container) return
+
+    function measure() {
+      const sheet = container.closest('.cv-page')
+      const sheetW = sheet ? sheet.clientWidth : 740
+      const pageContentH = sheetW * A4_RATIO - SHEET_PAD_Y
+      if (pageContentH <= 0) return
+
+      const headerH = outerHeight(headerRef.current)
+      const footerH = showFooter ? outerHeight(footerRef.current) : 0
+      const heights = secRefs.current.slice(0, sections.length).map(outerHeight)
+
+      // Page 1 has less room (header on top, footer pinned to the bottom).
+      let budget = pageContentH - headerH - footerH
+      let fill = 0
+      let page = 1
+      const breaks = []
+      heights.forEach((h, i) => {
+        if (fill > 0 && fill + h > budget) {
+          page += 1
+          breaks.push({ index: i, page })
+          fill = 0
+          budget = pageContentH // pages 2+ have no header/footer band
+        }
+        fill += h
+      })
+
+      const page1End = breaks.length ? breaks[0].index - 1 : sections.length - 1
+      const page1Used = heights.slice(0, page1End + 1).reduce((a, b) => a + b, 0)
+      const spacer = showFooter
+        ? Math.max(0, Math.round(pageContentH - headerH - footerH - page1Used))
+        : 0
+
+      setLayout(prev =>
+        prev.page1End === page1End
+        && prev.spacer === spacer
+        && prev.breaks.length === breaks.length
+        && prev.breaks.every((b, i) => b.index === breaks[i].index && b.page === breaks[i].page)
+          ? prev
+          : { breaks, page1End, spacer })
+    }
+
+    measure()
+    const ro = new ResizeObserver(() => requestAnimationFrame(measure))
+    ro.observe(container)
+    const sheet = container.closest('.cv-page')
+    if (sheet) ro.observe(sheet)
+    return () => ro.disconnect()
+  }, [cv, lang, showHeader, showFooter, branding])
+
+  const breakAt = i => layout.breaks.find(b => b.index === i)
+
+  return (
+    <ChatChangesContext.Provider value={{ changedPaths, onChangeSeen }}>
+     <div className="cv-editor" ref={containerRef}>
+
+      {branding && (
+        <div className="cv-branding-toggle">
+          <label className="cv-branding-toggle-label">
+            <input
+              type="checkbox"
+              checked={includeBranding}
+              onChange={e => onToggleBranding?.(e.target.checked)}
+            />
+            {no ? 'Vis merkevare i eksport' : 'Include branding in exports'}
+          </label>
+          <button type="button" className="cv-branding-edit-link" onClick={onEditBranding}>
+            {no ? 'Rediger merkevare' : 'Edit branding'}
+          </button>
+        </div>
+      )}
+
+      {showHeader && (
+        <div ref={headerRef}>
+          <BrandingHeader branding={branding} onEditBranding={onEditBranding} onSetProfilePicture={onSetProfilePicture} />
+        </div>
+      )}
+
+      {sections.map((s, i) => {
+        const brk = breakAt(i)
+        const isPage1End = i === layout.page1End
+        return (
+          <Fragment key={s.key}>
+            {brk && <PageBreak page={brk.page} no={no} />}
+            <div className="cv-sec" ref={el => { secRefs.current[i] = el }}>
+              {s.node}
+            </div>
+            {showFooter && isPage1End && (
+              <>
+                {layout.spacer > 0 && <div className="cv-page1-spacer" style={{ height: layout.spacer }} aria-hidden="true" />}
+                <div ref={footerRef}>
+                  <BrandingFooter branding={branding} onEditBranding={onEditBranding} />
+                </div>
+              </>
+            )}
+          </Fragment>
+        )
+      })}
      </div>
     </ChatChangesContext.Provider>
   )

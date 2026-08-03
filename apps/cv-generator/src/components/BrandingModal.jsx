@@ -25,13 +25,17 @@ export default function BrandingModal({ branding, onChange, uiLang = 'en', onClo
     }
   }
 
-  const FIELDS = [
-    ['companyName',    no ? 'Firmanavn' : 'Company name'],
-    ['companyAddress', no ? 'Adresse' : 'Address'],
-    ['companyWebsite', no ? 'Nettside' : 'Website'],
-    ['companyEmail',   no ? 'E-post' : 'Email'],
-    ['companyPhone',   no ? 'Telefon' : 'Phone'],
-  ]
+  const field = (key, label) => (
+    <label className="branding-cell">
+      <span className="branding-cell-label">{label}</span>
+      <input
+        className="offer-field-input"
+        value={branding[key] || ''}
+        onChange={e => set(key, e.target.value)}
+        placeholder={label}
+      />
+    </label>
+  )
 
   return (
     <div className="feedback-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
@@ -47,9 +51,16 @@ export default function BrandingModal({ branding, onChange, uiLang = 'en', onClo
         </div>
 
         <div className="offer-body">
-          {/* Logo */}
-          <div className="offer-field offer-field--full">
-            <span className="offer-field-label">{no ? 'Logo' : 'Logo'}</span>
+          {/* ── Header: logo (top-left of the CV). The profile photo is added
+                per consultant on the CV itself. ── */}
+          <div className="branding-zone">
+            <div className="branding-zone-head">
+              <span className="branding-zone-title">{no ? 'Topp — logo' : 'Header — logo'}</span>
+              <span className="branding-zone-hint">
+                {no ? 'Vises øverst til venstre. Profilbilde legges til på CV-en.'
+                    : 'Shown top-left. The profile photo is added on the CV.'}
+              </span>
+            </div>
             <div className="branding-logo-row">
               <div className="branding-logo-preview" onClick={() => logoRef.current?.click()}>
                 {branding.logo
@@ -72,18 +83,24 @@ export default function BrandingModal({ branding, onChange, uiLang = 'en', onClo
             {err && <span className="offer-error">{err}</span>}
           </div>
 
-          {/* Company fields */}
-          <div className="offer-grid">
-            {FIELDS.map(([key, label]) => (
-              <label key={key} className={`offer-field${key === 'companyAddress' ? ' offer-field--full' : ''}`}>
-                <span className="offer-field-label">{label}</span>
-                <input
-                  className="offer-field-input"
-                  value={branding[key] || ''}
-                  onChange={e => set(key, e.target.value)}
-                />
-              </label>
-            ))}
+          {/* ── Footer card: fields sit where they appear on the page ── */}
+          <div className="branding-zone branding-zone--footer">
+            <div className="branding-zone-head">
+              <span className="branding-zone-title">{no ? 'Bunntekst' : 'Footer'}</span>
+              <span className="branding-zone-hint">
+                {no ? 'Nederst på første side.' : 'Bottom of the first page.'}
+              </span>
+            </div>
+            <div className="branding-footer-card">
+              <div className="branding-footer-grid">
+                {field('companyName',    no ? 'Firmanavn' : 'Company name')}
+                {field('companyAddress', no ? 'Adresse' : 'Address')}
+                {field('companyWebsite', no ? 'Nettside' : 'Website')}
+                <span className="branding-cell branding-cell--blank" aria-hidden="true" />
+                {field('companyEmail',   no ? 'E-post' : 'Email')}
+                {field('companyPhone',   no ? 'Telefon' : 'Phone')}
+              </div>
+            </div>
           </div>
         </div>
 
