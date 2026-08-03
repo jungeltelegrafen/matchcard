@@ -84,6 +84,55 @@ personal data — retention policy + delete path. Enterprise clients will ask.
 - Bundle: lazy-load @react-pdf, docx, pdfjs-dist behind their actions
   (current main chunk ~2.7 MB)
 
+## 8. Page-break keep-together — no stranded headings/titles — PLANNED (parked 2026-08-03)
+Deferred by user until the product is near complete (don't touch CV views/renderers
+before then). Self-contained, low-risk.
+
+**Problem:** a section title or a project/experience entry can land at the very
+bottom of a page showing only its first 1–2 lines (company / date / role) with the
+rest flowing to the next page — the heading is left stranded.
+
+**Wanted behavior (confirmed):** soft-keep. If only ~1–2 lines of an entry (or a
+bare section title) would fit at a page bottom, push the whole entry/title to the
+next page; otherwise leave it (longer content still splits normally). Coherent
+across every output, no revamp.
+
+**Key insight — the 5 "formats" are really 3 engines:**
+- Online editor: one continuous card (`.cv-page`, min-height only) — *no on-screen
+  pages*, nothing to do.
+- Preview modal: renders the *actual PDF* in an iframe (`PreviewModal.jsx` →
+  `renderPdf.js`) — *fixing the PDF fixes the preview*.
+- PDF export: `@react-pdf/renderer` (`renderers/pdf/*`), no break props today.
+- Word export: `docx` v8.5 (`renderers/docx/*`), no keepNext/keepLines today.
+- Shared link (`app/cv/[id]/ShareCV.jsx` + `share.css`): own HTML, paginates only
+  on `window.print()`; already has `page-break-inside: avoid` on `.cv-section` and
+  `.cv-entry` — only section titles still need a keep-with-next rule.
+
+**Implementation:**
+1. **PDF** (also fixes Preview): add `theme.spacing.keepEntryAhead` (~64) and
+   `keepTitleAhead` (~44) in `theme/index.js` (pt; tune in preview). Add
+   `minPresenceAhead={keepTitleAhead}` to the `SectionHeading.jsx` wrapper View,
+   and `minPresenceAhead={keepEntryAhead}` to each per-entry `styles.item` View in
+   `CVExperience.jsx`, `CVEducation.jsx`, `CVPositions.jsx`, `CVCertsCourses.jsx`.
+   `minPresenceAhead` = "only render here if ≥ N pt remain, else move to next page"
+   = exactly the soft-keep. No `wrap={false}` (that hard-forces whole entries and
+   can overflow >1-page entries).
+2. **Word:** add optional `keepNext`/`keepLines` to the shared `sectionHeading` and
+   `twoColPara` helpers in `buildUtils.js` (title → first entry; entry date-line →
+   body). Add `keepNext: true` to the inline role/title `Paragraph` in
+   `buildExperience.js` / `buildPositions.js`; `keepNext` on education's degree line;
+   `keepLines` on the single-line cert entry.
+3. **Shared (print):** in the existing `@media print` block of `app/cv/[id]/share.css`,
+   add `.cv-section-title { break-after: avoid; page-break-after: avoid; }` (and
+   optionally `.cv-entry { orphans: 2; widows: 2; }`). No JSX change needed.
+4. **Editor:** no change (no pages on screen — intentional).
+
+**Verify:** build a CV where an entry heading lands near a page bottom; open the
+Preview (= PDF) and confirm the entry jumps to the next page rather than stranding
+company/date/role; export .docx and grep `word/document.xml` for `w:keepNext`;
+open a share link and Cmd+P to check the print output; `npm test` still passes.
+Full write-up was in the plan file `~/.claude/plans/some-improvements-being-able-starry-reddy.md`.
+
 ## Known deferred issues
 - Video profiles are not translated by the explicit translate button
   (client-only sections are never overwritten by AI results)

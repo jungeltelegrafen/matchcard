@@ -575,7 +575,7 @@ html {
 .feedback-cta {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: center;
   gap: 10px;
   padding: 5px 18px;
   font-size: 0.76rem;
