@@ -3662,6 +3662,10 @@ textarea.cv-field {
 .tr-lang-note { font-size: 0.74rem; color: var(--muted); font-style: italic; margin: 0 12px 8px; }
 .tr-section { padding: 8px 12px; border-top: 1px solid var(--border); }
 .tr-section-title { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin: 0 0 8px; }
+.tr-section--anon { background: rgba(125,170,203,0.08); border-top: 2px solid rgba(125,170,203,0.4); }
+.tr-anon-hint { font-size: 0.68rem; color: var(--muted); margin: 0 0 8px; line-height: 1.4; }
+.tr-anon-check { display: flex; align-items: center; gap: 7px; padding: 3px 0; font-size: 0.78rem; cursor: pointer; }
+.variant-notice--anon { color: #2f6690; background: rgba(125,170,203,0.14); border-bottom-color: rgba(125,170,203,0.4); }
 .tr-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 4px 0; }
 .tr-check { display: flex; align-items: center; gap: 7px; flex: 1; min-width: 0; cursor: pointer; }
 .tr-check input { flex-shrink: 0; }

@@ -58,8 +58,25 @@ function objByLang(raw, coerce) {
 function normalizeVariant(v) {
   if (!v || typeof v !== 'object') return null
   const ov = v.overrides || {}
+  const isAnon = v.kind === 'anonymous'
+  const anonText = v.anonymize?.text && typeof v.anonymize.text === 'object' ? v.anonymize.text : {}
   return {
     id: typeof v.id === 'string' ? v.id : newId(),
+    ...(isAnon ? {
+      kind: 'anonymous',
+      anonymize: {
+        name: v.anonymize?.name !== false,
+        contact: v.anonymize?.contact !== false,
+        location: v.anonymize?.location !== false,
+        company: v.anonymize?.company !== false,
+        certifications: v.anonymize?.certifications !== false,
+        portfolio: v.anonymize?.portfolio !== false,
+        positions: v.anonymize?.positions !== false,
+        videos: v.anonymize?.videos !== false,
+        education: v.anonymize?.education === true,
+        text: Object.fromEntries(LANGS.map(l => [l, (anonText[l] && typeof anonText[l] === 'object') ? anonText[l] : {}])),
+      },
+    } : {}),
     name: typeof v.name === 'string' && v.name.trim() ? v.name : 'Untitled role',
     role: {
       title: String(v.role?.title ?? ''),

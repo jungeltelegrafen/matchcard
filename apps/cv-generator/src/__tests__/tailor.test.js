@@ -4,6 +4,9 @@ import {
   emptyVariant,
   deriveTailoredCv,
   variantFromPlan,
+  anonymousVariant,
+  anonymizeCv,
+  cityOnly,
 } from '@lib/cv/tailor'
 
 function master() {
@@ -109,5 +112,59 @@ describe('variantFromPlan', () => {
     expect(v.overrides.en.expDesc.ghost).toBeUndefined()
     expect(v.rationale.fitNote).toMatch(/no SAP/)
     expect(v.tailoredInLang).toBe('en')
+  })
+})
+
+describe('anonymize', () => {
+  it('cityOnly keeps the first token', () => {
+    expect(cityOnly('Oslo, Norway')).toBe('Oslo')
+    expect(cityOnly('Bergen')).toBe('Bergen')
+    expect(cityOnly('')).toBe('')
+  })
+
+  it('redacts PII deterministically via deriveTailoredCv', () => {
+    const m = ensureIds(normalizeCv({
+      personal: { firstName: 'Kari', lastName: 'Nordmann', location: 'Oslo, Norway', phone: '+47 999', email: 'k@x.no', linkedin: 'in/kari' },
+      experience: [{ company: 'Equinor', role: 'Dev', startDate: '2020', location: 'Stavanger, Norway', description: 'Worked at Equinor', bullets: ['b1'], result: 'saved money' }],
+      certifications: [{ name: 'AWS SA' }],
+      portfolio: [{ label: 'GitHub', url: 'https://github.com/kari' }],
+      positions: { enabled: true, items: [{ company: 'Board', title: 'Member' }] },
+      education: [{ institution: 'NTNU', degree: 'MSc' }],
+    }))
+    const v = anonymousVariant({ tailoredInLang: 'en' })
+    const out = deriveTailoredCv(m, v, 'en')
+
+    expect(out.personal.firstName).toBe('Consultant')
+    expect(out.personal.lastName).toBe('')
+    expect(out.personal.showContactInfo).toBe(false)
+    expect(out.personal.phone).toBe('')
+    expect(out.personal.email).toBe('')
+    expect(out.personal.location).toBe('Oslo')
+    expect(out.experience[0].company).toBe('') // blanked (no AI descriptor yet)
+    expect(out.experience[0].location).toBe('Stavanger')
+    expect(out.certifications).toEqual([])
+    expect(out.portfolio).toEqual([])
+    expect(out.positions.items).toEqual([])
+    expect(out.positions.enabled).toBe(false)
+    expect(out.education.length).toBe(1) // kept by default
+  })
+
+  it('applies AI text redactions and honors toggles', () => {
+    const m = ensureIds(normalizeCv({
+      personal: { firstName: 'Kari', location: 'Oslo, Norway' },
+      experience: [{ company: 'Equinor', role: 'Dev', startDate: '2020', description: 'orig' }],
+    }))
+    const expId = m.experience[0]._id
+    const v = anonymousVariant({ tailoredInLang: 'en' })
+    v.overrides.en.expDesc[expId] = 'Worked at a major energy company.'
+    v.anonymize.text.en[expId] = { company: 'a major energy company', bullets: ['led a team'], result: 'cut cost 20%' }
+    v.anonymize.name = false // re-add the name
+
+    const out = deriveTailoredCv(m, v, 'en')
+    expect(out.personal.firstName).toBe('Kari') // name re-added
+    expect(out.experience[0].company).toBe('a major energy company')
+    expect(out.experience[0].description).toBe('Worked at a major energy company.')
+    expect(out.experience[0].bullets).toEqual(['led a team'])
+    expect(out.experience[0].result).toBe('cut cost 20%')
   })
 })

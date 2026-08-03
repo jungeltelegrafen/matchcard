@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
 import { emptyCv, ensureIds, stripIds, alignIds, cvHasContent, PARSE_CHAR_LIMIT } from '@lib/cv/schema'
 import { LANGS, LANG_ENDONYM } from '@lib/cv/lang'
-import { deriveTailoredCv, variantFromPlan } from '@lib/cv/tailor'
+import { deriveTailoredCv, variantFromPlan, anonymousVariant } from '@lib/cv/tailor'
 import { extractText } from './utils/extractText'
-import { parseWithClaude, translateCv, tailorCv } from './utils/parseWithClaude'
+import { parseWithClaude, translateCv, tailorCv, anonymizeCvText } from './utils/parseWithClaude'
 import { emptyOffer } from './utils/offer'
 import { loadDraft, saveDraft, clearDraft, draftHasContent } from './utils/draftStorage'
 import { applyPatches } from './utils/applyPatches'
@@ -368,6 +368,47 @@ export default function App() {
       setTailoring(false)
     }
   }
+  // Create an Anonymous version: activate immediately (deterministic PII redaction
+  // is instant), then AI-scrub free text in the background and patch the variant.
+  async function handleCreateAnonymous() {
+    const name = uiLang === 'no' ? 'Anonym' : 'Anonymous'
+    const v = anonymousVariant({ name, tailoredInLang: contentLang })
+    setVariants(prev => [...prev, v])
+    setActiveVariantId(v.id)
+    setTailoring(true)
+    setTailorError('')
+    try {
+      const plan = await anonymizeCvText(masterCv, contentLang)
+      const expIds = new Set((masterCv.experience || []).map(e => e._id))
+      setVariants(prev => prev.map(x => {
+        if (x.id !== v.id) return x
+        const overrides = { ...x.overrides, [contentLang]: { ...x.overrides[contentLang], expDesc: { ...x.overrides[contentLang].expDesc } } }
+        const text = { ...x.anonymize.text, [contentLang]: { ...x.anonymize.text[contentLang] } }
+        if (typeof plan?.summary === 'string' && plan.summary.trim()) overrides[contentLang].summary = plan.summary.trim()
+        for (const ex of plan?.experience || []) {
+          if (!ex?.id || !expIds.has(ex.id)) continue
+          if (typeof ex.description === 'string' && ex.description.trim()) overrides[contentLang].expDesc[ex.id] = ex.description.trim()
+          text[contentLang][ex.id] = {
+            company: typeof ex.company === 'string' ? ex.company : '',
+            bullets: Array.isArray(ex.bullets) ? ex.bullets : [],
+            result: typeof ex.result === 'string' ? ex.result : '',
+          }
+        }
+        return { ...x, overrides, anonymize: { ...x.anonymize, text } }
+      }))
+    } catch (err) {
+      setTailorError(err.message || 'Anonymization failed — structural redaction still applied.')
+    } finally {
+      setTailoring(false)
+    }
+  }
+
+  function handleToggleRedact(field) {
+    updateActiveVariant(v => (v.kind === 'anonymous'
+      ? { ...v, anonymize: { ...v.anonymize, [field]: !v.anonymize[field] } }
+      : v))
+  }
+
   function handleDeleteVariant(id) {
     setVariants(prev => prev.filter(v => v.id !== id))
     setActiveVariantId(cur => (cur === id ? null : cur))
@@ -461,6 +502,7 @@ export default function App() {
         activeVariantId={activeVariantId}
         onSelectVariant={setActiveVariantId}
         onOpenTailor={() => { setTailorError(''); setTailorOpen(true) }}
+        onCreateAnonymous={handleCreateAnonymous}
         onDeleteVariant={handleDeleteVariant}
         onUiLangChange={setUiLang}
         onContentLangChange={setContentLang}
@@ -523,11 +565,15 @@ export default function App() {
       )}
 
       {activeVariant && (
-        <div className="variant-notice">
+        <div className={`variant-notice${activeVariant.kind === 'anonymous' ? ' variant-notice--anon' : ''}`}>
           <span>
-            {uiLang === 'no'
-              ? `Viser «${activeVariant.name}». Tilpasset tekst lagres i denne versjonen; faktaendringer gjelder alle versjoner.`
-              : `Viewing “${activeVariant.name}”. Tailored text stays in this version; fact edits apply to all versions.`}
+            {activeVariant.kind === 'anonymous'
+              ? (uiLang === 'no'
+                  ? `Anonym versjon — persondata er fjernet.${tailoring ? ' Renser fritekst med AI…' : ''} Legg til seksjoner igjen i sidepanelet.`
+                  : `Anonymous version — personal data removed.${tailoring ? ' Scrubbing free text with AI…' : ''} Re-add sections in the sidebar.`)
+              : (uiLang === 'no'
+                  ? `Viser «${activeVariant.name}». Tilpasset tekst lagres i denne versjonen; faktaendringer gjelder alle versjoner.`
+                  : `Viewing “${activeVariant.name}”. Tailored text stays in this version; fact edits apply to all versions.`)}
           </span>
           <button className="variant-notice-btn" onClick={() => setActiveVariantId(null)}>
             {uiLang === 'no' ? 'Til Master' : 'Back to Master'}
@@ -585,6 +631,7 @@ export default function App() {
               onSummaryChange={handleVariantSummary}
               onExpDescChange={handleVariantExpDesc}
               onReorder={handleReorder}
+              onToggleRedact={handleToggleRedact}
             />
           ) : (
             <LeftSidebar

@@ -16,12 +16,27 @@ function ordered(items, orderIds) {
   return [...head, ...rest]
 }
 
+// Anonymize toggles: each checkbox "re-adds" the original data (checked = shown).
+const ANON_ROWS = [
+  ['name',           'Vis navn',                  'Show name'],
+  ['contact',        'Vis kontaktinfo',           'Show contact info'],
+  ['location',       'Vis full lokasjon',         'Show full location'],
+  ['company',        'Vis firmanavn',             'Show company names'],
+  ['certifications', 'Inkluder sertifiseringer',  'Include certifications'],
+  ['portfolio',      'Inkluder portefølje',       'Include portfolio'],
+  ['positions',      'Inkluder verv/stillinger',  'Include positions'],
+  ['videos',         'Inkluder video',            'Include videos'],
+  ['education',      'Inkluder utdanning',        'Include education'],
+]
+
 export default function TailoringReview({
   master, variant, lang, uiLang,
-  onToggleExclude, onToggleSkillTag, onSummaryChange, onExpDescChange, onReorder,
+  onToggleExclude, onToggleSkillTag, onSummaryChange, onExpDescChange, onReorder, onToggleRedact,
 }) {
   const no = uiLang === 'no'
   const lb = getL(lang)
+  const isAnon = variant.kind === 'anonymous'
+  const anon = variant.anonymize || {}
   const excluded = new Set(variant.excludedIds || [])
   const isIn = id => !excluded.has(id)
   const reason = id => variant.rationale?.reasons?.[id]
@@ -63,9 +78,24 @@ export default function TailoringReview({
   return (
     <aside className="side-panel side-panel--left tailoring-review">
       <div className="side-panel-header">
-        <h2 className="side-panel-title">{no ? 'Tilpasning' : 'Tailoring'}</h2>
+        <h2 className="side-panel-title">{isAnon ? (no ? 'Anonym versjon' : 'Anonymous version') : (no ? 'Tilpasning' : 'Tailoring')}</h2>
         <p className="side-panel-sub">{variant.name}</p>
       </div>
+
+      {isAnon && (
+        <div className="tr-section tr-section--anon">
+          <h3 className="tr-section-title">{no ? 'Anonymisering' : 'Anonymize'}</h3>
+          <p className="tr-anon-hint">
+            {no ? 'Persondata er fjernet. Hak av for å legge til igjen.' : 'Personal data is removed. Check to add back.'}
+          </p>
+          {ANON_ROWS.map(([field, lNo, lEn]) => (
+            <label key={field} className="tr-check tr-anon-check">
+              <input type="checkbox" checked={!anon[field]} onChange={() => onToggleRedact(field)} />
+              <span className="tr-label">{no ? lNo : lEn}</span>
+            </label>
+          ))}
+        </div>
+      )}
 
       {variant.rationale?.fitNote && (
         <div className="tr-fitnote">

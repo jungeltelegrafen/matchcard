@@ -12,6 +12,7 @@ export default function AppHeader({
   activeVariantId = null,
   onSelectVariant,
   onOpenTailor,
+  onCreateAnonymous,
   onDeleteVariant,
   onUiLangChange,
   onContentLangChange,
@@ -31,6 +32,7 @@ export default function AppHeader({
 
   const activeVariant = variants.find(v => v.id === activeVariantId) || null
   const versionLabel = activeVariant ? activeVariant.name : (no ? 'Master' : 'Master')
+  const variantIcon = v => (v.kind === 'anonymous' ? '🎭' : '✦')
 
   function selectVersion(id) {
     onSelectVariant?.(id)
@@ -63,7 +65,7 @@ export default function AppHeader({
                 className={`header-version-btn${activeVariant ? ' header-version-btn--tailored' : ''}`}
                 onClick={() => setVersionMenuOpen(v => !v)}
               >
-                {activeVariant ? '✦ ' : ''}{versionLabel} ▾
+                {activeVariant ? `${variantIcon(activeVariant)} ` : ''}{versionLabel} ▾
               </button>
               {versionMenuOpen && (
                 <div className="header-version-menu">
@@ -76,7 +78,7 @@ export default function AppHeader({
                   {variants.map(v => (
                     <div key={v.id} className={`header-version-item-row${v.id === activeVariantId ? ' active' : ''}`}>
                       <button className="header-version-item" onClick={() => selectVersion(v.id)}>
-                        ✦ {v.name}
+                        {variantIcon(v)} {v.name}
                       </button>
                       <button
                         className="header-version-del"
@@ -90,6 +92,12 @@ export default function AppHeader({
                     onClick={() => { setVersionMenuOpen(false); onOpenTailor?.() }}
                   >
                     {no ? '+ Tilpass til en stilling…' : '+ Tailor to a job…'}
+                  </button>
+                  <button
+                    className="header-version-item header-version-add"
+                    onClick={() => { setVersionMenuOpen(false); onCreateAnonymous?.() }}
+                  >
+                    {no ? '🎭 Lag anonym versjon' : '🎭 Create anonymous version'}
                   </button>
                 </div>
               )}

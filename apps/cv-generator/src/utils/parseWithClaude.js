@@ -62,6 +62,12 @@ export async function tailorCv(cv, role, lang = 'en') {
   return plan
 }
 
+// Anonymization keeps _id markers too: the plan references experience by _id.
+export async function anonymizeCvText(cv, lang = 'en') {
+  const { plan } = await apiJson('/api/cv/anonymize', { cv, lang })
+  return plan
+}
+
 // Fetches a public URL server-side and returns its readable text. The server
 // enforces the SSRF guard, timeout, and size cap. Returns { text, title, url,
 // truncated }.
