@@ -308,7 +308,7 @@ export default function CVEditor({ cv, lang = 'en', uiLang = 'en', meta, onField
       )}
 
       {showHeader && (
-        <div ref={headerRef}>
+        <div ref={headerRef} className={!showLogo && showPhoto ? 'cv-branding-photofloat' : undefined}>
           <BrandingHeader
             branding={branding}
             showLogo={showLogo}

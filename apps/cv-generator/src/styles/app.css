@@ -3306,6 +3306,13 @@ textarea.cv-field {
 }
 .cv-page1-spacer { flex: none; }
 
+/* No-logo layout: float the photo right so the section content sits beside it. */
+.cv-branding-photofloat {
+  float: right;
+  margin: 0 0 8px 20px;
+}
+.cv-branding-photofloat .cv-branding-header { margin-bottom: 0; }
+
 /* ── Branding header/footer in the editor CV card (WYSIWYG, page-1 only) ── */
 .cv-branding-header {
   display: flex;

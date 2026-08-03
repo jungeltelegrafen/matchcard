@@ -104,6 +104,9 @@ body {
   object-fit: cover;
   flex-shrink: 0;
 }
+/* No-logo layout: photo floats to the right of the name/practical info. */
+.cv-sheet-head--withphoto { overflow: hidden; }
+.cv-sheet-photo--inline { float: right; margin: 0 0 8px 24px; }
 
 /* ── Branding footer (company info; mirrors PDF first-page footer) ── */
 .cv-sheet-footer {

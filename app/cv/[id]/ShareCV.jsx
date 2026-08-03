@@ -99,20 +99,22 @@ export default function ShareCV({ cv, lang = 'en' }) {
       {/* CV sheet */}
       <main className="cv-sheet">
 
-        {/* Branding header — logo left, profile photo right */}
-        {(branding.logo || branding.profilePicture) && (
+        {/* Branding band — only when there's a logo: logo left, photo right. */}
+        {branding.logo && (
           <div className="cv-sheet-brand">
-            {branding.logo
-              ? <img className="cv-sheet-logo" src={branding.logo} alt="" />
-              : <span />}
+            <img className="cv-sheet-logo" src={branding.logo} alt="" />
             {branding.profilePicture
               ? <img className="cv-sheet-photo" src={branding.profilePicture} alt="" />
               : <span />}
           </div>
         )}
 
-        {/* Header */}
-        <div className="cv-sheet-head">
+        {/* Header. With no logo, the photo floats to the right of the info so
+            the header stays balanced. */}
+        <div className={`cv-sheet-head${!branding.logo && branding.profilePicture ? ' cv-sheet-head--withphoto' : ''}`}>
+          {!branding.logo && branding.profilePicture && (
+            <img className="cv-sheet-photo cv-sheet-photo--inline" src={branding.profilePicture} alt="" />
+          )}
           <h1 className="cv-sheet-name">{fullName}</h1>
           {personal.title && <p className="cv-sheet-title">{personal.title}</p>}
           <div className="cv-sheet-meta">
