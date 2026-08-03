@@ -1,7 +1,7 @@
 'use client'
 import './share.css'
 import { useState, Fragment } from 'react'
-import { getL } from '@/apps/cv-generator/src/utils/labels'
+import { getL, videoPlacement } from '@/apps/cv-generator/src/utils/labels'
 
 // Turn a stored playback URL into an embeddable src (or null → external link).
 function videoEmbed(url) {
@@ -15,15 +15,7 @@ function videoEmbed(url) {
 }
 const isDirectVideo = url => /\.(mp4|webm|mov|m4v)(\?|$)/i.test(url || '')
 
-function placementLabel(pl, lang) {
-  const no = lang === 'no', es = lang === 'es'
-  return {
-    intro:      no ? 'Introduksjon' : es ? 'Introducción' : 'Introduction',
-    motivation: no ? 'Motivasjon'   : es ? 'Motivación'   : 'Motivation',
-    experience: no ? 'Erfaring'     : es ? 'Experiencia'  : 'Experience',
-    general:    no ? 'Generell'     : es ? 'General'      : 'General',
-  }[pl] || ''
-}
+const placementLabel = videoPlacement
 
 // Read-only share view. Mirrors the PDF/DOCX exports field-for-field (see
 // renderers/pdf/*), localized via getL — keep in sync with the schema in

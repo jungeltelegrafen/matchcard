@@ -46,6 +46,11 @@ export async function generateEmailSummary(cv, lang) {
   return text
 }
 
+// Drafts the offer teaser fields (seniority, relevance, keywords) from the CV.
+export async function draftOffer(cv, lang = 'en') {
+  return apiJson('/api/cv/offer', { cv: stripIds(cv), lang })
+}
+
 export async function runAgent(cv, agentPrompt, lang = 'en') {
   const { findings } = await apiJson('/api/cv/agent', { cv: stripIds(cv), prompt: agentPrompt, lang })
   return findings || []

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { saveAs } from 'file-saver'
 import { renderPdfBlob } from '../utils/renderPdf'
 import { downloadDocx } from '../renderers/docx/buildDocument'
@@ -65,35 +65,39 @@ function barColor(pct) {
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
-export default function ExportFooter({ cvByLang, contentLang, uiLang, filename, onPreview }) {
+export default function ExportFooter({ cvByLang, contentLang, uiLang, filename, offer, onPreview, onContentLangChange, onOpenOffer }) {
   const [exporting,     setExporting]     = useState(false)
-  const [openMenu,      setOpenMenu]      = useState(null) // 'pdf' | 'docx' | 'email' | null
+  const [emailOpen,     setEmailOpen]     = useState(false)
   const [exportStatus,  setExportStatus]  = useState('')
   const [shareUrl,      setShareUrl]      = useState('')
   const [sharing,       setSharing]       = useState(false)
   const [copied,        setCopied]        = useState(false)
+  const emailRef = useRef(null)
 
   const no = uiLang === 'no'
   const cv = cvByLang[contentLang]
   const pct   = Math.round(computeCvScore(cv) * 100)
   const label = scoreLabel(pct, no)
 
-  // Languages worth offering: those with real content. Fall back to the
-  // currently-viewed language so a brand-new CV can still be exported.
-  const filled = LANGS.filter(l => cvHasContent(cvByLang[l]))
-  const exportLangs = filled.length ? filled : [contentLang]
-  const multi = exportLangs.length > 1
+  // Export is WYSIWYG: everything exports the language currently being viewed
+  // (`contentLang`). The footer language toggle switches which language that is,
+  // offering every language that has content plus the current one.
+  const toggleLangs = LANGS.filter(l => l === contentLang || cvHasContent(cvByLang[l]))
 
   const fileFor = lang => `${filename}_${lang.toUpperCase()}`
   const outputCv = lang => stripIds(cvByLang[lang])
 
-  function toggleMenu(name) {
-    setOpenMenu(prev => (prev === name ? null : name))
-  }
+  // Close the email attach-format menu on outside click.
+  useEffect(() => {
+    if (!emailOpen) return
+    function away(e) { if (emailRef.current && !emailRef.current.contains(e.target)) setEmailOpen(false) }
+    document.addEventListener('mousedown', away)
+    return () => document.removeEventListener('mousedown', away)
+  }, [emailOpen])
 
   async function run(statusMsg, fn) {
     setExporting(true)
-    setOpenMenu(null)
+    setEmailOpen(false)
     setExportStatus(statusMsg)
     try {
       await fn()
@@ -108,21 +112,21 @@ export default function ExportFooter({ cvByLang, contentLang, uiLang, filename, 
     setExporting(false)
   }
 
-  function handlePdf(lang) {
+  function handlePdf() {
     run(no ? 'Klargjør PDF…' : 'Preparing PDF…', async () => {
-      const blob = await renderPdfBlob(outputCv(lang), lang)
-      saveAs(blob, `${fileFor(lang)}.pdf`)
+      const blob = await renderPdfBlob(outputCv(contentLang), contentLang)
+      saveAs(blob, `${fileFor(contentLang)}.pdf`)
     })
   }
 
-  function handleDocx(lang) {
+  function handleDocx() {
     run(no ? 'Klargjør Word…' : 'Preparing Word…', () =>
-      downloadDocx(outputCv(lang), `${fileFor(lang)}.docx`, lang))
+      downloadDocx(outputCv(contentLang), `${fileFor(contentLang)}.docx`, contentLang))
   }
 
-  function handleEmail(lang, attachFormat) {
+  function handleEmail(attachFormat) {
     run(no ? 'Klargjør e-post…' : 'Preparing email…', () =>
-      downloadEmail(outputCv(lang), fileFor(lang), attachFormat, lang))
+      downloadEmail(outputCv(contentLang), fileFor(contentLang), attachFormat, contentLang, offer))
   }
 
   function handleCopyLink() {
@@ -152,40 +156,6 @@ export default function ExportFooter({ cvByLang, contentLang, uiLang, filename, 
     } finally {
       setSharing(false)
     }
-  }
-
-  // A format button: direct download when only one language exists, a language
-  // dropdown when both do.
-  function FormatControl({ name, label, onPick }) {
-    if (!multi) {
-      return (
-        <button
-          className={`export-btn export-btn--${name}`}
-          onClick={() => onPick(exportLangs[0])}
-          disabled={exporting}
-        >
-          ↓ {label}
-        </button>
-      )
-    }
-    return (
-      <div className="export-menu-wrap">
-        <button
-          className={`export-btn export-btn--${name}`}
-          onClick={() => toggleMenu(name)}
-          disabled={exporting}
-        >
-          ↓ {label} ▾
-        </button>
-        {openMenu === name && (
-          <div className="export-menu">
-            {exportLangs.map(l => (
-              <button key={l} onClick={() => onPick(l)}>{LANG_ENDONYM[l]}</button>
-            ))}
-          </div>
-        )}
-      </div>
-    )
   }
 
   return (
@@ -238,31 +208,50 @@ export default function ExportFooter({ cvByLang, contentLang, uiLang, filename, 
         </div>
 
         <div className="export-right">
+          {/* Export language — WYSIWYG: everything below exports this language. */}
+          {toggleLangs.length > 1 && (
+            <div className="export-lang-toggle" title={no ? 'Språk for eksport' : 'Export language'}>
+              {toggleLangs.map(l => (
+                <button
+                  key={l}
+                  className={`export-lang-btn${l === contentLang ? ' active' : ''}`}
+                  onClick={() => onContentLangChange?.(l)}
+                  disabled={exporting}
+                >
+                  {LANG_ENDONYM[l]}
+                </button>
+              ))}
+            </div>
+          )}
+
           <button className="export-btn export-btn--preview" onClick={onPreview}>
             {no ? 'Forhåndsvis' : 'Preview'}
           </button>
 
-          <FormatControl name="pdf"  label="PDF"  onPick={handlePdf} />
-          <FormatControl name="docx" label="Word" onPick={handleDocx} />
+          <button className="export-btn export-btn--pdf" onClick={handlePdf} disabled={exporting}>
+            ↓ PDF
+          </button>
+          <button className="export-btn export-btn--docx" onClick={handleDocx} disabled={exporting}>
+            ↓ Word
+          </button>
 
-          <div className="export-menu-wrap">
+          <button className="export-btn export-btn--offer" onClick={onOpenOffer}>
+            ✉ {no ? 'E-posttilbud' : 'Email Offer'}
+          </button>
+
+          <div className="export-menu-wrap" ref={emailRef}>
             <button
               className="export-btn export-btn--email"
-              onClick={() => toggleMenu('email')}
+              onClick={() => setEmailOpen(o => !o)}
               disabled={exporting}
             >
-              ✉ {no ? 'E-post' : 'Email'} ▾
+              ✉ {no ? 'E-posteksport' : 'Email Export'} ▾
             </button>
-            {openMenu === 'email' && (
+            {emailOpen && (
               <div className="export-menu">
-                {exportLangs.map(l => (
-                  <div key={l} className="export-menu-group">
-                    {multi && <span className="export-menu-heading">{LANG_ENDONYM[l]}</span>}
-                    <button onClick={() => handleEmail(l, 'pdf')}>{no ? 'Legg ved PDF' : 'Attach PDF'}</button>
-                    <button onClick={() => handleEmail(l, 'docx')}>{no ? 'Legg ved Word' : 'Attach Word'}</button>
-                    <button onClick={() => handleEmail(l, 'both')}>{no ? 'Legg ved begge' : 'Attach Both'}</button>
-                  </div>
-                ))}
+                <button onClick={() => handleEmail('pdf')}>{no ? 'Legg ved PDF' : 'Attach PDF'}</button>
+                <button onClick={() => handleEmail('docx')}>{no ? 'Legg ved Word' : 'Attach Word'}</button>
+                <button onClick={() => handleEmail('both')}>{no ? 'Legg ved begge' : 'Attach Both'}</button>
               </div>
             )}
           </div>

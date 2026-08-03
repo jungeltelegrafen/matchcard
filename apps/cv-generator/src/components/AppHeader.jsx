@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { LANG_ENDONYM } from '@lib/cv/lang'
+import { LANGS, LANG_ENDONYM } from '@lib/cv/lang'
 import FeedbackModal from './FeedbackModal'
 
 export default function AppHeader({
@@ -23,6 +23,7 @@ export default function AppHeader({
   const [feedbackOpen, setFeedbackOpen] = useState(false)
   const [versionMenuOpen, setVersionMenuOpen] = useState(false)
   const [translateMenuOpen, setTranslateMenuOpen] = useState(false)
+  const [langMenuOpen, setLangMenuOpen] = useState(false)
   const no = uiLang === 'no'
 
   const candidateName = [cv.personal.firstName, cv.personal.lastName].filter(Boolean).join(' ')
@@ -151,29 +152,31 @@ export default function AppHeader({
             </div>
           </div>
 
-          {/* CV content language toggle — which language is viewed/edited/exported.
-              Switching is instant and lossless; the other versions are kept. */}
+          {/* CV content language — which language is viewed/edited/exported.
+              A compact dropdown (many supported languages) instead of pills, so
+              the header never crowds the title. Data-driven off LANGS. */}
           <div className="header-toggle-group">
-            <span className="header-toggle-label">CV</span>
-            <div className="header-pill">
+            <span className="header-toggle-label">{no ? 'CV-språk' : 'CV Language'}</span>
+            <div className="header-version-wrap">
               <button
-                className={`header-pill-btn${contentLang === 'no' ? ' active' : ''}`}
-                onClick={() => onContentLangChange('no')}
+                className="header-version-btn"
+                onClick={() => setLangMenuOpen(o => !o)}
               >
-                Norsk
+                {LANG_ENDONYM[contentLang]} ▾
               </button>
-              <button
-                className={`header-pill-btn${contentLang === 'en' ? ' active' : ''}`}
-                onClick={() => onContentLangChange('en')}
-              >
-                English
-              </button>
-              <button
-                className={`header-pill-btn${contentLang === 'es' ? ' active' : ''}`}
-                onClick={() => onContentLangChange('es')}
-              >
-                Español
-              </button>
+              {langMenuOpen && (
+                <div className="header-version-menu">
+                  {LANGS.map(l => (
+                    <button
+                      key={l}
+                      className={`header-version-item${contentLang === l ? ' active' : ''}`}
+                      onClick={() => { setLangMenuOpen(false); onContentLangChange(l) }}
+                    >
+                      {LANG_ENDONYM[l]}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 

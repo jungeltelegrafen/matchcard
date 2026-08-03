@@ -1,17 +1,9 @@
 import { Paragraph, TextRun, ExternalHyperlink } from 'docx'
 import { theme } from '../../theme'
-import { getL } from '../../utils/labels'
+import { getL, videoPlacement } from '../../utils/labels'
 import { hex, sectionHeading } from './buildUtils'
 
-function placementLabel(pl, lang) {
-  const no = lang === 'no', es = lang === 'es'
-  return {
-    intro: no ? 'INTRODUKSJON' : es ? 'INTRODUCCIÓN' : 'INTRODUCTION',
-    motivation: no ? 'MOTIVASJON' : es ? 'MOTIVACIÓN' : 'MOTIVATION',
-    experience: no ? 'ERFARING' : es ? 'EXPERIENCIA' : 'EXPERIENCE',
-    general: no ? 'GENERELL' : es ? 'GENERAL' : 'GENERAL',
-  }[pl] || ''
-}
+const placementLabel = (pl, lang) => videoPlacement(pl, lang).toUpperCase()
 
 // Only hosted (http) videos — session blob: clips can't resolve in a downloaded
 // document.
@@ -19,7 +11,7 @@ export function buildVideos(videos = [], lang = 'en') {
   const vids = (videos || []).filter(v => /^https?:\/\//.test(v.playbackUrl || ''))
   if (!vids.length) return []
   const lb = getL(lang)
-  const watch = lang === 'no' ? 'Se video' : lang === 'es' ? 'Ver vídeo' : 'Watch video'
+  const watch = (lb.watchVideo || 'Watch video').replace(/^▶\s*/, '')
 
   const paras = [sectionHeading(lb.videos, { before: 0, after: 80 })]
 

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import CVField from './CVField'
 import VideoProfileModal from '../VideoProfileModal'
-import { getL } from '../../utils/labels'
+import { getL, videoPlacement } from '../../utils/labels'
 import { videoPoster } from '../../utils/videoPoster'
 
 const emptyItem = {
@@ -24,12 +24,7 @@ export default function VideosSection({
   const sessionOnly = no ? 'Kun denne økten' : es ? 'Solo esta sesión' : 'This session only'
   const durationTxt = d => d || ''
 
-  const placementLabel = pl => ({
-    intro:      no ? 'Introduksjon' : es ? 'Introducción' : 'Introduction',
-    motivation: no ? 'Motivasjon'   : es ? 'Motivación'   : 'Motivation',
-    experience: no ? 'Erfaring'      : es ? 'Experiencia'  : 'Experience',
-    general:    no ? 'Generell'      : es ? 'General'       : 'General',
-  }[pl] || pl)
+  const placementLabel = pl => videoPlacement(pl, lang) || pl
 
   const setField = (i, key, val) =>
     onChange(items.map((it, idx) => (idx === i ? { ...it, [key]: val } : it)))

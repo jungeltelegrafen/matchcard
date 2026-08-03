@@ -2,11 +2,13 @@ import { useState, useRef, useEffect } from 'react'
 import { chatWithClaude } from '../utils/parseWithClaude'
 import { applyPatchesReport } from '../utils/applyPatches'
 import { buildReceipt } from '../utils/patchLabels'
+import { getL } from '../utils/labels'
 import UrlFetchField from './UrlFetchField'
 
 const ACCEPT = '.pdf,.docx,.txt'
 
 export default function InputPanel({ cv, lang, onGenerate, generating, error, warning }) {
+  const lb = getL(lang)
   const [files, setFiles]         = useState([])
   const [rawText, setRawText]     = useState('')
   const [dragging, setDragging]   = useState(false)
@@ -221,13 +223,8 @@ export default function InputPanel({ cv, lang, onGenerate, generating, error, wa
 
           {messages.length === 0 && (
             <div className="input-chat-examples">
-              <span>Try:</span>
-              {[
-                'Make the summary more concise and impactful',
-                'Emphasize leadership and stakeholder management',
-                'Tailor this CV for a senior cloud architect role',
-                'Rewrite the latest experience entry to highlight results',
-              ].map(s => (
+              <span>{lb.chatExamplesLabel}:</span>
+              {(lb.chatExamples || []).map(s => (
                 <button key={s} className="input-chat-example-pill"
                   onClick={() => { setChatInput(s) }}>{s}</button>
               ))}

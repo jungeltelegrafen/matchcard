@@ -11,6 +11,7 @@ globalThis.localStorage = {
 
 const { loadDraft, saveDraft, clearDraft, draftHasContent } = await import('../utils/draftStorage')
 
+const V4 = 'cv-generator:draft:v4'
 const V3 = 'cv-generator:draft:v3'
 const V2 = 'cv-generator:draft:v2'
 const V1 = 'cv-generator:draft:v1'
@@ -99,13 +100,30 @@ describe('draftStorage v3', () => {
     expect(loadDraft().cvByLang.en.personal.firstName).toBe('v3')
   })
 
-  it('saving clears superseded v1/v2 keys', () => {
+  it('saving clears superseded v1/v2/v3 keys and writes v4', () => {
     store.set(V1, 'x')
     store.set(V2, 'y')
+    store.set(V3, 'z')
     saveDraft(baseSave({}))
     expect(store.has(V1)).toBe(false)
     expect(store.has(V2)).toBe(false)
-    expect(store.has(V3)).toBe(true)
+    expect(store.has(V3)).toBe(false)
+    expect(store.has(V4)).toBe(true)
+  })
+
+  it('round-trips offerByLang and migrates v3 drafts to empty offers', () => {
+    saveDraft(baseSave({ offerByLang: { en: { role: 'Backend Engineer', keywords: ['Java'], generated: true }, no: {} } }))
+    const back = loadDraft()
+    expect(back.offerByLang.en.role).toBe('Backend Engineer')
+    expect(back.offerByLang.en.keywords).toEqual(['Java'])
+    expect(back.offerByLang.en.generated).toBe(true)
+
+    // a v3 draft (no offerByLang) migrates forward with empty offers
+    store.clear()
+    store.set(V3, JSON.stringify({ v: 3, cvByLang: { en: { personal: { firstName: 'x' } } } }))
+    const migrated = loadDraft()
+    expect(migrated.offerByLang.en.generated).toBe(false)
+    expect(migrated.offerByLang.en.role).toBe('')
   })
 
   it('returns null for missing, corrupt, or wrong-version drafts', () => {

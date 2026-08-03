@@ -1,6 +1,6 @@
 import { View, Text, Link, StyleSheet } from '@react-pdf/renderer'
 import { theme } from '../../theme'
-import { getL } from '../../utils/labels'
+import { getL, videoPlacement } from '../../utils/labels'
 import SectionHeading from './SectionHeading'
 
 const C = theme.colors
@@ -20,15 +20,7 @@ const styles = StyleSheet.create({
   link: { fontSize: 7, color: '#4A90D9' },
 })
 
-function placementLabel(pl, lang) {
-  const no = lang === 'no', es = lang === 'es'
-  return {
-    intro: no ? 'Introduksjon' : es ? 'Introducción' : 'Introduction',
-    motivation: no ? 'Motivasjon' : es ? 'Motivación' : 'Motivation',
-    experience: no ? 'Erfaring' : es ? 'Experiencia' : 'Experience',
-    general: no ? 'Generell' : es ? 'General' : 'General',
-  }[pl] || ''
-}
+const placementLabel = videoPlacement
 
 // Only videos with a real hosted URL make sense in a downloaded PDF (session
 // blob: clips are excluded — their links wouldn't resolve for anyone else).
@@ -36,7 +28,7 @@ export default function CVVideos({ items = [], lang = 'en' }) {
   const vids = (items || []).filter(v => /^https?:\/\//.test(v.playbackUrl || ''))
   if (!vids.length) return null
   const lb = getL(lang)
-  const watch = lang === 'no' ? '▶ Se video' : lang === 'es' ? '▶ Ver vídeo' : '▶ Watch video'
+  const watch = lb.watchVideo
 
   return (
     <View style={styles.wrapper}>

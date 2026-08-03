@@ -4,6 +4,7 @@ import { LANGS, LANG_ENDONYM } from '@lib/cv/lang'
 import { deriveTailoredCv, variantFromPlan } from '@lib/cv/tailor'
 import { extractText } from './utils/extractText'
 import { parseWithClaude, translateCv, tailorCv } from './utils/parseWithClaude'
+import { emptyOffer } from './utils/offer'
 import { loadDraft, saveDraft, clearDraft, draftHasContent } from './utils/draftStorage'
 import { applyPatches } from './utils/applyPatches'
 import {
@@ -23,6 +24,7 @@ import AgentsBar from './components/AgentsBar'
 import LeftSidebar from './components/LeftSidebar'
 import RightSidebar from './components/RightSidebar'
 import PreviewModal from './components/PreviewModal'
+import OfferModal from './components/OfferModal'
 import ExportFooter from './components/ExportFooter'
 import TailorPanel from './components/TailorPanel'
 import TailoringReview from './components/TailoringReview'
@@ -95,6 +97,7 @@ export default function App() {
   const [cvByLang, setCvByLang]           = useState(() => draft?.cvByLang       ?? Object.fromEntries(LANGS.map(l => [l, emptyCv()])))
   const [metaByLang, setMetaByLang]       = useState(() => draft?.metaByLang     ?? Object.fromEntries(LANGS.map(l => [l, emptyMeta()])))
   const [feedbackByLang, setFeedbackByLang] = useState(() => draft?.feedbackByLang ?? Object.fromEntries(LANGS.map(l => [l, []])))
+  const [offerByLang, setOfferByLang]     = useState(() => draft?.offerByLang   ?? Object.fromEntries(LANGS.map(l => [l, emptyOffer()])))
   const [uiLang, setUiLang]               = useState(() => draft?.uiLang      ?? 'en')
   const [contentLang, setContentLang]     = useState(() => draft?.contentLang ?? 'en')
 
@@ -110,6 +113,7 @@ export default function App() {
   const [genError, setGenError]       = useState('')
   const [genWarning, setGenWarning]   = useState('')
   const [previewOpen, setPreviewOpen] = useState(false)
+  const [offerOpen, setOfferOpen] = useState(false)
   const [hoveredSection, setHoveredSection] = useState(null)
   const [changedPaths, setChangedPaths] = useState(new Set())
   // One-level undo for the last chat edit — snapshot of the slices it touched.
@@ -150,16 +154,17 @@ export default function App() {
   // Debounced autosave — master (both languages), toggles, and variants
   useEffect(() => {
     const t = setTimeout(
-      () => saveDraft({ cvByLang, metaByLang, feedbackByLang, uiLang, contentLang, variants, activeVariantId }),
+      () => saveDraft({ cvByLang, metaByLang, feedbackByLang, offerByLang, uiLang, contentLang, variants, activeVariantId }),
       600
     )
     return () => clearTimeout(t)
-  }, [cvByLang, metaByLang, feedbackByLang, uiLang, contentLang, variants, activeVariantId])
+  }, [cvByLang, metaByLang, feedbackByLang, offerByLang, uiLang, contentLang, variants, activeVariantId])
 
   // ── active master-slot setters ──────────────────────────────────────────
   const setActiveCv   = next => setCvByLang(prev => ({ ...prev, [contentLang]: typeof next === 'function' ? next(prev[contentLang]) : next }))
   const setActiveMeta = next => setMetaByLang(prev => ({ ...prev, [contentLang]: typeof next === 'function' ? next(prev[contentLang]) : next }))
   const setActiveFeedback = next => setFeedbackByLang(prev => ({ ...prev, [contentLang]: typeof next === 'function' ? next(prev[contentLang]) : next }))
+  const setActiveOffer = next => setOfferByLang(prev => ({ ...prev, [contentLang]: typeof next === 'function' ? next(prev[contentLang]) : next }))
   const updateActiveVariant = updater => setVariants(prev => prev.map(v => v.id === activeVariantId ? updater(v) : v))
 
   function markChangeSeen(path) {
@@ -423,6 +428,7 @@ export default function App() {
     setCvByLang(Object.fromEntries(LANGS.map(l => [l, emptyCv()])))
     setMetaByLang(Object.fromEntries(LANGS.map(l => [l, emptyMeta()])))
     setFeedbackByLang(Object.fromEntries(LANGS.map(l => [l, []])))
+    setOfferByLang(Object.fromEntries(LANGS.map(l => [l, emptyOffer()])))
     setVariants([])
     setActiveVariantId(null)
     setTailorOpen(false)
@@ -625,6 +631,17 @@ export default function App() {
         <PreviewModal cv={viewCv} lang={contentLang} onClose={() => setPreviewOpen(false)} />
       )}
 
+      {offerOpen && (
+        <OfferModal
+          cv={viewCv}
+          offer={offerByLang[contentLang]}
+          onChange={setActiveOffer}
+          lang={contentLang}
+          uiLang={uiLang}
+          onClose={() => setOfferOpen(false)}
+        />
+      )}
+
       {tailorOpen && (
         <TailorPanel
           lang={uiLang}
@@ -640,7 +657,10 @@ export default function App() {
         contentLang={contentLang}
         uiLang={uiLang}
         filename={filename}
+        offer={offerByLang[contentLang]}
         onPreview={() => setPreviewOpen(true)}
+        onContentLangChange={setContentLang}
+        onOpenOffer={() => setOfferOpen(true)}
       />
     </div>
   )

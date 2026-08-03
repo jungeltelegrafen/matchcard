@@ -1,19 +1,24 @@
 import { saveAs } from 'file-saver'
 import { renderPdfBlob } from './renderPdf'
 import { buildDocxBlob } from '../renderers/docx/buildDocument'
-import { generateEmailSummary } from './parseWithClaude'
+import { composeOffer, offerForExport } from './offer'
 
-export async function downloadEmail(cv, filename, attachFormat, lang) {
-  const [summary, pdfB64, docxB64] = await Promise.all([
-    generateEmailSummary(cv, lang),
+// The .eml body IS the consultant offer (Tilbudsformat) — the same text as the
+// "Email Offer" modal — filled from CV facts + whatever was drafted/edited there.
+// The chosen CV file is attached (PDF/Word/both).
+export async function downloadEmail(cv, filename, attachFormat, lang, offer) {
+  const [pdfB64, docxB64] = await Promise.all([
     (attachFormat === 'pdf' || attachFormat === 'both') ? getPdfBase64(cv, lang) : Promise.resolve(null),
     (attachFormat === 'docx' || attachFormat === 'both') ? getDocxBase64(cv, lang) : Promise.resolve(null),
   ])
 
   const name = [cv.personal.firstName, cv.personal.lastName].filter(Boolean).join(' ') || 'Candidate'
+  const exp = offerForExport(offer, cv)
+  const body = composeOffer(exp, cv, lang)
+  const subject = exp.role || name // the consultant's title/role
   const boundary = `----=_CVGen_${Date.now()}`
 
-  const parts = [mimeTextPart(summary)]
+  const parts = [mimeTextPart(body)]
 
   if (pdfB64) {
     parts.push(mimeAttachment(pdfB64, 'application/pdf', `${filename}.pdf`))
@@ -29,7 +34,7 @@ export async function downloadEmail(cv, filename, attachFormat, lang) {
   const eml = [
     'From: ',
     'To: ',
-    `Subject: CV – ${name}`,
+    `Subject: ${subject}`,
     'MIME-Version: 1.0',
     `Content-Type: multipart/mixed; boundary="${boundary}"`,
     '',

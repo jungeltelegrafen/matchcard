@@ -1,8 +1,8 @@
 import { getL } from '../utils/labels'
 
 // Localized names for the language a variant was tailored in (for the note below).
-const LANG_NAME_NO = { en: 'engelsk', no: 'norsk', es: 'spansk' }
-const LANG_NAME_EN = { en: 'English', no: 'Norwegian', es: 'Spanish' }
+const LANG_NAME_NO = { en: 'engelsk', no: 'norsk', es: 'spansk', sv: 'svensk', da: 'dansk', pl: 'polsk' }
+const LANG_NAME_EN = { en: 'English', no: 'Norwegian', es: 'Spanish', sv: 'Swedish', da: 'Danish', pl: 'Polish' }
 
 // Shown in the left column while a job variant is active. Everything here is
 // non-destructive: it curates how the master is presented (include/exclude,

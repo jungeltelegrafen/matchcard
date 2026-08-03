@@ -9,11 +9,13 @@
 
 import { normalizeCv, ensureIds, emptyCv, cvHasContent, newId, resyncLangIds } from '@lib/cv/schema'
 import { LANGS, toLang } from '@lib/cv/lang'
+import { emptyOffer, normalizeOffer } from './offer'
 
-const KEY = 'cv-generator:draft:v3'
+const KEY = 'cv-generator:draft:v4'
+const KEY_V3 = 'cv-generator:draft:v3'
 const KEY_V2 = 'cv-generator:draft:v2'
 const KEY_V1 = 'cv-generator:draft:v1'
-const LEGACY_KEYS = [KEY_V2, KEY_V1]
+const LEGACY_KEYS = [KEY_V3, KEY_V2, KEY_V1]
 
 // Portfolio used to store a `platform` enum + `customPlatform`; it now stores a
 // free-text `label` (title) + `category`. Map old items forward BEFORE
@@ -85,7 +87,10 @@ function normalizeVariants(raw) {
 
 export function loadDraft() {
   try {
-    const rawV3 = localStorage.getItem(KEY)
+    const rawV4 = localStorage.getItem(KEY)
+    if (rawV4) return parseV4(JSON.parse(rawV4))
+
+    const rawV3 = localStorage.getItem(KEY_V3)
     if (rawV3) return parseV3(JSON.parse(rawV3))
 
     const rawV2 = localStorage.getItem(KEY_V2)
@@ -105,14 +110,27 @@ function baseFromV2Shape(draft) {
     cvByLang: normalizeCvByLang(draft.cvByLang),
     metaByLang: objByLang(draft.metaByLang, m => (m && typeof m === 'object' ? m : {})),
     feedbackByLang: objByLang(draft.feedbackByLang, f => (Array.isArray(f) ? f : [])),
+    offerByLang: objByLang(draft.offerByLang, normalizeOffer),
     uiLang: toLang(draft.uiLang),
     contentLang: toLang(draft.contentLang),
     savedAt: typeof draft.savedAt === 'number' ? draft.savedAt : null,
   }
 }
 
+// v4 adds offerByLang (the consultant "offer"/Tilbudsformat). v3 shape is
+// otherwise identical, so v3 drafts migrate forward by just gaining empty offers
+// (baseFromV2Shape coerces a missing offerByLang to empties).
+function parseV4(draft) {
+  if (draft?.v !== 4 || !draft.cvByLang || typeof draft.cvByLang !== 'object') return null
+  return withVariants(draft)
+}
+
 function parseV3(draft) {
   if (draft?.v !== 3 || !draft.cvByLang || typeof draft.cvByLang !== 'object') return null
+  return withVariants(draft)
+}
+
+function withVariants(draft) {
   const base = baseFromV2Shape(draft)
   const variants = normalizeVariants(draft.variants)
   const activeVariantId = variants.some(v => v.id === draft.activeVariantId) ? draft.activeVariantId : null
@@ -140,6 +158,7 @@ function migrateV1(draft) {
   }
   return {
     cvByLang, metaByLang, feedbackByLang,
+    offerByLang: Object.fromEntries(LANGS.map(l => [l, emptyOffer()])),
     uiLang: lang === 'no' ? 'no' : 'en',
     contentLang: lang,
     variants: [],
@@ -148,14 +167,15 @@ function migrateV1(draft) {
   }
 }
 
-export function saveDraft({ cvByLang, metaByLang, feedbackByLang, uiLang, contentLang, variants, activeVariantId }) {
+export function saveDraft({ cvByLang, metaByLang, feedbackByLang, offerByLang, uiLang, contentLang, variants, activeVariantId }) {
   try {
     localStorage.setItem(KEY, JSON.stringify({
-      v: 3,
+      v: 4,
       savedAt: Date.now(),
       cvByLang,
       metaByLang,
       feedbackByLang,
+      offerByLang,
       uiLang,
       contentLang,
       variants: variants ?? [],
