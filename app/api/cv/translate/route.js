@@ -2,6 +2,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import { LANG_NAME } from '@/lib/cv/lang'
 import { buildCvJsonSchema, normalizeCv, CV_SECTIONS } from '@/lib/cv/schema'
 import { checkRateLimit, rateLimitedResponse, LIMITS } from '@/lib/rateLimit'
+import { mapLimit, withDeadline } from '@/lib/aiConcurrency'
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
@@ -46,22 +47,6 @@ ${JSON.stringify(fragment)}`,
   return toolUse.input
 }
 
-// Run async fn over items with bounded concurrency; never rejects (per-item
-// settle) so one bad chunk can't fail the whole translation.
-async function mapLimit(items, limit, fn) {
-  const results = new Array(items.length)
-  let next = 0
-  async function worker() {
-    while (next < items.length) {
-      const i = next++
-      results[i] = await fn(items[i]).then(v => ({ ok: true, value: v }), () => ({ ok: false }))
-    }
-  }
-  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker))
-  return results
-}
-
-const pick = (obj, keys) => Object.fromEntries(keys.filter(k => obj[k] !== undefined).map(k => [k, obj[k]]))
 
 export async function POST(request) {
   const limit = await checkRateLimit(request, LIMITS.ai)
@@ -95,14 +80,9 @@ export async function POST(request) {
 
     // Global deadline: abort any in-flight/queued chunk at 50s so the whole
     // request always returns under the 60s cap — stragglers fall back below.
-    const ac = new AbortController()
-    const deadline = setTimeout(() => ac.abort(), GLOBAL_DEADLINE)
-    let results
-    try {
-      results = await mapLimit(fragments, CONCURRENCY, f => translateChunk(f.payload, f.sections, langName, ac.signal))
-    } finally {
-      clearTimeout(deadline)
-    }
+    const results = await withDeadline(GLOBAL_DEADLINE, signal =>
+      mapLimit(fragments, CONCURRENCY, f => translateChunk(f.payload, f.sections, langName, signal))
+    )
 
     // Reassemble, starting from the originals so any failed chunk falls back.
     const merged = { ...cv, cvType: cv.cvType }

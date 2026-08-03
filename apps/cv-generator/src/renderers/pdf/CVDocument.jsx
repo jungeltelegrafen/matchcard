@@ -55,7 +55,7 @@ export default function CVDocument({ data, lang = 'en' }) {
           <CVSkills items={data.skills} lang={lang} />
         )}
 
-        {data.competences?.enabled && data.competences.items.length > 0 && (
+        {data.competences?.enabled !== false && data.competences?.items?.some(c => c.requirement?.trim()) && (
           <CVCompetences competences={data.competences} lang={lang} />
         )}
 

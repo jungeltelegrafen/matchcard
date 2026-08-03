@@ -310,6 +310,17 @@ a.cv-sheet-meta-value:hover { text-decoration: underline; }
   color: var(--accent);
   text-decoration: underline;
 }
+.cv-portfolio-tag {
+  display: inline-block;
+  margin-right: 8px;
+  padding: 1px 7px;
+  border-radius: 10px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 600;
+  vertical-align: middle;
+}
 
 /* ── Video presentations ─────────────────────────────────────────── */
 .cv-share-videos {

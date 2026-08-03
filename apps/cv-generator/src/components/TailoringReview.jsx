@@ -29,7 +29,7 @@ export default function TailoringReview({
   const differentLang = variant.tailoredInLang !== lang
 
   const experience  = ordered(master.experience || [], variant.order?.experience)
-  const competences = master.competences?.enabled ? ordered(master.competences.items || [], variant.order?.competences) : []
+  const competences = master.competences?.enabled === false ? [] : ordered(master.competences?.items || [], variant.order?.competences)
 
   function CheckRow({ id, label, children, canReorder, section }) {
     return (

@@ -58,9 +58,9 @@ export default function ShareCV({ cv, lang = 'en' }) {
   const positionItems = positions?.enabled ? (positions.items || []) : []
   const positionsFull = positions?.useProjectFormat
   const competencesSimple = competences?.simpleFormat
-  const competenceItems = competences?.enabled
-    ? (competences.items || []).filter(c => c.requirement?.trim())
-    : []
+  const competenceItems = competences?.enabled === false
+    ? []
+    : (competences?.items || []).filter(c => c.requirement?.trim())
   const portfolioItems = (portfolio || []).filter(p => p.url || p.label)
 
   function handlePrint() { window.print() }
@@ -335,14 +335,18 @@ export default function ShareCV({ cv, lang = 'en' }) {
         {portfolioItems.length > 0 && (
           <section className="cv-section">
             <h2 className="cv-section-title">{lb.portfolio}</h2>
-            {portfolioItems.map((p, i) => (
-              <div key={i} className="cv-entry cv-entry--inline">
-                {p.url
-                  ? <a className="cv-portfolio-link" href={p.url} target="_blank" rel="noopener noreferrer">{p.label || p.url}</a>
-                  : <span className="cv-entry-role">{p.label}</span>}
-                {p.description && <><span className="cv-entry-sep">·</span><span className="cv-entry-company">{p.description}</span></>}
-              </div>
-            ))}
+            {portfolioItems.map((p, i) => {
+              const tag = lb.portfolioCategories?.[p.category] || ''
+              return (
+                <div key={i} className="cv-entry cv-entry--inline">
+                  {tag && <span className="cv-portfolio-tag">{tag}</span>}
+                  {p.url
+                    ? <a className="cv-portfolio-link" href={p.url} target="_blank" rel="noopener noreferrer">{p.label || p.url}</a>
+                    : <span className="cv-entry-role">{p.label}</span>}
+                  {p.description && <><span className="cv-entry-sep">·</span><span className="cv-entry-company">{p.description}</span></>}
+                </div>
+              )
+            })}
           </section>
         )}
 

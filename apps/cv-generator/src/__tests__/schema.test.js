@@ -41,7 +41,7 @@ describe('normalizeCv', () => {
   it('fills missing sections with defaults and rejects invalid scalars', () => {
     const cv = normalizeCv({ cvType: 'nonsense' })
     expect(cv.cvType).toBe('technical')
-    expect(cv.competences).toEqual({ enabled: false, simpleFormat: false, projectLabel: '', items: [] })
+    expect(cv.competences).toEqual({ enabled: true, simpleFormat: false, projectLabel: '', items: [] })
   })
 
   it('preserves _id markers on items', () => {

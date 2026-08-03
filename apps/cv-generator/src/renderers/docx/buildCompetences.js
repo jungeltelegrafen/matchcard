@@ -14,7 +14,9 @@ function blankLine() {
 }
 
 export function buildCompetences(competences, lang = 'en') {
-  if (!competences?.enabled || !competences?.items?.length) return []
+  if (competences?.enabled === false) return []
+  const items = (competences?.items || []).filter(it => it.requirement?.trim())
+  if (!items.length) return []
   const lb = getL(lang)
   const simple = !!competences.simpleFormat
 
@@ -24,7 +26,7 @@ export function buildCompetences(competences, lang = 'en') {
 
   return [
     sectionHeading(title),
-    ...competences.items.flatMap((item, i) => {
+    ...items.flatMap((item, i) => {
       const paras = []
 
       // Blank line between competence items (not before the first)

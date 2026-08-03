@@ -2835,6 +2835,10 @@ textarea.cv-field {
   min-width: 0;
   line-height: 1.45;
 }
+/* In the portfolio item (a column flex container) flex:1 would let flexbox
+   override the textarea's auto-grow height and clip it to min-height. The field
+   is already width:100%, so opt it out of flex sizing and honor its height. */
+.portfolio-item .cv-desc-field { flex: 0 0 auto; }
 
 /* ═══════════════════════════════════════════════════════════════
    SPINNERS

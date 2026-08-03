@@ -76,22 +76,12 @@ function ProjectChips({ projects, path, experiences, onEdit }) {
   )
 }
 
-function hasFilledItem(items) {
-  return (items || []).some(it => it.requirement?.trim())
-}
-
 export default function CompetenceTable({ data, lang = 'en', meta, onFieldEdit, onChange, onAccept, onDismiss, experiences }) {
   const lb = getL(lang)
-  const { enabled, simpleFormat = false, projectLabel = '', items } = data
-
-  // Auto-enable when AI imports competences with filled items
-  const prevItemCount = useRef(items.length)
-  useEffect(() => {
-    if (!enabled && hasFilledItem(items) && items.length !== prevItemCount.current) {
-      onChange({ ...data, enabled: true })
-    }
-    prevItemCount.current = items.length
-  }, [items])
+  // Opt-out model: `enabled` defaults true (included). The section only renders
+  // in preview/exports when a row is actually filled; toggling `enabled` off
+  // explicitly excludes it even when filled.
+  const { enabled = true, simpleFormat = false, projectLabel = '', items } = data
 
   function toggle()  { onChange({ ...data, enabled: !enabled }) }
 
@@ -102,17 +92,7 @@ export default function CompetenceTable({ data, lang = 'en', meta, onFieldEdit, 
 
   function removeItem(i) {
     const newItems = items.filter((_, idx) => idx !== i)
-    onChange({ ...data, items: newItems, enabled: enabled && hasFilledItem(newItems) })
-  }
-
-  function setItemField(i, key, val) {
-    const newItems = items.map((it, idx) => idx === i ? { ...it, [key]: val } : it)
-    const nowHasFilled = hasFilledItem(newItems)
-    onChange({
-      ...data,
-      items: newItems,
-      enabled: enabled || (key === 'requirement' && !!val.trim() && nowHasFilled),
-    })
+    onChange({ ...data, items: newItems })
   }
 
   const prefix = (i, key) => `competences.items.${i}.${key}`
@@ -130,16 +110,14 @@ export default function CompetenceTable({ data, lang = 'en', meta, onFieldEdit, 
         </button>
       </div>
 
-      {enabled && (
-        <label className="cv-toggle-inline cv-toggle-sub">
-          <input
-            type="checkbox"
-            checked={!!simpleFormat}
-            onChange={e => onChange({ ...data, simpleFormat: e.target.checked })}
-          />
-          <span>{lb.simpleCompetence}</span>
-        </label>
-      )}
+      <label className="cv-toggle-inline cv-toggle-sub">
+        <input
+          type="checkbox"
+          checked={!!simpleFormat}
+          onChange={e => onChange({ ...data, simpleFormat: e.target.checked })}
+        />
+        <span>{lb.simpleCompetence}</span>
+      </label>
 
       <div className="cv-competence-project-row">
         <span className="cv-competence-project-prefix">{lb.forProject}</span>

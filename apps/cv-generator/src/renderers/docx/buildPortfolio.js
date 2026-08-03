@@ -3,24 +3,15 @@ import { theme } from '../../theme'
 import { hex, sectionHeading } from './buildUtils'
 import { getL } from '../../utils/labels'
 
-const PLATFORM_LABELS = {
-  github:        'GitHub',
-  gitlab:        'GitLab',
-  stackoverflow: 'Stack Overflow',
-  dribbble:      'Dribbble',
-  behance:       'Behance',
-  website:       'Website',
-  other:         '',
-}
-
 export function buildPortfolio(items, lang = 'en') {
   if (!items?.length) return []
 
-  const heading = getL(lang).portfolio
+  const lb = getL(lang)
+  const heading = lb.portfolio
   const result  = [sectionHeading(heading)]
 
   for (const item of items) {
-    const platformLabel = PLATFORM_LABELS[item.platform] || ''
+    const platformLabel = lb.portfolioCategories?.[item.category] || ''
     const displayLabel  = item.label || item.url || platformLabel
 
     const lineChildren = []

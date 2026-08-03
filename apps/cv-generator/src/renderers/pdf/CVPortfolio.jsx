@@ -3,16 +3,6 @@ import { theme } from '../../theme'
 import SectionHeading from './SectionHeading'
 import { getL } from '../../utils/labels'
 
-const PLATFORM_LABELS = {
-  github:        'GitHub',
-  gitlab:        'GitLab',
-  stackoverflow: 'Stack Overflow',
-  dribbble:      'Dribbble',
-  behance:       'Behance',
-  website:       'Website',
-  other:         '',
-}
-
 const styles = StyleSheet.create({
   item: {
     marginBottom: 8,
@@ -53,13 +43,14 @@ const styles = StyleSheet.create({
 export default function CVPortfolio({ items, lang = 'en' }) {
   if (!items?.length) return null
 
-  const heading = getL(lang).portfolio
+  const lb = getL(lang)
+  const heading = lb.portfolio
 
   return (
     <View style={{ marginBottom: theme.spacing.sectionGap }}>
       <SectionHeading>{heading}</SectionHeading>
       {items.map((item, i) => {
-        const platformLabel = PLATFORM_LABELS[item.platform] || ''
+        const platformLabel = lb.portfolioCategories?.[item.category] || ''
         const displayLabel  = item.label || item.url || platformLabel
 
         return (

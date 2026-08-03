@@ -15,9 +15,35 @@ const KEY_V2 = 'cv-generator:draft:v2'
 const KEY_V1 = 'cv-generator:draft:v1'
 const LEGACY_KEYS = [KEY_V2, KEY_V1]
 
+// Portfolio used to store a `platform` enum + `customPlatform`; it now stores a
+// free-text `label` (title) + `category`. Map old items forward BEFORE
+// normalizeCv drops the retired fields, so existing links keep their name/tag.
+const LEGACY_PLATFORM = {
+  github:        { title: 'GitHub',         category: 'code' },
+  gitlab:        { title: 'GitLab',         category: 'code' },
+  stackoverflow: { title: 'Stack Overflow', category: 'code' },
+  dribbble:      { title: 'Dribbble',       category: 'design' },
+  behance:       { title: 'Behance',        category: 'design' },
+  website:       { title: '',               category: 'project' },
+}
+function migratePortfolioLegacy(cv) {
+  if (!cv || !Array.isArray(cv.portfolio)) return cv
+  const portfolio = cv.portfolio.map(item => {
+    if (!item || (item.platform === undefined && item.customPlatform === undefined)) return item
+    const { platform, customPlatform, ...rest } = item
+    const map = LEGACY_PLATFORM[platform] || { title: '', category: '' }
+    return {
+      ...rest,
+      label: rest.label || (platform === 'other' ? (customPlatform || '') : map.title),
+      category: rest.category || map.category,
+    }
+  })
+  return { ...cv, portfolio }
+}
+
 function normalizeCvByLang(raw) {
   const out = {}
-  for (const l of LANGS) out[l] = ensureIds(normalizeCv(raw?.[l] ?? {}))
+  for (const l of LANGS) out[l] = ensureIds(normalizeCv(migratePortfolioLegacy(raw?.[l] ?? {})))
   return out
 }
 
@@ -108,7 +134,7 @@ function migrateV1(draft) {
   const lang = toLang(draft.lang)
   const cvByLang = {}, metaByLang = {}, feedbackByLang = {}
   for (const l of LANGS) {
-    cvByLang[l] = l === lang ? ensureIds(normalizeCv(draft.cv)) : emptyCv()
+    cvByLang[l] = l === lang ? ensureIds(normalizeCv(migratePortfolioLegacy(draft.cv))) : emptyCv()
     metaByLang[l] = l === lang && draft.meta && typeof draft.meta === 'object' ? draft.meta : {}
     feedbackByLang[l] = l === lang && Array.isArray(draft.feedbackItems) ? draft.feedbackItems : []
   }

@@ -1,20 +1,31 @@
 import CVField from './CVField'
 import { getL } from '../../utils/labels'
+import { deriveFromUrl } from '../../utils/portfolioHeuristics'
 
-const PLATFORMS = [
-  { value: 'github',        label: 'GitHub' },
-  { value: 'gitlab',        label: 'GitLab' },
-  { value: 'stackoverflow', label: 'Stack Overflow' },
-  { value: 'dribbble',      label: 'Dribbble' },
-  { value: 'behance',       label: 'Behance' },
-  { value: 'website',       label: 'Personal Website / Portfolio' },
-  { value: 'other',         label: 'Other' },
-]
+const CATEGORY_VALUES = ['code', 'design', 'project', 'writing', 'other']
 
-const emptyItem = { platform: 'github', label: '', url: '', description: '' }
+const emptyItem = { category: '', label: '', url: '', description: '' }
 
 export default function PortfolioSection({ items = [], lang = 'en', meta, onFieldEdit, onChange, onAccept, onDismiss }) {
   const lb = getL(lang)
+  const cats = lb.portfolioCategories || {}
+
+  function setItem(i, patch) {
+    onChange(items.map((it, idx) => (idx === i ? { ...it, ...patch } : it)))
+  }
+
+  // On leaving the URL field, guess a title + category from the link — but only
+  // fill fields the user hasn't set, never overwrite their own input.
+  function autofillFromUrl(i) {
+    const item = items[i]
+    if (!item?.url) return
+    const guess = deriveFromUrl(item.url)
+    const patch = {}
+    if (guess.title && !item.label?.trim()) patch.label = guess.title
+    if (guess.category && !item.category) patch.category = guess.category
+    if (Object.keys(patch).length) setItem(i, patch)
+  }
+
   return (
     <section className="cv-section">
       <div className="cv-section-heading">
@@ -26,14 +37,12 @@ export default function PortfolioSection({ items = [], lang = 'en', meta, onFiel
           <div className="portfolio-item-row">
             <select
               className="portfolio-platform-select"
-              value={item.platform || 'other'}
-              onChange={e => {
-                const updated = items.map((it, idx) => idx === i ? { ...it, platform: e.target.value } : it)
-                onChange(updated)
-              }}
+              value={CATEGORY_VALUES.includes(item.category) ? item.category : ''}
+              onChange={e => setItem(i, { category: e.target.value })}
             >
-              {PLATFORMS.map(p => (
-                <option key={p.value} value={p.value}>{p.label}</option>
+              <option value="">{lb.portfolioCategoryTag}</option>
+              {CATEGORY_VALUES.map(v => (
+                <option key={v} value={v}>{cats[v] || v}</option>
               ))}
             </select>
 
@@ -42,7 +51,7 @@ export default function PortfolioSection({ items = [], lang = 'en', meta, onFiel
               path={`portfolio.${i}.label`}
               meta={meta} onEdit={onFieldEdit} onAccept={onAccept} onDismiss={onDismiss}
               className="cv-role-field"
-              placeholder={lang === 'no' ? 'Visningsnavn (valgfritt)' : 'Display name (optional)'}
+              placeholder={lb.portfolioTitlePlaceholder}
             />
           </div>
 
@@ -52,6 +61,7 @@ export default function PortfolioSection({ items = [], lang = 'en', meta, onFiel
             meta={meta} onEdit={onFieldEdit} onAccept={onAccept} onDismiss={onDismiss}
             className="cv-company-field portfolio-url-field"
             placeholder="https://github.com/yourname"
+            onBlur={() => autofillFromUrl(i)}
           />
 
           <CVField

@@ -72,6 +72,9 @@ export const L = {
     videoUrlPlaceholder:   'Paste video link (Cloudflare, Vimeo, YouTube…)',
     videoNoUrl:          'No video link yet',
     addLink:             '+ Add link',
+    portfolioTitlePlaceholder: 'Title / name',
+    portfolioCategoryTag: '— tag —',
+    portfolioCategories: { code: 'Code', design: 'Design', project: 'Project', writing: 'Writing', other: 'Other' },
   },
 
   no: {
@@ -147,6 +150,9 @@ export const L = {
     videoUrlPlaceholder:   'Lim inn videolenke (Cloudflare, Vimeo, YouTube…)',
     videoNoUrl:          'Ingen videolenke ennå',
     addLink:             '+ Legg til lenke',
+    portfolioTitlePlaceholder: 'Tittel / navn',
+    portfolioCategoryTag: '— merkelapp —',
+    portfolioCategories: { code: 'Kode', design: 'Design', project: 'Prosjekt', writing: 'Skriving', other: 'Annet' },
   },
 
   es: {
@@ -222,6 +228,9 @@ export const L = {
     videoUrlPlaceholder:   'Pega el enlace del vídeo (Cloudflare, Vimeo, YouTube…)',
     videoNoUrl:          'Aún no hay enlace de vídeo',
     addLink:             '+ Añadir enlace',
+    portfolioTitlePlaceholder: 'Título / nombre',
+    portfolioCategoryTag: '— etiqueta —',
+    portfolioCategories: { code: 'Código', design: 'Diseño', project: 'Proyecto', writing: 'Escritura', other: 'Otro' },
   },
 }
 

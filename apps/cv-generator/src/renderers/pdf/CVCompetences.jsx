@@ -88,8 +88,9 @@ function LevelDots({ level }) {
 
 export default function CVCompetences({ competences, lang = 'en' }) {
   const lb = getL(lang)
-  const { projectLabel, items, simpleFormat } = competences
-  if (!items?.length) return null
+  const { projectLabel, simpleFormat } = competences
+  const items = (competences.items || []).filter(it => it.requirement?.trim())
+  if (!items.length) return null
 
   const title = projectLabel ? `${lb.competences} — ${projectLabel}` : lb.competences
 

@@ -133,6 +133,21 @@ company/date/role; export .docx and grep `word/document.xml` for `w:keepNext`;
 open a share link and Cmd+P to check the print output; `npm test` still passes.
 Full write-up was in the plan file `~/.claude/plans/some-improvements-being-able-starry-reddy.md`.
 
+## 9. Parsing — Vercel Pro upgrade path (deferred; currently on Hobby)
+The parser is now a two-phase pipeline (outline → parallel per-entry expansion)
+engineered to stay under Vercel Hobby's **60s** function cap
+(`app/api/cv/parse/route.js`, reusing `lib/aiConcurrency.js`). If the site moves
+to **Vercel Pro** (maxDuration up to 300s), the simpler + higher-fidelity option
+is a SINGLE long smart pass:
+- Raise the parse route `export const maxDuration` to ~180–300s and `max_tokens`
+  to ~16k; collapse the two phases back into one `save_cv` call with the smart
+  prompt (weighted summary, split projects, curated skills).
+- Raise the client abort in `apps/cv-generator/src/utils/parseWithClaude.js`
+  (`apiFetch` currently aborts at 70s) to match.
+- Add a progress indicator (parses may take 1–3 min).
+- Trade ~$20/mo for less code + fewer moving parts. Keep the two-phase pipeline
+  as the fallback for Hobby.
+
 ## Known deferred issues
 - Video profiles are not translated by the explicit translate button
   (client-only sections are never overwritten by AI results)
