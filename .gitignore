@@ -5,3 +5,6 @@ node_modules
 apps/*/node_modules
 apps/*/dist
 .DS_Store
+
+# Built SPA bundle — regenerated during Vercel deploy (buildCommand), not committed
+/public/cv-generator/
