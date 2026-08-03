@@ -3250,6 +3250,11 @@ textarea.cv-field {
   padding-bottom: 12px;
   border-bottom: 1px dashed var(--border);
 }
+.cv-branding-toggle-group {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
 .cv-branding-toggle-label {
   display: flex;
   align-items: center;
@@ -3270,18 +3275,24 @@ textarea.cv-field {
 }
 .cv-branding-edit-link:hover { text-decoration: underline; }
 
-/* ── Page-break gutter in the editor (approximate print pagination) ── */
+/* ── Page-break gutter in the editor (approximate print pagination) ──
+   A real band of space so the two pages read as separated: dashed rule at the
+   top, then the page label sitting in the gutter below it (not on the line). */
 .cv-page-break {
   position: relative;
-  height: 0;
-  margin: 40px -60px;                 /* bleed into the sheet's side padding */
+  height: 30px;                       /* the visible gutter between pages */
+  margin: 40px -60px 44px;            /* bleed into the sheet's side padding */
   border-top: 2px dashed #d9cfc4;
+  background: repeating-linear-gradient(
+    -45deg,
+    transparent, transparent 6px,
+    rgba(0,0,0,0.015) 6px, rgba(0,0,0,0.015) 12px
+  );
 }
 .cv-page-break-label {
   position: absolute;
-  top: -9px;
+  top: 9px;                           /* below the dashed rule, in the gutter */
   right: 60px;
-  background: var(--surface);
   padding: 0 8px;
   font-size: 0.62rem;
   letter-spacing: 0.06em;
@@ -3309,8 +3320,11 @@ textarea.cv-field {
 }
 .cv-brand-logo { height: 44px; max-width: 180px; }
 .cv-brand-logo img { max-height: 44px; max-width: 180px; object-fit: contain; }
-.cv-brand-photo { width: 68px; height: 68px; border-radius: 50%; background: #f2ede8; }
-.cv-brand-photo img { width: 68px; height: 68px; object-fit: cover; }
+/* Photo always sits at the right edge, even when the logo is hidden. Overflow
+   is visible so the remove badge (inside the photo) isn't clipped; the image
+   rounds itself. */
+.cv-brand-photo { width: 68px; height: 68px; border-radius: 50%; background: #f2ede8; margin-left: auto; position: relative; overflow: visible; }
+.cv-brand-photo img { width: 68px; height: 68px; object-fit: cover; border-radius: 50%; }
 .cv-brand-slot {
   font-size: 0.7rem;
   color: #b7a996;
@@ -3370,6 +3384,25 @@ textarea.cv-field {
   color: var(--accent);
 }
 .branding-zone-hint { font-size: 0.7rem; color: var(--muted); }
+
+/* Header mock — logo left, photo right (mirrors the CV page header). */
+.branding-header-mock {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+.bhm-slot { display: flex; flex-direction: column; gap: 8px; }
+.bhm-slot--photo { align-items: flex-end; }
+.branding-slot-actions { display: flex; gap: 8px; }
+.branding-photo-preview {
+  width: 72px; height: 72px;
+  border: 1px dashed #d9cfc4; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; overflow: hidden; background: #fff; flex-shrink: 0;
+}
+.branding-photo-preview img { width: 72px; height: 72px; object-fit: cover; }
+.branding-photo-empty { font-size: 0.68rem; color: #b7a996; text-align: center; }
 
 /* Footer card — mirrors the on-page footer: accent top rule, name left,
    address/website across the top, email/phone across the bottom. */

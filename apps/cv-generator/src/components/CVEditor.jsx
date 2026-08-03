@@ -28,7 +28,8 @@ function outerHeight(el) {
 
 // Branding header shown at the top of the CV card (page-1 only in exports):
 // company logo left (click to edit branding), profile photo right (per-CV upload).
-function BrandingHeader({ branding, onEditBranding, onSetProfilePicture }) {
+// The logo and photo are gated independently (showLogo / showPhoto).
+function BrandingHeader({ branding, showLogo, showPhoto, onEditBranding, onSetProfilePicture }) {
   const photoRef = useRef(null)
   async function onPhoto(file) {
     if (!file) return
@@ -36,20 +37,24 @@ function BrandingHeader({ branding, onEditBranding, onSetProfilePicture }) {
   }
   return (
     <div className="cv-branding-header">
-      <div className="cv-brand-logo" onClick={onEditBranding} title="Branding">
-        {branding.logo
-          ? <img src={branding.logo} alt="logo" />
-          : <span className="cv-brand-slot">+ Logo</span>}
-      </div>
-      <div className="cv-brand-photo" onClick={() => photoRef.current?.click()} title="Profile photo">
-        {branding.profilePicture
-          ? <img src={branding.profilePicture} alt="photo" />
-          : <span className="cv-brand-slot">+ Photo</span>}
-        <input ref={photoRef} type="file" accept="image/*" style={{ display: 'none' }}
-          onChange={e => { onPhoto(e.target.files?.[0]); e.target.value = '' }} />
-      </div>
-      {branding.profilePicture && (
-        <button className="cv-brand-photo-remove" onClick={() => onSetProfilePicture('')} title="Remove photo">×</button>
+      {showLogo && (
+        <div className="cv-brand-logo" onClick={onEditBranding} title="Branding">
+          {branding.logo
+            ? <img src={branding.logo} alt="logo" />
+            : <span className="cv-brand-slot">+ Logo</span>}
+        </div>
+      )}
+      {showPhoto && (
+        <div className="cv-brand-photo" onClick={() => photoRef.current?.click()} title="Profile photo">
+          {branding.profilePicture
+            ? <img src={branding.profilePicture} alt="photo" />
+            : <span className="cv-brand-slot">+ Photo</span>}
+          <input ref={photoRef} type="file" accept="image/*" style={{ display: 'none' }}
+            onChange={e => { onPhoto(e.target.files?.[0]); e.target.value = '' }} />
+          {branding.profilePicture && (
+            <button className="cv-brand-photo-remove" onClick={e => { e.stopPropagation(); onSetProfilePicture('') }} title="Remove photo">×</button>
+          )}
+        </div>
       )}
     </div>
   )
@@ -106,12 +111,15 @@ function SectionWrap({ sectionKey, hoveredSection, commentCounts, children }) {
   )
 }
 
-export default function CVEditor({ cv, lang = 'en', uiLang = 'en', meta, onFieldEdit, onAccept, onDismiss, onStructural, hoveredSection, commentCounts, changedPaths, onChangeSeen, branding, includeBranding = true, onToggleBranding, onEditBranding, onSetProfilePicture }) {
+export default function CVEditor({ cv, lang = 'en', uiLang = 'en', meta, onFieldEdit, onAccept, onDismiss, onStructural, hoveredSection, commentCounts, changedPaths, onChangeSeen, branding, includeBranding = true, includeImage = true, onToggleBranding, onToggleImage, onEditBranding, onSetProfilePicture }) {
   const shared = { lang, meta, onFieldEdit, onAccept, onDismiss }
   const wrap = sectionKey => ({ sectionKey, hoveredSection, commentCounts })
   const no = uiLang === 'no'
 
-  const showHeader = Boolean(branding) && includeBranding
+  // Logo + footer follow "branding"; the profile photo follows "image".
+  const showLogo   = Boolean(branding) && includeBranding
+  const showPhoto  = Boolean(branding) && includeImage
+  const showHeader = showLogo || showPhoto
   const showFooter = Boolean(branding) && includeBranding && hasCompanyFooter(branding)
 
   // ── Estimated page pagination (screen guide, not the exact PDF layout) ──────
@@ -264,7 +272,7 @@ export default function CVEditor({ cv, lang = 'en', uiLang = 'en', meta, onField
     const sheet = container.closest('.cv-page')
     if (sheet) ro.observe(sheet)
     return () => ro.disconnect()
-  }, [cv, lang, showHeader, showFooter, branding])
+  }, [cv, lang, showLogo, showPhoto, showFooter, branding])
 
   const breakAt = i => layout.breaks.find(b => b.index === i)
 
@@ -274,14 +282,24 @@ export default function CVEditor({ cv, lang = 'en', uiLang = 'en', meta, onField
 
       {branding && (
         <div className="cv-branding-toggle">
-          <label className="cv-branding-toggle-label">
-            <input
-              type="checkbox"
-              checked={includeBranding}
-              onChange={e => onToggleBranding?.(e.target.checked)}
-            />
-            {no ? 'Vis merkevare i eksport' : 'Include branding in exports'}
-          </label>
+          <div className="cv-branding-toggle-group">
+            <label className="cv-branding-toggle-label">
+              <input
+                type="checkbox"
+                checked={includeBranding}
+                onChange={e => onToggleBranding?.(e.target.checked)}
+              />
+              {no ? 'Merkevare' : 'Branding'}
+            </label>
+            <label className="cv-branding-toggle-label">
+              <input
+                type="checkbox"
+                checked={includeImage}
+                onChange={e => onToggleImage?.(e.target.checked)}
+              />
+              {no ? 'Profilbilde' : 'Photo'}
+            </label>
+          </div>
           <button type="button" className="cv-branding-edit-link" onClick={onEditBranding}>
             {no ? 'Rediger merkevare' : 'Edit branding'}
           </button>
@@ -290,7 +308,13 @@ export default function CVEditor({ cv, lang = 'en', uiLang = 'en', meta, onField
 
       {showHeader && (
         <div ref={headerRef}>
-          <BrandingHeader branding={branding} onEditBranding={onEditBranding} onSetProfilePicture={onSetProfilePicture} />
+          <BrandingHeader
+            branding={branding}
+            showLogo={showLogo}
+            showPhoto={showPhoto}
+            onEditBranding={onEditBranding}
+            onSetProfilePicture={onSetProfilePicture}
+          />
         </div>
       )}
 

@@ -104,7 +104,10 @@ export default function App() {
   // the profile photo is per-CV (in the draft).
   const [companyBranding, setCompanyBranding] = useState(loadCompanyBranding)
   const [profilePicture, setProfilePicture]   = useState(() => draft?.profilePicture ?? '')
+  // Branding (logo + company footer) and the profile photo are independent — each
+  // can be included in exports on its own.
   const [includeBranding, setIncludeBranding] = useState(() => draft?.includeBranding ?? true)
+  const [includeImage, setIncludeImage]       = useState(() => draft?.includeImage ?? true)
   const [brandingOpen, setBrandingOpen]       = useState(false)
   const [uiLang, setUiLang]               = useState(() => draft?.uiLang      ?? 'en')
   const [contentLang, setContentLang]     = useState(() => draft?.contentLang ?? 'en')
@@ -162,11 +165,11 @@ export default function App() {
   // Debounced autosave — master (both languages), toggles, and variants
   useEffect(() => {
     const t = setTimeout(
-      () => saveDraft({ cvByLang, metaByLang, feedbackByLang, offerByLang, profilePicture, includeBranding, uiLang, contentLang, variants, activeVariantId }),
+      () => saveDraft({ cvByLang, metaByLang, feedbackByLang, offerByLang, profilePicture, includeBranding, includeImage, uiLang, contentLang, variants, activeVariantId }),
       600
     )
     return () => clearTimeout(t)
-  }, [cvByLang, metaByLang, feedbackByLang, offerByLang, profilePicture, includeBranding, uiLang, contentLang, variants, activeVariantId])
+  }, [cvByLang, metaByLang, feedbackByLang, offerByLang, profilePicture, includeBranding, includeImage, uiLang, contentLang, variants, activeVariantId])
 
   // Company branding lives in its own store so it survives Reset / a new CV.
   useEffect(() => { saveCompanyBranding(companyBranding) }, [companyBranding])
@@ -174,9 +177,12 @@ export default function App() {
   // What the editor receives (always, so branding can be edited/toggled there):
   // company branding + the per-CV profile photo.
   const branding = { ...companyBranding, profilePicture }
-  // What exports/preview/share receive — an empty object (no logo/photo/footer)
-  // when the user has excluded branding, so renderers stay null-safe.
-  const exportBranding = includeBranding ? branding : {}
+  // What exports/preview/share receive — branding (logo + footer) and the photo
+  // are composed independently, so either can be included on its own.
+  const exportBranding = {
+    ...(includeBranding ? companyBranding : {}),
+    profilePicture: includeImage ? profilePicture : '',
+  }
 
   // ── active master-slot setters ──────────────────────────────────────────
   const setActiveCv   = next => setCvByLang(prev => ({ ...prev, [contentLang]: typeof next === 'function' ? next(prev[contentLang]) : next }))
@@ -677,7 +683,9 @@ export default function App() {
               branding={branding}
               uiLang={uiLang}
               includeBranding={includeBranding}
+              includeImage={includeImage}
               onToggleBranding={setIncludeBranding}
+              onToggleImage={setIncludeImage}
               onEditBranding={() => setBrandingOpen(true)}
               onSetProfilePicture={setProfilePicture}
             />
@@ -707,6 +715,8 @@ export default function App() {
         <BrandingModal
           branding={companyBranding}
           onChange={setCompanyBranding}
+          profilePicture={profilePicture}
+          onSetProfilePicture={setProfilePicture}
           uiLang={uiLang}
           onClose={() => setBrandingOpen(false)}
         />

@@ -2,10 +2,13 @@ import { useState, useEffect, useRef } from 'react'
 import { fileToDataUrl } from '../utils/branding'
 
 // Set the company brand once — logo + footer info — reused for every consultant.
-export default function BrandingModal({ branding, onChange, uiLang = 'en', onClose }) {
+// The profile photo is per-CV (not stored with the reusable brand), but it's
+// edited here too so the header preview mirrors the page: logo left, photo right.
+export default function BrandingModal({ branding, onChange, profilePicture = '', onSetProfilePicture, uiLang = 'en', onClose }) {
   const no = uiLang === 'no'
   const [err, setErr] = useState('')
   const logoRef = useRef(null)
+  const photoRef = useRef(null)
 
   useEffect(() => {
     function onKey(e) { if (e.key === 'Escape') onClose() }
@@ -20,6 +23,16 @@ export default function BrandingModal({ branding, onChange, uiLang = 'en', onClo
     setErr('')
     try {
       set('logo', await fileToDataUrl(file, { maxDim: 400, quality: 0.9 }))
+    } catch {
+      setErr(no ? 'Kunne ikke lese bildet.' : 'Could not read the image.')
+    }
+  }
+
+  async function onPhotoFile(file) {
+    if (!file) return
+    setErr('')
+    try {
+      onSetProfilePicture?.(await fileToDataUrl(file, { maxDim: 512, quality: 0.85 }))
     } catch {
       setErr(no ? 'Kunne ikke lese bildet.' : 'Could not read the image.')
     }
@@ -51,33 +64,57 @@ export default function BrandingModal({ branding, onChange, uiLang = 'en', onClo
         </div>
 
         <div className="offer-body">
-          {/* ── Header: logo (top-left of the CV). The profile photo is added
-                per consultant on the CV itself. ── */}
+          {/* ── Header: logo left, profile photo right — mirrors the CV page.
+                Brand (logo) is reusable; the photo is per consultant. ── */}
           <div className="branding-zone">
             <div className="branding-zone-head">
-              <span className="branding-zone-title">{no ? 'Topp — logo' : 'Header — logo'}</span>
+              <span className="branding-zone-title">{no ? 'Topp' : 'Header'}</span>
               <span className="branding-zone-hint">
-                {no ? 'Vises øverst til venstre. Profilbilde legges til på CV-en.'
-                    : 'Shown top-left. The profile photo is added on the CV.'}
+                {no ? 'Logo til venstre, profilbilde til høyre.'
+                    : 'Logo on the left, profile photo on the right.'}
               </span>
             </div>
-            <div className="branding-logo-row">
-              <div className="branding-logo-preview" onClick={() => logoRef.current?.click()}>
-                {branding.logo
-                  ? <img src={branding.logo} alt="logo" />
-                  : <span className="branding-logo-empty">{no ? '+ Last opp logo' : '+ Upload logo'}</span>}
-              </div>
-              <input ref={logoRef} type="file" accept="image/*" style={{ display: 'none' }}
-                onChange={e => { onLogoFile(e.target.files?.[0]); e.target.value = '' }} />
-              <div className="branding-logo-actions">
-                <button className="offer-btn" onClick={() => logoRef.current?.click()}>
-                  {no ? 'Velg bilde' : 'Choose image'}
-                </button>
-                {branding.logo && (
-                  <button className="offer-btn offer-btn--ghost" onClick={() => set('logo', '')}>
-                    {no ? 'Fjern' : 'Remove'}
+            <div className="branding-header-mock">
+              {/* Logo — left */}
+              <div className="bhm-slot bhm-slot--logo">
+                <div className="branding-logo-preview" onClick={() => logoRef.current?.click()}>
+                  {branding.logo
+                    ? <img src={branding.logo} alt="logo" />
+                    : <span className="branding-logo-empty">{no ? '+ Logo' : '+ Logo'}</span>}
+                </div>
+                <input ref={logoRef} type="file" accept="image/*" style={{ display: 'none' }}
+                  onChange={e => { onLogoFile(e.target.files?.[0]); e.target.value = '' }} />
+                <div className="branding-slot-actions">
+                  <button className="offer-btn" onClick={() => logoRef.current?.click()}>
+                    {no ? 'Velg logo' : 'Choose logo'}
                   </button>
-                )}
+                  {branding.logo && (
+                    <button className="offer-btn offer-btn--ghost" onClick={() => set('logo', '')}>
+                      {no ? 'Fjern' : 'Remove'}
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Profile photo — right */}
+              <div className="bhm-slot bhm-slot--photo">
+                <div className="branding-photo-preview" onClick={() => photoRef.current?.click()}>
+                  {profilePicture
+                    ? <img src={profilePicture} alt="photo" />
+                    : <span className="branding-photo-empty">{no ? '+ Bilde' : '+ Photo'}</span>}
+                </div>
+                <input ref={photoRef} type="file" accept="image/*" style={{ display: 'none' }}
+                  onChange={e => { onPhotoFile(e.target.files?.[0]); e.target.value = '' }} />
+                <div className="branding-slot-actions">
+                  <button className="offer-btn" onClick={() => photoRef.current?.click()}>
+                    {no ? 'Velg bilde' : 'Choose photo'}
+                  </button>
+                  {profilePicture && (
+                    <button className="offer-btn offer-btn--ghost" onClick={() => onSetProfilePicture?.('')}>
+                      {no ? 'Fjern' : 'Remove'}
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
             {err && <span className="offer-error">{err}</span>}
