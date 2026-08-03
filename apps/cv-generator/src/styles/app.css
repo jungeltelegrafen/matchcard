@@ -3253,7 +3253,12 @@ textarea.cv-field {
 .cv-branding-toggle-group {
   display: flex;
   align-items: center;
-  gap: 18px;
+  gap: 14px;
+}
+.cv-branding-toggle-lead {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--muted);
 }
 .cv-branding-toggle-label {
   display: flex;
@@ -3318,13 +3323,13 @@ textarea.cv-field {
   border-radius: 8px;
   overflow: hidden;
 }
-.cv-brand-logo { height: 44px; max-width: 180px; }
-.cv-brand-logo img { max-height: 44px; max-width: 180px; object-fit: contain; }
+.cv-brand-logo { height: 58px; max-width: 200px; }
+.cv-brand-logo img { max-height: 58px; max-width: 200px; object-fit: contain; }
 /* Photo always sits at the right edge, even when the logo is hidden. Overflow
    is visible so the remove badge (inside the photo) isn't clipped; the image
-   rounds itself. */
-.cv-brand-photo { width: 68px; height: 68px; border-radius: 50%; background: #f2ede8; margin-left: auto; position: relative; overflow: visible; }
-.cv-brand-photo img { width: 68px; height: 68px; object-fit: cover; border-radius: 50%; }
+   rounds itself. Sized to roughly match the logo height. */
+.cv-brand-photo { width: 62px; height: 62px; border-radius: 50%; background: #f2ede8; margin-left: auto; position: relative; overflow: visible; }
+.cv-brand-photo img { width: 62px; height: 62px; object-fit: cover; border-radius: 50%; }
 .cv-brand-slot {
   font-size: 0.7rem;
   color: #b7a996;
@@ -3333,7 +3338,7 @@ textarea.cv-field {
   padding: 8px 12px;
   white-space: nowrap;
 }
-.cv-brand-photo .cv-brand-slot { border-radius: 50%; width: 68px; height: 68px; display: flex; align-items: center; justify-content: center; text-align: center; padding: 0; }
+.cv-brand-photo .cv-brand-slot { border-radius: 50%; width: 62px; height: 62px; display: flex; align-items: center; justify-content: center; text-align: center; padding: 0; }
 .cv-brand-photo-remove {
   position: absolute; top: -6px; right: -6px;
   width: 18px; height: 18px; border-radius: 50%;

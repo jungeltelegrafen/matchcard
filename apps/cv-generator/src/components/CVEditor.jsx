@@ -283,6 +283,7 @@ export default function CVEditor({ cv, lang = 'en', uiLang = 'en', meta, onField
       {branding && (
         <div className="cv-branding-toggle">
           <div className="cv-branding-toggle-group">
+            <span className="cv-branding-toggle-lead">{no ? 'Ta med i eksport:' : 'Include in export:'}</span>
             <label className="cv-branding-toggle-label">
               <input
                 type="checkbox"

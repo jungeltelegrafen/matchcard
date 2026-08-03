@@ -6,15 +6,13 @@ const LABEL_W = 72   // pt — label column width
 
 const styles = StyleSheet.create({
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    flexDirection: 'column',
     marginBottom: theme.spacing.sectionGap,
     paddingBottom: theme.spacing.itemGap,
     borderBottomWidth: 2,
     borderBottomColor: theme.colors.accent,
   },
-  left: { flex: 1 },
+  left: {},
   name: {
     fontSize: theme.fonts.sizes.name,
     fontFamily: theme.fonts.heading,
@@ -43,18 +41,23 @@ const styles = StyleSheet.create({
     fontSize: 7,
     color: theme.colors.muted,
   },
+  // Brand band above the name — logo left, profile photo right, similar heights.
+  brandRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
   logo: {
-    maxWidth: 120,
-    height: 40,
+    maxWidth: 200,
+    height: 58,
     objectFit: 'contain',
-    marginRight: 14,
   },
   photo: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     objectFit: 'cover',
-    marginLeft: 14,
   },
 })
 
@@ -72,9 +75,16 @@ export default function CVHeader({ personal, lang = 'en', branding = {} }) {
   const lb = getL(lang)
   const showContact = personal.showContactInfo !== false
 
+  const hasBrandBand = branding.logo || branding.profilePicture
+
   return (
     <View style={styles.header}>
-      {branding.logo ? <Image style={styles.logo} src={branding.logo} /> : null}
+      {hasBrandBand ? (
+        <View style={styles.brandRow}>
+          {branding.logo ? <Image style={styles.logo} src={branding.logo} /> : <View />}
+          {branding.profilePicture ? <Image style={styles.photo} src={branding.profilePicture} /> : <View />}
+        </View>
+      ) : null}
       <View style={styles.left}>
         <Text style={styles.name}>
           {[personal.firstName, personal.lastName].filter(Boolean).join(' ')}
@@ -90,7 +100,6 @@ export default function CVHeader({ personal, lang = 'en', branding = {} }) {
         <InfoRow label={lb.availableFrom}    value={personal.availableFrom} />
         <InfoRow label={lb.workPreference}   value={personal.workPreference} />
       </View>
-      {branding.profilePicture ? <Image style={styles.photo} src={branding.profilePicture} /> : null}
     </View>
   )
 }

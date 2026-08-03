@@ -19,8 +19,8 @@ const emptyHF = kind => (kind === 'header'
 // First-page header: logo left, profile photo right (either may be absent).
 export function brandHeader(branding) {
   if (!branding?.logo && !branding?.profilePicture) return emptyHF('header')
-  const logo = branding.logo ? image(branding.logo, 120, 40) : null
-  const photo = branding.profilePicture ? image(branding.profilePicture, 60, 60) : null
+  const logo = branding.logo ? image(branding.logo, 156, 52) : null
+  const photo = branding.profilePicture ? image(branding.profilePicture, 62, 62) : null
   const children = []
   if (logo) children.push(logo)
   children.push(new TextRun({ text: '\t' }))
