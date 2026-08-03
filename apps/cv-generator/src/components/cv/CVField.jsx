@@ -1,4 +1,6 @@
+import { useContext } from 'react'
 import { getSource, getAiSuggestion } from '../../utils/fieldMeta'
+import { ChatChangesContext } from './ChatChangesContext'
 
 export default function CVField({
   value,
@@ -14,15 +16,26 @@ export default function CVField({
   const source = getSource(meta, path)
   const suggestion = getAiSuggestion(meta, path)
 
-  const cls = ['cv-field', source === 'user' ? 'cv-field--user' : '', className]
+  const { changedPaths, onChangeSeen } = useContext(ChatChangesContext)
+  const chatChanged = !!changedPaths?.has(path)
+
+  const cls = ['cv-field',
+    source === 'user' ? 'cv-field--user' : '',
+    chatChanged ? 'cv-field--chat-updated' : '',
+    className]
     .filter(Boolean).join(' ')
 
   function handleChange(e) {
+    if (chatChanged) onChangeSeen(path)
     onEdit(path, e.target.value)
     if (Tag === 'textarea') {
       e.target.style.height = 'auto'
       e.target.style.height = e.target.scrollHeight + 'px'
     }
+  }
+
+  function handleFocus() {
+    if (chatChanged) onChangeSeen(path)
   }
 
   function handleRef(el) {
@@ -38,7 +51,9 @@ export default function CVField({
         ref={Tag === 'textarea' ? handleRef : undefined}
         value={value ?? ''}
         onChange={handleChange}
+        onFocus={handleFocus}
         className={cls}
+        title={chatChanged ? 'Changed by chat — click to review and dismiss' : undefined}
         {...props}
       />
       {suggestion != null && (

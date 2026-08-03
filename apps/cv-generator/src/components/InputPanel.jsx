@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { chatWithClaude } from '../utils/parseWithClaude'
 import { applyPatches } from '../utils/applyPatches'
+import UrlFetchField from './UrlFetchField'
 
 const ACCEPT = '.pdf,.docx,.txt'
 
@@ -134,6 +135,13 @@ export default function InputPanel({ cv, lang, onGenerate, generating, error, wa
                     value={rawText}
                     onChange={e => setRawText(e.target.value)}
                     placeholder={'Paste email threads, job descriptions, project summaries, LinkedIn bios… Combined with your files when generating.'}
+                  />
+                  <UrlFetchField
+                    lang="en"
+                    disabled={generating}
+                    placeholder="…or paste a public link to fetch (your profile, portfolio, a page)"
+                    hint="Public pages only (no login/paywall). The fetched text is added below for you to review."
+                    onText={t => setRawText(prev => (prev ? prev + t : t.replace(/^\n+/, '')))}
                   />
                 </div>
               </div>

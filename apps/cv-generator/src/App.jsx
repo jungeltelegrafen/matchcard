@@ -31,33 +31,29 @@ import './styles/app.css'
 
 const slug = s => (s || '').replace(/[^a-z0-9]+/gi, '_').replace(/^_+|_+$/g, '') || 'version'
 
-// CV key → SectionWrap key mapping for chat diff
-// Maps a CV data key to the editor SectionWrap key it should highlight after a
-// chat edit. Keys without a visual anchor (competences, positions, certs,
-// courses) map to themselves and degrade gracefully to no highlight — but must
-// NOT borrow another section's anchor, or an edit highlights the wrong section.
-const CV_SECTION_MAP = {
-  personal:       'summary',
-  skills:         'skills',
-  competences:    'competences',
-  videos:         'videos',
-  experience:     'experience',
-  positions:      'positions',
-  education:      'education',
-  languages:      'languages',
-  certifications: 'certifications',
-  courses:        'courses',
-  portfolio:      'portfolio',
-}
-
-function diffCvSections(oldCv, newCv) {
-  const changed = new Set()
-  for (const [cvKey, sectionKey] of Object.entries(CV_SECTION_MAP)) {
-    if (JSON.stringify(oldCv[cvKey]) !== JSON.stringify(newCv[cvKey])) {
-      changed.add(sectionKey)
+// Walks two CV snapshots in parallel and returns the set of dotted LEAF paths
+// whose value changed (e.g. "personal.summary", "experience.2.description").
+// This drives the per-field "✎ updated" highlight after a chat edit — precise
+// to the line, not the whole section. Descends whenever either side is an
+// object/array so newly-added items get all their leaves marked; skips stable
+// `_id` keys so an id never lights up as a change.
+function diffCvLeaves(a, b, prefix = '', out = new Set()) {
+  if (a === b) return out
+  const aObj = a && typeof a === 'object'
+  const bObj = b && typeof b === 'object'
+  if (aObj || bObj) {
+    const keys = new Set([
+      ...(aObj ? Object.keys(a) : []),
+      ...(bObj ? Object.keys(b) : []),
+    ])
+    for (const k of keys) {
+      if (k === '_id') continue
+      diffCvLeaves(aObj ? a[k] : undefined, bObj ? b[k] : undefined, prefix ? `${prefix}.${k}` : k, out)
     }
+    return out
   }
-  return changed
+  if (prefix) out.add(prefix)
+  return out
 }
 
 // A tailored view is derived from the master: array sections are filtered
@@ -115,8 +111,9 @@ export default function App() {
   const [genWarning, setGenWarning]   = useState('')
   const [previewOpen, setPreviewOpen] = useState(false)
   const [hoveredSection, setHoveredSection] = useState(null)
-  const [chatChangedSections, setChatChangedSections] = useState(new Set())
+  const [changedPaths, setChangedPaths] = useState(new Set())
   const [showRestored, setShowRestored] = useState(() => draftHasContent(draft))
+  const [showFeedbackCta, setShowFeedbackCta] = useState(true)
 
   // Master slice for the active content language, plus edit metadata & feedback.
   const masterCv = cvByLang[contentLang]
@@ -163,8 +160,11 @@ export default function App() {
   const setActiveFeedback = next => setFeedbackByLang(prev => ({ ...prev, [contentLang]: typeof next === 'function' ? next(prev[contentLang]) : next }))
   const updateActiveVariant = updater => setVariants(prev => prev.map(v => v.id === activeVariantId ? updater(v) : v))
 
-  function dismissChatChange(key) {
-    setChatChangedSections(prev => { const n = new Set(prev); n.delete(key); return n })
+  function markChangeSeen(path) {
+    setChangedPaths(prev => {
+      if (!prev.has(path)) return prev
+      const n = new Set(prev); n.delete(path); return n
+    })
   }
 
   async function handleGenerate(files, rawText, directCv = null, patches = null) {
@@ -187,14 +187,14 @@ export default function App() {
         }
         if (factPatches.length) {
           const patchedMaster = applyPatches(masterCv, factPatches)
-          setChatChangedSections(diffCvSections(masterCv, patchedMaster))
+          setChangedPaths(diffCvLeaves(masterCv, patchedMaster))
           const { cv: nextCv, meta: nextMeta } = applyAiResult(meta, masterCv, patchedMaster)
           setActiveCv(nextCv)
           setActiveMeta(nextMeta)
         }
         return
       }
-      setChatChangedSections(diffCvSections(masterCv, directCv))
+      setChangedPaths(diffCvLeaves(masterCv, directCv))
       const { cv: nextCv, meta: nextMeta } = applyAiResult(meta, masterCv, directCv)
       setActiveCv(nextCv)
       setActiveMeta(nextMeta)
@@ -392,7 +392,7 @@ export default function App() {
     setVariants([])
     setActiveVariantId(null)
     setTailorOpen(false)
-    setChatChangedSections(new Set())
+    setChangedPaths(new Set())
     setGenWarning('')
     setShowRestored(false)
   }
@@ -428,6 +428,22 @@ export default function App() {
         onClear={handleClear}
         onCvTypeChange={handleCvTypeChange}
       />
+
+      {showFeedbackCta && (
+        <div className="feedback-cta">
+          <span className="feedback-cta-text">
+            {uiLang === 'no'
+              ? 'Vær med å forme CV Generator — si fra om hva som funker og ikke, stort som smått. Vi vil ha all tilbakemelding. Bruk «💬 Tilbakemelding» øverst til høyre '
+              : 'Help shape CV Generator — tell us what works and what doesn’t, big or small. We want all of it. Use the “💬 Feedback” button in the top-right corner '}
+            <span className="feedback-cta-arrow" aria-hidden="true">↗</span>
+          </span>
+          <button
+            className="feedback-cta-dismiss"
+            onClick={() => setShowFeedbackCta(false)}
+            title={uiLang === 'no' ? 'Skjul' : 'Dismiss'}
+          >×</button>
+        </div>
+      )}
 
       {showRestored && (
         <div className="draft-notice">
@@ -528,8 +544,8 @@ export default function App() {
               onStructural={handleStructural}
               hoveredSection={hoveredSection}
               commentCounts={commentCounts}
-              chatChangedSections={chatChangedSections}
-              onDismissChatChange={dismissChatChange}
+              changedPaths={changedPaths}
+              onChangeSeen={markChangeSeen}
             />
           </div>
 

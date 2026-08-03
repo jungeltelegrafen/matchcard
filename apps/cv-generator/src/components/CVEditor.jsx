@@ -1,3 +1,4 @@
+import { ChatChangesContext } from './cv/ChatChangesContext'
 import PersonalSection from './cv/PersonalSection'
 import SkillsSection from './cv/SkillsSection'
 import CompetenceTable from './cv/CompetenceTable'
@@ -9,15 +10,13 @@ import LanguagesSection from './cv/LanguagesSection'
 import PortfolioSection from './cv/PortfolioSection'
 import VideosSection from './cv/VideosSection'
 
-function SectionWrap({ sectionKey, hoveredSection, commentCounts, chatChangedSections, onDismissChatChange, children }) {
+function SectionWrap({ sectionKey, hoveredSection, commentCounts, children }) {
   const count      = commentCounts?.[sectionKey] || 0
   const active     = hoveredSection === sectionKey
-  const chatChanged = chatChangedSections?.has(sectionKey)
 
   const classes = [
     'cv-section-outer',
-    active      ? 'cv-section--highlighted'  : '',
-    chatChanged ? 'cv-section--chat-updated' : '',
+    active ? 'cv-section--highlighted' : '',
   ].filter(Boolean).join(' ')
 
   return (
@@ -30,27 +29,18 @@ function SectionWrap({ sectionKey, hoveredSection, commentCounts, chatChangedSec
           {count}
         </span>
       )}
-      {chatChanged && (
-        <div className="cv-section-chat-badge">
-          <span>✎ Updated by chat</span>
-          <button
-            className="cv-section-chat-dismiss"
-            onClick={() => onDismissChatChange?.(sectionKey)}
-            title="Dismiss"
-          >×</button>
-        </div>
-      )}
       {children}
     </div>
   )
 }
 
-export default function CVEditor({ cv, lang = 'en', meta, onFieldEdit, onAccept, onDismiss, onStructural, hoveredSection, commentCounts, chatChangedSections, onDismissChatChange }) {
+export default function CVEditor({ cv, lang = 'en', meta, onFieldEdit, onAccept, onDismiss, onStructural, hoveredSection, commentCounts, changedPaths, onChangeSeen }) {
   const shared = { lang, meta, onFieldEdit, onAccept, onDismiss }
-  const wrap = sectionKey => ({ sectionKey, hoveredSection, commentCounts, chatChangedSections, onDismissChatChange })
+  const wrap = sectionKey => ({ sectionKey, hoveredSection, commentCounts })
 
   return (
-    <div className="cv-editor">
+    <ChatChangesContext.Provider value={{ changedPaths, onChangeSeen }}>
+     <div className="cv-editor">
       <SectionWrap {...wrap('summary')}>
         <PersonalSection data={cv.personal} {...shared} />
       </SectionWrap>
@@ -127,6 +117,7 @@ export default function CVEditor({ cv, lang = 'en', meta, onFieldEdit, onAccept,
           onChange={items => onStructural('portfolio', items)}
         />
       </SectionWrap>
-    </div>
+     </div>
+    </ChatChangesContext.Provider>
   )
 }

@@ -57,6 +57,13 @@ export async function tailorCv(cv, role, lang = 'en') {
   return plan
 }
 
+// Fetches a public URL server-side and returns its readable text. The server
+// enforces the SSRF guard, timeout, and size cap. Returns { text, title, url,
+// truncated }.
+export async function fetchUrlText(url) {
+  return apiJson('/api/cv/fetch-url', { url })
+}
+
 // Streaming chat. Calls onDelta with the accumulated reply text as it streams;
 // resolves with { reply, patches } once the server finishes.
 export async function chatWithClaude(cv, userMessage, history, { lang = 'en', onDelta } = {}) {
