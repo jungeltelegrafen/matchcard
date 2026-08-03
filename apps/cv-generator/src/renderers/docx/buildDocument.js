@@ -13,6 +13,7 @@ import { buildLanguages } from './buildLanguages'
 import { buildVideos } from './buildVideos'
 import { buildPortfolio } from './buildPortfolio'
 import { brandHeader, brandFooter } from './buildBranding'
+import { squareCropDataUrl, fitImageBox } from '../../utils/branding'
 
 function section(paras) {
   if (!paras.length) return []
@@ -57,11 +58,23 @@ function buildDoc(data, lang = 'en', branding = {}) {
   })
 }
 
+// Word can't crop/fit images, so normalize the brand images to proportionate
+// sizes up front: square-crop the photo, fit the logo to its true aspect ratio.
+async function prepareBranding(branding) {
+  if (!branding || (!branding.logo && !branding.profilePicture)) return branding
+  const out = { ...branding }
+  try {
+    if (branding.profilePicture) out.profilePicture = await squareCropDataUrl(branding.profilePicture, 256)
+    if (branding.logo) out.logoBox = await fitImageBox(branding.logo, 180, 56)
+  } catch { /* fall back to raw images */ }
+  return out
+}
+
 export async function downloadDocx(data, filename = 'cv.docx', lang = 'en', branding) {
-  const blob = await Packer.toBlob(buildDoc(data, lang, branding))
+  const blob = await Packer.toBlob(buildDoc(data, lang, await prepareBranding(branding)))
   saveAs(blob, filename)
 }
 
 export async function buildDocxBlob(data, lang = 'en', branding) {
-  return Packer.toBlob(buildDoc(data, lang, branding))
+  return Packer.toBlob(buildDoc(data, lang, await prepareBranding(branding)))
 }

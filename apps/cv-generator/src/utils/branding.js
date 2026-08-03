@@ -73,6 +73,42 @@ export function fileToDataUrl(file, { maxDim = 512, quality = 0.85 } = {}) {
   })
 }
 
+// Load a data URI into an <img> so we can read its natural size / redraw it.
+function loadImageEl(dataUrl) {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    img.onload = () => resolve(img)
+    img.onerror = reject
+    img.src = dataUrl
+  })
+}
+
+// Center-crop a data URI to a square. docx ImageRun can't object-fit, so a
+// non-square photo forced into a square box gets stretched — pre-cropping to a
+// square keeps it proportionate (matching the PDF/HTML object-fit: cover look).
+export async function squareCropDataUrl(dataUrl, size = 256) {
+  const img = await loadImageEl(dataUrl)
+  const side = Math.min(img.width, img.height)
+  const sx = (img.width - side) / 2
+  const sy = (img.height - side) / 2
+  const canvas = document.createElement('canvas')
+  canvas.width = size; canvas.height = size
+  const ctx = canvas.getContext('2d')
+  ctx.drawImage(img, sx, sy, side, side, 0, 0, size, size)
+  const isPng = /^data:image\/png/i.test(dataUrl)
+  return canvas.toDataURL(isPng ? 'image/png' : 'image/jpeg', isPng ? undefined : 0.85)
+}
+
+// Fit an image's natural size into a max box, preserving aspect ratio (no
+// upscaling) — so a logo embeds at its true proportions instead of a guess.
+export async function fitImageBox(dataUrl, maxW, maxH) {
+  const img = await loadImageEl(dataUrl)
+  const w = img.width || maxW
+  const h = img.height || maxH
+  const scale = Math.min(maxW / w, maxH / h, 1)
+  return { width: Math.max(1, Math.round(w * scale)), height: Math.max(1, Math.round(h * scale)) }
+}
+
 // data URI → Uint8Array (for docx ImageRun, which needs raw bytes).
 export function dataUrlToBytes(dataUrl) {
   const comma = String(dataUrl || '').indexOf(',')
