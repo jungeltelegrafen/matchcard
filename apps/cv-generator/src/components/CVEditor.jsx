@@ -229,19 +229,36 @@ export default function CVEditor({ cv, lang = 'en', uiLang = 'en', meta, onField
       const footerH = showFooter ? outerHeight(footerRef.current) : 0
       const heights = secRefs.current.slice(0, sections.length).map(outerHeight)
 
-      // Walk sections until they'd overflow page 1 (header on top, footer at the
-      // bottom) — that boundary is where the footer is inserted.
+      // Find the section that first reaches the page-1 line, then place the
+      // footer at whichever boundary (just before or just after it) sits closest
+      // to that line — so it never leaves a big gap nor overshoots a tall block.
       const budget = pageContentH - headerH - footerH
-      let fill = 0
-      let page1End = sections.length - 1
+      let cum = 0
+      let crossIdx = -1
       for (let i = 0; i < heights.length; i++) {
-        if (fill > 0 && fill + heights[i] > budget) { page1End = i - 1; break }
-        fill += heights[i]
+        cum += heights[i]
+        if (cum >= budget) { crossIdx = i; break }
       }
 
-      // Push the footer down to roughly the A4 page-1 line (a guide, not exact).
-      const used = heights.slice(0, page1End + 1).reduce((a, b) => a + b, 0)
-      const spacer = showFooter ? Math.max(0, Math.round(budget - used)) : 0
+      let page1End, spacer
+      if (crossIdx === -1) {
+        // Whole CV fits on one page — nudge the footer down to the A4 line.
+        page1End = sections.length - 1
+        const used = heights.reduce((a, b) => a + b, 0)
+        spacer = showFooter ? Math.max(0, Math.round(budget - used)) : 0
+      } else {
+        const usedAfter = heights.slice(0, crossIdx + 1).reduce((a, b) => a + b, 0)
+        const usedBefore = usedAfter - heights[crossIdx]
+        const gapBefore = budget - usedBefore   // whitespace if footer goes before
+        const overAfter = usedAfter - budget     // overshoot if footer goes after
+        if (crossIdx > 0 && gapBefore <= overAfter) {
+          page1End = crossIdx - 1
+          spacer = showFooter ? Math.round(gapBefore) : 0
+        } else {
+          page1End = crossIdx
+          spacer = 0
+        }
+      }
 
       setLayout(prev =>
         prev.page1End === page1End && prev.spacer === spacer && prev.pageH === pageFullH
