@@ -116,6 +116,11 @@ export default function App() {
   // Job-tailoring variants over the master (null active = Master view).
   const [variants, setVariants]           = useState(() => draft?.variants ?? [])
   const [activeVariantId, setActiveVariantId] = useState(() => draft?.activeVariantId ?? null)
+
+  // Record-invite links minted for this CV ({ id, lang, filename, createdAt }).
+  // Kept so the agency can later pull the consultant's recorded videos back into
+  // this editable draft (the shared row is a separate snapshot — see ExportFooter).
+  const [recordShares, setRecordShares] = useState(() => draft?.recordShares ?? [])
   const [tailorOpen, setTailorOpen]       = useState(false)
   const [tailoring, setTailoring]         = useState(false)
   const [tailorError, setTailorError]     = useState('')
@@ -170,11 +175,11 @@ export default function App() {
   // Debounced autosave — master (both languages), toggles, and variants
   useEffect(() => {
     const t = setTimeout(
-      () => saveDraft({ cvByLang, metaByLang, feedbackByLang, offerByLang, profilePicture, includeBranding, includeImage, uiLang, contentLang, variants, activeVariantId }),
+      () => saveDraft({ cvByLang, metaByLang, feedbackByLang, offerByLang, profilePicture, includeBranding, includeImage, uiLang, contentLang, variants, activeVariantId, recordShares }),
       600
     )
     return () => clearTimeout(t)
-  }, [cvByLang, metaByLang, feedbackByLang, offerByLang, profilePicture, includeBranding, includeImage, uiLang, contentLang, variants, activeVariantId])
+  }, [cvByLang, metaByLang, feedbackByLang, offerByLang, profilePicture, includeBranding, includeImage, uiLang, contentLang, variants, activeVariantId, recordShares])
 
   // Company branding lives in its own store so it survives Reset / a new CV.
   useEffect(() => { saveCompanyBranding(companyBranding) }, [companyBranding])
@@ -377,6 +382,28 @@ export default function App() {
   function setMasterVideos(items) {
     setCvByLang(prev => ({ ...prev, [contentLang]: ensureIds({ ...prev[contentLang], videos: items }) }))
   }
+  // Remember a record-invite link so its videos can be pulled back later.
+  const addRecordShare = share =>
+    setRecordShares(prev => (prev.some(s => s.id === share.id) ? prev : [...prev, share]))
+  // Merge videos a consultant recorded on shared links into the working draft
+  // (current language), skipping any already present by _id. Anchors resolve
+  // because item `_id`s are stable across languages and section keys are universal.
+  // Returns the number actually added (for the sync status message).
+  function mergeVideosIntoDraft(incoming) {
+    const cur = cvByLang[contentLang]
+    const have = new Set((cur.videos || []).map(v => v._id))
+    const add = (incoming || []).filter(v => v && v._id && !have.has(v._id))
+    if (add.length) {
+      setCvByLang(prev => {
+        const existing = prev[contentLang].videos || []
+        const seen = new Set(existing.map(v => v._id))
+        const toAdd = add.filter(v => !seen.has(v._id))
+        if (!toAdd.length) return prev
+        return { ...prev, [contentLang]: ensureIds({ ...prev[contentLang], videos: [...existing, ...toAdd] }) }
+      })
+    }
+    return add.length
+  }
   function handleCvTypeChange(type) {
     setCvByLang(prev => Object.fromEntries(LANGS.map(l => [l, { ...prev[l], cvType: type }])))
   }
@@ -502,6 +529,7 @@ export default function App() {
     setProfilePicture('') // company branding intentionally persists across Reset
     setVariants([])
     setActiveVariantId(null)
+    setRecordShares([])
     setTailorOpen(false)
     setChangedPaths(new Set())
     setChatUndo(null)
@@ -777,6 +805,9 @@ export default function App() {
         onPreview={() => setPreviewOpen(true)}
         onContentLangChange={setContentLang}
         onOpenOffer={() => setOfferOpen(true)}
+        recordShares={recordShares}
+        onRecordShareCreated={addRecordShare}
+        onSyncVideos={mergeVideosIntoDraft}
       />
     </div>
   )

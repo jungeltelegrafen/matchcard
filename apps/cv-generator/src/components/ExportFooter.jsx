@@ -65,13 +65,15 @@ function barColor(pct) {
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
-export default function ExportFooter({ cvByLang, contentLang, uiLang, filename, offer, branding, onPreview, onContentLangChange, onOpenOffer }) {
+export default function ExportFooter({ cvByLang, contentLang, uiLang, filename, offer, branding, onPreview, onContentLangChange, onOpenOffer, recordShares = [], onRecordShareCreated, onSyncVideos }) {
   const [exporting,     setExporting]     = useState(false)
   const [emailOpen,     setEmailOpen]     = useState(false)
   const [exportStatus,  setExportStatus]  = useState('')
   const [shareUrl,      setShareUrl]      = useState('')
   const [recordUrl,     setRecordUrl]     = useState('')
   const [sharing,       setSharing]       = useState(false)
+  const [syncing,       setSyncing]       = useState(false)
+  const [syncMsg,       setSyncMsg]       = useState('')
   const [copied,        setCopied]        = useState(false)
   const emailRef = useRef(null)
 
@@ -173,8 +175,10 @@ export default function ExportFooter({ cvByLang, contentLang, uiLang, filename, 
         body: JSON.stringify({ cv: { ...outputCv(contentLang), branding }, lang: contentLang, filename: fileFor(contentLang), recordable: true }),
       })
       if (!res.ok) throw new Error('invite failed')
-      const { recordUrl } = await res.json()
+      const { id, recordUrl } = await res.json()
       setRecordUrl(recordUrl)
+      // Remember the link so its recorded videos can be pulled back later.
+      if (id) onRecordShareCreated?.({ id, lang: contentLang, filename: fileFor(contentLang), createdAt: Date.now() })
       navigator.clipboard.writeText(recordUrl).catch(() => {})
     } catch (err) {
       console.error(err)
@@ -182,6 +186,37 @@ export default function ExportFooter({ cvByLang, contentLang, uiLang, filename, 
       setTimeout(() => setExportStatus(''), 3000)
     } finally {
       setSharing(false)
+    }
+  }
+
+  // Pull videos consultants recorded on our invite links back into the editable
+  // draft. Each invite link is a separate snapshot row; we read each one's videos
+  // and merge the new ones (deduped by _id) into the working CV.
+  async function handleSyncVideos() {
+    if (!recordShares.length) return
+    setSyncing(true)
+    setSyncMsg('')
+    try {
+      const lists = await Promise.all(recordShares.map(async s => {
+        try {
+          const r = await fetch(`/api/cv/share?id=${encodeURIComponent(s.id)}`)
+          if (!r.ok) return []
+          const { cv } = await r.json()
+          return Array.isArray(cv?.videos) ? cv.videos : []
+        } catch { return [] }
+      }))
+      const byId = new Map()
+      for (const v of lists.flat()) if (v && v._id) byId.set(v._id, v)
+      const added = onSyncVideos?.(Array.from(byId.values())) || 0
+      setSyncMsg(added > 0
+        ? (no ? `✓ Hentet ${added} ny${added > 1 ? 'e' : ''} video${added > 1 ? 'er' : ''}` : `✓ Pulled ${added} new video${added > 1 ? 's' : ''}`)
+        : (no ? 'Ingen nye videoer ennå' : 'No new videos yet'))
+    } catch (err) {
+      console.error(err)
+      setSyncMsg(no ? 'Synk feilet' : 'Sync failed')
+    } finally {
+      setSyncing(false)
+      setTimeout(() => setSyncMsg(''), 5000)
     }
   }
 
@@ -326,6 +361,20 @@ export default function ExportFooter({ cvByLang, contentLang, uiLang, filename, 
           >
             {no ? '🎥 Invitér til opptak' : '🎥 Invite to record'}
           </button>
+
+          {recordShares.length > 0 && (
+            <button
+              className="export-btn export-btn--share"
+              onClick={handleSyncVideos}
+              disabled={syncing || exporting}
+              title={no
+                ? 'Hent videoer konsulenten har tatt opp via opptakslenken(e) inn i denne CV-en'
+                : 'Pull videos the consultant recorded via your invite link(s) into this CV'}
+            >
+              {syncing ? '…' : (no ? '↻ Hent videoer' : '↻ Sync videos')}
+            </button>
+          )}
+          {syncMsg && <span className="export-status">{syncMsg}</span>}
         </div>
       </div>
 

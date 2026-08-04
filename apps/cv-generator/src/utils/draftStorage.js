@@ -102,6 +102,21 @@ function normalizeVariants(raw) {
   return Array.isArray(raw) ? raw.map(normalizeVariant).filter(Boolean) : []
 }
 
+// Record-invite links minted for this CV, kept so their recorded videos can be
+// pulled back into the draft. Only the (non-secret) share id is stored — reading
+// a shared row's videos needs the id, not the write token.
+function normalizeRecordShares(raw) {
+  if (!Array.isArray(raw)) return []
+  return raw
+    .filter(s => s && typeof s.id === 'string')
+    .map(s => ({
+      id: s.id,
+      lang: toLang(s.lang),
+      filename: typeof s.filename === 'string' ? s.filename : 'cv',
+      createdAt: typeof s.createdAt === 'number' ? s.createdAt : Date.now(),
+    }))
+}
+
 export function loadDraft() {
   try {
     const rawV4 = localStorage.getItem(KEY)
@@ -133,6 +148,7 @@ function baseFromV2Shape(draft) {
     includeImage: typeof draft.includeImage === 'boolean' ? draft.includeImage : true,
     uiLang: toLang(draft.uiLang),
     contentLang: toLang(draft.contentLang),
+    recordShares: normalizeRecordShares(draft.recordShares),
     savedAt: typeof draft.savedAt === 'number' ? draft.savedAt : null,
   }
 }
@@ -187,7 +203,7 @@ function migrateV1(draft) {
   }
 }
 
-export function saveDraft({ cvByLang, metaByLang, feedbackByLang, offerByLang, profilePicture, includeBranding, includeImage, uiLang, contentLang, variants, activeVariantId }) {
+export function saveDraft({ cvByLang, metaByLang, feedbackByLang, offerByLang, profilePicture, includeBranding, includeImage, uiLang, contentLang, variants, activeVariantId, recordShares }) {
   try {
     localStorage.setItem(KEY, JSON.stringify({
       v: 4,
@@ -203,6 +219,7 @@ export function saveDraft({ cvByLang, metaByLang, feedbackByLang, offerByLang, p
       contentLang,
       variants: variants ?? [],
       activeVariantId: activeVariantId ?? null,
+      recordShares: recordShares ?? [],
     }))
     for (const k of LEGACY_KEYS) localStorage.removeItem(k)
   } catch {
