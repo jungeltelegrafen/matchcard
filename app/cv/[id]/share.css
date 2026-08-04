@@ -373,16 +373,17 @@ a.cv-sheet-meta-value:hover { text-decoration: underline; }
 .cv-share-video {
   border: 1px solid var(--border);
   border-left: 3px solid var(--accent);
-  border-radius: 8px;
+  border-radius: 10px;
   padding: 12px 14px;
   background: #fff;
+  box-shadow: 0 1px 5px rgba(0,0,0,0.07);
 }
 .cv-share-video-info { display: flex; flex-direction: column; gap: 3px; }
 .cv-share-video-tag {
   font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
   color: var(--accent);
 }
-.cv-share-video-title { font-weight: 700; color: var(--navy); }
+.cv-share-video-title { font-weight: 700; color: var(--accent); }
 .cv-share-video-desc { color: var(--muted); font-size: 0.92em; }
 .cv-share-video-play {
   display: inline-block;

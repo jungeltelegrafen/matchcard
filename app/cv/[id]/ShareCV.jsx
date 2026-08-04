@@ -1,7 +1,7 @@
 'use client'
 import './share.css'
 import { useState, Fragment } from 'react'
-import { getL, videoPlacement } from '@/apps/cv-generator/src/utils/labels'
+import { getL } from '@/apps/cv-generator/src/utils/labels'
 import { hasCompanyFooter } from '@/apps/cv-generator/src/utils/branding'
 import { mainBlockVideos, videoItemsForUnit, renderedUnitIds } from '@/apps/cv-generator/src/utils/videoAnchors'
 
@@ -16,8 +16,6 @@ function videoEmbed(url) {
   return null
 }
 const isDirectVideo = url => /\.(mp4|webm|mov|m4v)(\?|$)/i.test(url || '')
-
-const placementLabel = videoPlacement
 
 // Read-only share view. Mirrors the PDF/DOCX exports field-for-field (see
 // renderers/pdf/*), localized via getL — keep in sync with the schema in
@@ -65,12 +63,10 @@ export default function ShareCV({ cv, lang = 'en' }) {
     const embed = videoEmbed(v.playbackUrl)
     const key = v._id || v.playbackUrl || `v${idx}`
     const active = playing === key
-    const pl = placementLabel(v.placement, lang)
     return (
       <div key={key} className="cv-share-video">
         <div className="cv-share-video-info">
-          {pl && <span className="cv-share-video-tag">{pl}</span>}
-          <span className="cv-share-video-title">{v.title || 'Video'}</span>
+          <span className="cv-share-video-title">{v.title ? `Video: ${v.title}` : 'Video'}</span>
           {v.description && <p className="cv-share-video-desc">{v.description}</p>}
         </div>
         {active && embed ? (
