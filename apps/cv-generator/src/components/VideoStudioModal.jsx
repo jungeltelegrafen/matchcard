@@ -18,39 +18,8 @@ function roundRect(ctx, x, y, w, h, r) {
   ctx.closePath()
 }
 
-// ── Teleprompter scripts (private cues, per language) ────────────────────────
-// Selecting a script pre-fills the saved card's title/kind/placement. The cues
-// are shown only on the recorder's screen — MediaRecorder captures the camera
-// stream, never this overlay, so they never appear in the video.
-const SCRIPTS = {
-  en: [
-    { id: 'intro', title: 'Introduction', kind: 'intro', placement: 'intro', target: 60,
-      cues: ['Who you are and your current role', 'Your core strengths in one line', 'One standout achievement', 'What you want to do next'] },
-    { id: 'match', title: 'Why I fit this role', kind: 'match', placement: 'general', target: 90,
-      cues: ['The role you’re applying for', 'Your most relevant experience', 'A concrete, measurable result', 'Why you’re a strong match'] },
-    { id: 'motivation', title: 'My motivation', kind: 'motivation', placement: 'motivation', target: 60,
-      cues: ['Why this company or mission excites you', 'What drives you in your work', 'Where you want to grow'] },
-  ],
-  no: [
-    { id: 'intro', title: 'Introduksjon', kind: 'intro', placement: 'intro', target: 60,
-      cues: ['Hvem du er og din nåværende rolle', 'Dine sterkeste sider i én setning', 'Én fremragende prestasjon', 'Hva du vil gjøre videre'] },
-    { id: 'match', title: 'Hvorfor jeg passer', kind: 'match', placement: 'general', target: 90,
-      cues: ['Rollen du søker på', 'Din mest relevante erfaring', 'Et konkret, målbart resultat', 'Hvorfor du passer godt'] },
-    { id: 'motivation', title: 'Min motivasjon', kind: 'motivation', placement: 'motivation', target: 60,
-      cues: ['Hvorfor selskapet eller oppdraget engasjerer deg', 'Hva som driver deg i arbeidet', 'Hvor du vil vokse'] },
-  ],
-  es: [
-    { id: 'intro', title: 'Introducción', kind: 'intro', placement: 'intro', target: 60,
-      cues: ['Quién eres y tu puesto actual', 'Tus puntos fuertes en una frase', 'Un logro destacado', 'Qué quieres hacer a continuación'] },
-    { id: 'match', title: 'Por qué encajo en el puesto', kind: 'match', placement: 'general', target: 90,
-      cues: ['El puesto al que te presentas', 'Tu experiencia más relevante', 'Un resultado concreto y medible', 'Por qué eres un buen candidato'] },
-    { id: 'motivation', title: 'Mi motivación', kind: 'motivation', placement: 'motivation', target: 60,
-      cues: ['Por qué te ilusiona la empresa o el proyecto', 'Qué te impulsa en tu trabajo', 'Dónde quieres crecer'] },
-  ],
-}
-
 const T = {
-  en: { studio: 'Recording studio', yourCV: 'Your CV', script: 'Script', cues: 'Cues — only you see these',
+  en: { studio: 'Recording studio', yourCV: 'Your CV', defaultTitle: 'Screen walkthrough', script: 'Script', cues: 'Cues — only you see these',
         consentTitle: 'Ready when you are', consentNote: 'Your camera stays off until you turn it on below. Nothing is recorded until you press Record — a red ● REC badge shows the whole time you’re recording.',
         turnOn: 'Turn on camera', turnOff: 'Turn off camera', camOn: 'Camera on', camErr: 'Could not access camera or microphone. Check browser permissions.',
         record: 'Record', pause: 'Pause', resume: 'Resume', stop: 'Stop', retake: 'Re-take', use: 'Use this recording',
@@ -68,7 +37,7 @@ const T = {
         scrollHint: 'Scroll over your CV to move through it while you talk — your cursor is highlighted so viewers follow along.',
         mp4Warn: 'Heads up: your browser records in a format that may not play for viewers on Safari. For best compatibility, record in Chrome, Edge, or Safari.',
         notUploaded: 'Saved to this session only (video hosting isn’t set up yet).' },
-  no: { studio: 'Innspillingsstudio', yourCV: 'Din CV', script: 'Manus', cues: 'Stikkord — kun du ser disse',
+  no: { studio: 'Innspillingsstudio', yourCV: 'Din CV', defaultTitle: 'Skjermgjennomgang', script: 'Manus', cues: 'Stikkord — kun du ser disse',
         consentTitle: 'Klar når du er', consentNote: 'Kameraet er av til du slår det på nedenfor. Ingenting tas opp før du trykker Ta opp — et rødt ● REC-merke vises hele tiden mens du tar opp.',
         turnOn: 'Slå på kamera', turnOff: 'Slå av kamera', camOn: 'Kamera på', camErr: 'Fikk ikke tilgang til kamera eller mikrofon. Sjekk tillatelser.',
         record: 'Ta opp', pause: 'Pause', resume: 'Fortsett', stop: 'Stopp', retake: 'Ta opp på nytt', use: 'Bruk dette opptaket',
@@ -86,7 +55,7 @@ const T = {
         scrollHint: 'Bla over CV-en for å bevege deg gjennom den mens du snakker — markøren din er uthevet så seerne følger med.',
         mp4Warn: 'Merk: nettleseren din tar opp i et format som kanskje ikke spilles av for seere på Safari. For best kompatibilitet, ta opp i Chrome, Edge eller Safari.',
         notUploaded: 'Lagret kun for denne økten (videohosting er ikke satt opp ennå).' },
-  es: { studio: 'Estudio de grabación', yourCV: 'Tu CV', script: 'Guion', cues: 'Notas — solo tú las ves',
+  es: { studio: 'Estudio de grabación', yourCV: 'Tu CV', defaultTitle: 'Recorrido de pantalla', script: 'Guion', cues: 'Notas — solo tú las ves',
         consentTitle: 'Cuando quieras', consentNote: 'La cámara está apagada hasta que la enciendas abajo. No se graba nada hasta que pulses Grabar — verás una insignia roja ● REC todo el tiempo que grabes.',
         turnOn: 'Encender cámara', turnOff: 'Apagar cámara', camOn: 'Cámara encendida', camErr: 'No se pudo acceder a la cámara o el micrófono. Revisa los permisos.',
         record: 'Grabar', pause: 'Pausar', resume: 'Reanudar', stop: 'Detener', retake: 'Regrabar', use: 'Usar esta grabación',
@@ -152,18 +121,15 @@ function makeThumb(url) {
 
 export default function VideoStudioModal({ cv = {}, lang = 'en', onClose, onSave }) {
   const t = T[lang] || T.en
-  const scripts = SCRIPTS[lang] || SCRIPTS.en
   const mp4Ok = canRecordMp4()
   // Links from the CV to open and share while presenting (screen mode).
   const portfolioLinks = (cv.portfolio || [])
     .filter(p => p && p.url)
     .map(p => ({ url: p.url, label: p.label || p.url }))
 
-  const [scriptId, setScriptId] = useState(scripts[0].id)
   const [phase, setPhase]       = useState('consent') // consent | ready | countdown | recording | paused | review | error
   const [count, setCount]       = useState(3)
   const [elapsed, setElapsed]   = useState(0)
-  const [cueIdx, setCueIdx]     = useState(0)
   const [recordedUrl, setRecordedUrl] = useState(null)
   const [errMsg, setErrMsg]     = useState('')
   const [pdfUrl, setPdfUrl]     = useState(null)
@@ -189,7 +155,6 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', onClose, onSave
   const savedRef  = useRef(false)
   const cdRef     = useRef(null)
 
-  const script = scripts.find(s => s.id === scriptId) || scripts[0]
   const cameraLive = ['ready', 'countdown', 'recording', 'paused'].includes(phase)
 
   const stopScreen = useCallback(() => {
@@ -440,7 +405,7 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', onClose, onSave
 
   function beginCountdown() {
     if (phase !== 'ready') return
-    setCueIdx(0); setCount(3); setPhase('countdown')
+    setCount(3); setPhase('countdown')
     let n = 3
     cdRef.current = setInterval(() => {
       n -= 1
@@ -523,7 +488,7 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', onClose, onSave
     } catch { hosted = null }
     savedRef.current = true
     onSave({
-      title: script.title, kind: script.kind, placement: script.placement, description: '',
+      title: t.defaultTitle, kind: 'general', placement: 'general', description: '',
       provider: hosted ? 'cloudflare' : 'local',
       assetId: hosted?.uid || '',
       playbackUrl: hosted?.playbackUrl || recordedUrl || '',
@@ -652,7 +617,6 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', onClose, onSave
                 <div className={`studio-rec${phase === 'paused' ? ' paused' : ''}`}>
                   <span className="studio-rec-dot" />
                   {phase === 'paused' ? t.paused : t.recording} {fmt(elapsed)}
-                  <span className="studio-rec-target"> / {t.target} {fmt(script.target)}</span>
                 </div>
               )}
             </div>
@@ -698,37 +662,6 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', onClose, onSave
             {/* Firefox etc. can only record webm → warn about Safari viewers */}
             {!mp4Ok && (phase === 'consent' || phase === 'ready' || phase === 'error') && (
               <p className="studio-warn">⚠️ {t.mp4Warn}</p>
-            )}
-
-            {/* Private teleprompter — below the camera, readable, only you see it */}
-            {(phase === 'recording' || phase === 'paused') && (
-              <div className="studio-teleprompt">
-                <span className="studio-tp-label">{t.cues}</span>
-                <p className="studio-tp-current">{script.cues[cueIdx]}</p>
-                {script.cues[cueIdx + 1] && <p className="studio-tp-next">{script.cues[cueIdx + 1]}</p>}
-                <div className="studio-tp-nav">
-                  <button onClick={() => setCueIdx(i => Math.max(0, i - 1))} disabled={cueIdx === 0}>{t.prev}</button>
-                  <span>{cueIdx + 1}/{script.cues.length}</span>
-                  <button onClick={() => setCueIdx(i => Math.min(script.cues.length - 1, i + 1))}
-                    disabled={cueIdx >= script.cues.length - 1}>{t.next}</button>
-                </div>
-              </div>
-            )}
-
-            {/* Script picker (before recording) */}
-            {phase === 'ready' && (
-              <div className="studio-scripts">
-                <span className="studio-scripts-label">{t.script}</span>
-                <div className="studio-scripts-row">
-                  {scripts.map(s => (
-                    <button key={s.id}
-                      className={`studio-script-pill${s.id === scriptId ? ' active' : ''}`}
-                      onClick={() => setScriptId(s.id)}>
-                      {s.title} · {fmt(s.target)}
-                    </button>
-                  ))}
-                </div>
-              </div>
             )}
 
             {phase === 'review' && <p className="studio-review-note">{t.review} — {t.notUploaded}</p>}
