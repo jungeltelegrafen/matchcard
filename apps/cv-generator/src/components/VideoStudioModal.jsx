@@ -59,6 +59,7 @@ const T = {
         recMode: 'What to record', withCv: '📄 CV + me', withScreen: '🖥️ Screen + me', justMe: '👤 Just me', page: 'Page',
         pickShare: 'Share screen / window', openLinks: 'Open a link to present',
         presentNow: '● Recording — switch to your window or screen and present it. Stop from the browser’s share bar.',
+        pillHint: 'Recording — present your screen. Stop here or from the browser bar.',
         shareOn: 'Sharing', showWebcam: '📹 Turn on webcam bubble', hideWebcam: '📹 Hide webcam bubble',
         screenHint: 'To get your face in the corner, share your WHOLE screen: 1) turn on the webcam bubble and drag it bottom-right, 2) share your whole screen, 3) Record, then open your GitHub or live site and walk through it. Everything you see and your cursor are captured. Stop from the browser bar. (A single-window share records that window + your voice, without the webcam bubble.)',
         scrollHint: 'Scroll over your CV to move through it while you talk — your cursor is highlighted so viewers follow along.',
@@ -73,6 +74,7 @@ const T = {
         recMode: 'Hva skal tas opp', withCv: '📄 CV + meg', withScreen: '🖥️ Skjerm + meg', justMe: '👤 Bare meg', page: 'Side',
         pickShare: 'Del skjerm / vindu', openLinks: 'Åpne en lenke å presentere',
         presentNow: '● Tar opp — bytt til vinduet eller skjermen din og presenter. Stopp fra nettleserens delingslinje.',
+        pillHint: 'Tar opp — presenter skjermen. Stopp her eller fra nettleserlinjen.',
         shareOn: 'Deler', showWebcam: '📹 Slå på webkamera-boble', hideWebcam: '📹 Skjul webkamera-boble',
         screenHint: 'For å få ansiktet i hjørnet, del HELE skjermen: 1) slå på webkamera-boblen og dra den ned til høyre, 2) del hele skjermen, 3) Ta opp, åpne så GitHub eller nettsiden og gå gjennom den. Alt du ser og markøren tas opp. Stopp fra nettleserlinjen. (Deler du bare ett vindu, tas vinduet + stemmen opp, uten webkamera-boblen.)',
         scrollHint: 'Bla over CV-en for å bevege deg gjennom den mens du snakker — markøren din er uthevet så seerne følger med.',
@@ -87,6 +89,7 @@ const T = {
         recMode: 'Qué grabar', withCv: '📄 CV + yo', withScreen: '🖥️ Pantalla + yo', justMe: '👤 Solo yo', page: 'Página',
         pickShare: 'Compartir pantalla / ventana', openLinks: 'Abre un enlace para presentar',
         presentNow: '● Grabando — cambia a tu ventana o pantalla y preséntala. Detén desde la barra del navegador.',
+        pillHint: 'Grabando — presenta tu pantalla. Detén aquí o desde la barra del navegador.',
         shareOn: 'Compartiendo', showWebcam: '📹 Activar burbuja de cámara', hideWebcam: '📹 Ocultar burbuja de cámara',
         screenHint: 'Para tu cara en la esquina, comparte TODA la pantalla: 1) activa la burbuja de la cámara y arrástrala abajo a la derecha, 2) comparte toda la pantalla, 3) Graba, abre tu GitHub o el sitio en vivo y recórrelo. Se graba todo lo que ves y el cursor. Detén desde la barra del navegador. (Compartir una sola ventana graba esa ventana + tu voz, sin la burbuja de la cámara.)',
         scrollHint: 'Desplázate sobre tu CV para recorrerlo mientras hablas — tu cursor se resalta para que los espectadores te sigan.',
@@ -558,6 +561,23 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', onClose, onSave
   }
 
   const busy = phase === 'recording' || phase === 'paused' || phase === 'uploading'
+
+  // While screen-recording, collapse the whole studio to a small floating pill so
+  // it never blocks the screen you're presenting. You stop from here or, more
+  // naturally, from the browser's own "Stop sharing" bar.
+  if (mode === 'screen' && (phase === 'recording' || phase === 'paused')) {
+    return (
+      <div className={`studio-pill${phase === 'paused' ? ' paused' : ''}`}>
+        <span className="studio-pill-dot" />
+        <span className="studio-pill-time">{fmt(elapsed)}</span>
+        <span className="studio-pill-hint">{t.pillHint}</span>
+        {phase === 'recording'
+          ? <button className="studio-pill-btn" onClick={pauseRecording} title={t.pause}>❙❙</button>
+          : <button className="studio-pill-btn" onClick={resumeRecording} title={t.resume}>▶</button>}
+        <button className="studio-pill-btn studio-pill-btn--stop" onClick={stopRecording}>■ {t.stop}</button>
+      </div>
+    )
+  }
 
   // Only a click on the dark backdrop BEFORE the camera is on closes the studio —
   // once you're live (setting up a screen share, recording, etc.) an accidental

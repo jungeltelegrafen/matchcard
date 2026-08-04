@@ -2648,6 +2648,30 @@ textarea.cv-field {
   font-size: 0.58rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase;
   color: rgba(255,255,255,0.4);
 }
+/* Collapsed recording pill (screen mode) — small floating bar, never a modal */
+.studio-pill {
+  position: fixed; z-index: 300; left: 20px; bottom: 20px;
+  display: flex; align-items: center; gap: 10px;
+  background: rgba(20,17,15,0.92); color: #fff; border-radius: 999px;
+  padding: 8px 10px 8px 16px; box-shadow: 0 10px 34px rgba(0,0,0,0.45);
+  font-size: 0.82rem; font-weight: 600;
+}
+.studio-pill-dot {
+  width: 10px; height: 10px; border-radius: 50%; background: #e5484d;
+  animation: studio-pill-pulse 1.2s ease-in-out infinite;
+}
+.studio-pill.paused .studio-pill-dot { background: #f5a623; animation: none; }
+@keyframes studio-pill-pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+.studio-pill-time { font-variant-numeric: tabular-nums; }
+.studio-pill-hint { color: rgba(255,255,255,0.6); font-weight: 400; font-size: 0.74rem; }
+.studio-pill-btn {
+  background: rgba(255,255,255,0.14); border: none; color: #fff; border-radius: 999px;
+  padding: 6px 11px; cursor: pointer; font-family: inherit; font-size: 0.8rem; line-height: 1;
+}
+.studio-pill-btn:hover { background: rgba(255,255,255,0.24); }
+.studio-pill-btn--stop { background: #e5484d; font-weight: 700; }
+.studio-pill-btn--stop:hover { background: #f0575c; }
+
 .studio-screenctl {
   position: absolute; z-index: 2; left: 0; right: 0; bottom: 20px;
   display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px;
