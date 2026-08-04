@@ -105,21 +105,25 @@ const T = {
 const MAX_SECONDS = 300 // hard cap so a recording can never run silently forever
 
 // A red-dot favicon shown while recording so the recorder tab stands out in the
-// tab bar even when it's inactive/narrow (where the title text is hidden). A PNG
-// (drawn on a canvas) — Safari refreshes SVG data-URI favicons unreliably.
-let _recFavicon = null
-function recFaviconDataUrl() {
-  if (_recFavicon != null) return _recFavicon
+// tab bar even when it's inactive/narrow (where the title text is hidden). Safari
+// often ignores data-URI favicon changes, so we prefer an object URL (a "real"
+// resource, which Safari is more willing to repaint) and pre-build it; the PNG
+// data URI is the fallback (fine on Chrome/Edge/Firefox).
+let _recIconData = null // synchronous PNG data URI
+let _recIconObj = null  // async object URL (preferred, esp. Safari)
+function buildRecIcon() {
+  if (_recIconData != null) return
   try {
     const c = document.createElement('canvas')
     c.width = 32; c.height = 32
     const ctx = c.getContext('2d')
     ctx.fillStyle = '#e5484d'
     ctx.beginPath(); ctx.arc(16, 16, 13, 0, Math.PI * 2); ctx.fill()
-    _recFavicon = c.toDataURL('image/png')
-  } catch { _recFavicon = '' }
-  return _recFavicon
+    _recIconData = c.toDataURL('image/png')
+    c.toBlob(b => { if (b) _recIconObj = URL.createObjectURL(b) }, 'image/png')
+  } catch { _recIconData = '' }
 }
+function recIconHref() { buildRecIcon(); return _recIconObj || _recIconData || '' }
 
 function fmt(sec) {
   const m = Math.floor(sec / 60), s = sec % 60
@@ -271,8 +275,10 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', branding, filen
     setPhase('consent')
   }
 
-  // Clean everything up on close — no lingering camera, ever.
+  // Clean everything up on close — no lingering camera, ever. Also pre-build the
+  // recording favicon so its object URL is ready before the first recording.
   useEffect(() => {
+    buildRecIcon()
     return () => {
       clearInterval(timerRef.current); clearInterval(cdRef.current)
       cancelAnimationFrame(rafRef.current)
@@ -448,7 +454,7 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', branding, filen
     const originals = Array.from(document.querySelectorAll("link[rel~='icon']"))
     originals.forEach(l => l.remove())
     const link = document.createElement('link')
-    link.rel = 'icon'; link.type = 'image/png'; link.href = recFaviconDataUrl()
+    link.rel = 'icon'; link.type = 'image/png'; link.href = recIconHref()
     document.head.appendChild(link)
 
     return () => {
