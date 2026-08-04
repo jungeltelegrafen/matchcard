@@ -70,6 +70,7 @@ export default function ExportFooter({ cvByLang, contentLang, uiLang, filename, 
   const [emailOpen,     setEmailOpen]     = useState(false)
   const [exportStatus,  setExportStatus]  = useState('')
   const [shareUrl,      setShareUrl]      = useState('')
+  const [recordUrl,     setRecordUrl]     = useState('')
   const [sharing,       setSharing]       = useState(false)
   const [copied,        setCopied]        = useState(false)
   const emailRef = useRef(null)
@@ -162,6 +163,28 @@ export default function ExportFooter({ cvByLang, contentLang, uiLang, filename, 
     }
   }
 
+  // Mint a record-invite link: a snapshot the consultant can record videos onto.
+  async function handleRecordInvite() {
+    setSharing(true)
+    try {
+      const res = await fetch('/api/cv/share', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cv: { ...outputCv(contentLang), branding }, lang: contentLang, filename: fileFor(contentLang), recordable: true }),
+      })
+      if (!res.ok) throw new Error('invite failed')
+      const { recordUrl } = await res.json()
+      setRecordUrl(recordUrl)
+      navigator.clipboard.writeText(recordUrl).catch(() => {})
+    } catch (err) {
+      console.error(err)
+      setExportStatus(no ? 'Kunne ikke lage opptakslenke' : 'Couldn’t create record link')
+      setTimeout(() => setExportStatus(''), 3000)
+    } finally {
+      setSharing(false)
+    }
+  }
+
   return (
     <footer className="export-footer">
 
@@ -200,6 +223,28 @@ export default function ExportFooter({ cvByLang, contentLang, uiLang, filename, 
             {no
               ? '📌 Lenken er et øyeblikksbilde av CV-en akkurat nå. Har du tatt opp en ny video eller endret noe? Klikk «↻ Ny lenke» for å dele oppdateringen — den gamle lenken beholder forrige versjon.'
               : '📌 This link is a snapshot of your CV as it is right now. Recorded a new video or made edits? Click “↻ New link” to share the update — the old link keeps the previous version.'}
+          </p>
+        </div>
+      )}
+
+      {/* ── Record-invite URL bar ── */}
+      {recordUrl && (
+        <div className="export-share-bar-wrap">
+          <div className="export-share-bar">
+            <span className="export-share-bar-label">{no ? 'Opptakslenke' : 'Record link'}</span>
+            <span className="export-share-bar-url">{recordUrl}</span>
+            <button className="export-share-bar-copy" onClick={() => navigator.clipboard.writeText(recordUrl).catch(() => {})}>
+              {no ? '⎘ Kopier' : '⎘ Copy'}
+            </button>
+            <a href={recordUrl} target="_blank" rel="noopener noreferrer" className="export-share-bar-open">
+              {no ? 'Åpne ↗' : 'Open ↗'}
+            </a>
+            <button className="export-share-bar-close" onClick={() => setRecordUrl('')}>×</button>
+          </div>
+          <p className="export-share-bar-note">
+            {no
+              ? '🎥 Send denne til konsulenten. De kan ta opp videoer som lagres på denne CV-en — du ser dem på den vanlige delingslenken.'
+              : '🎥 Send this to the consultant — they can record videos that save onto this CV. You’ll see them on the normal share link.'}
           </p>
         </div>
       )}
@@ -269,6 +314,17 @@ export default function ExportFooter({ cvByLang, contentLang, uiLang, filename, 
               : `Shares the ${LANG_ENDONYM[contentLang]} version`}
           >
             {sharing ? '…' : shareUrl ? (no ? '↻ Ny lenke' : '↻ New link') : (no ? '⤷ Del' : '⤷ Share')}
+          </button>
+
+          <button
+            className="export-btn export-btn--share"
+            onClick={handleRecordInvite}
+            disabled={sharing || exporting}
+            title={no
+              ? 'Lag en lenke der konsulenten kan ta opp video som lagres på CV-en'
+              : 'Create a link where the consultant can record a video that saves onto the CV'}
+          >
+            {no ? '🎥 Invitér til opptak' : '🎥 Invite to record'}
           </button>
         </div>
       </div>

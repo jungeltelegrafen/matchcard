@@ -13,13 +13,22 @@ export async function generateMetadata({ params }) {
   return { title: name ? `${name} — CV` : 'Shared CV' }
 }
 
-export default async function CVSharePage({ params }) {
+export default async function CVSharePage({ params, searchParams }) {
   const { rows } = await pool.query(
-    'SELECT cv_data, lang, filename FROM shared_cvs WHERE id = $1',
+    'SELECT cv_data, lang, filename, record_token FROM shared_cvs WHERE id = $1',
     [params.id]
   )
   if (!rows.length) notFound()
 
-  const { cv_data: cv, lang, filename } = rows[0]
-  return <ShareCV cv={cv} lang={lang} filename={filename} />
+  const { cv_data: cv, lang, filename, record_token } = rows[0]
+  // A record-invite link carries the secret token; only then expose the recorder.
+  const record = searchParams?.record
+  const canRecord = Boolean(record_token && record && record === record_token)
+
+  return (
+    <ShareCV
+      cv={cv} lang={lang} filename={filename}
+      id={params.id} canRecord={canRecord} recordToken={canRecord ? record_token : ''}
+    />
+  )
 }

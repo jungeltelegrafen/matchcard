@@ -75,6 +75,25 @@ body {
   min-height: 100vh;
 }
 
+/* Record-invite bar (only on a ?record=<token> link). */
+.share-recordbar {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 12px;
+  max-width: 800px; margin: 0 auto -8px; padding: 12px 18px;
+  background: var(--accent); color: #fff; border-radius: 10px;
+  font-size: 0.9rem; font-weight: 600;
+}
+.share-recordbar-in { display: flex; align-items: center; gap: 6px; font-weight: 500; }
+.share-recordbar-select {
+  font-family: inherit; font-size: 0.85rem; padding: 5px 8px; border-radius: 6px;
+  border: none; color: var(--navy); background: #fff; cursor: pointer; max-width: 220px;
+}
+.share-recordbar-btn {
+  background: #fff; color: var(--accent); border: none; border-radius: 6px;
+  padding: 7px 14px; font-family: inherit; font-weight: 700; cursor: pointer;
+}
+.share-recordbar-btn:hover { opacity: 0.92; }
+.share-recordbar-msg { font-weight: 500; opacity: 0.95; }
+
 .cv-sheet {
   max-width: 800px;
   margin: 32px auto;

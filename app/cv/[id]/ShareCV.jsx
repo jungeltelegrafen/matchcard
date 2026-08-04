@@ -1,9 +1,11 @@
 'use client'
 import './share.css'
+import '@/apps/cv-generator/src/styles/studio.css'
 import { useState, Fragment } from 'react'
 import { getL } from '@/apps/cv-generator/src/utils/labels'
 import { hasCompanyFooter } from '@/apps/cv-generator/src/utils/branding'
-import { mainBlockVideos, videoItemsForUnit, renderedUnitIds } from '@/apps/cv-generator/src/utils/videoAnchors'
+import { mainBlockVideos, videoItemsForUnit, renderedUnitIds, anchorOptions } from '@/apps/cv-generator/src/utils/videoAnchors'
+import VideoStudioModal from '@/apps/cv-generator/src/components/VideoStudioModal'
 
 // Turn a stored playback URL into an embeddable src (or null → external link).
 function videoEmbed(url) {
@@ -20,10 +22,16 @@ const isDirectVideo = url => /\.(mp4|webm|mov|m4v)(\?|$)/i.test(url || '')
 // Read-only share view. Mirrors the PDF/DOCX exports field-for-field (see
 // renderers/pdf/*), localized via getL — keep in sync with the schema in
 // lib/cv/schema.js.
-export default function ShareCV({ cv, lang = 'en' }) {
+export default function ShareCV({ cv, lang = 'en', filename = 'cv', id = '', canRecord = false, recordToken = '' }) {
   const [copied, setCopied] = useState(false)
   const [playing, setPlaying] = useState(null)
+  // Videos are local state so a consultant's recording (write-back) appears at once.
+  const [videos, setVideos] = useState(cv.videos || [])
+  const [recorderOpen, setRecorderOpen] = useState(false)
+  const [recAnchor, setRecAnchor] = useState('')
+  const [recMsg, setRecMsg] = useState('')
   const lb = getL(lang)
+  const no = lang === 'no'
 
   const {
     personal = {},
@@ -36,10 +44,37 @@ export default function ShareCV({ cv, lang = 'en' }) {
     positions = {},
     competences = {},
     portfolio = [],
-    videos = [],
     cvType = 'technical',
     branding = {},
   } = cv
+
+  // "Which section" options for the record picker (localized section names).
+  const secLabel = k => ({ summary: lb.summary, skills: lb.skills, competences: lb.competences,
+    education: lb.education, courses: lb.courses, portfolio: lb.portfolio }[k] || k)
+  const recAnchorOptions = anchorOptions(cv, secLabel)
+
+  // Write a recorded video back to the shared CV (consultant record-invite flow).
+  async function onRecordSave(entry) {
+    setRecorderOpen(false)
+    if (entry.provider === 'local' || !/^https?:\/\//.test(entry.playbackUrl || '')) {
+      setRecMsg(no ? 'Videohosting er ikke satt opp, så opptaket kunne ikke lagres på CV-en.'
+                   : 'Video hosting isn’t set up, so this recording couldn’t be saved to the CV.')
+      return
+    }
+    setRecMsg(no ? 'Lagrer…' : 'Saving…')
+    try {
+      const res = await fetch(`/api/cv/share/${id}`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: recordToken, video: { ...entry, anchor: recAnchor } }),
+      })
+      if (!res.ok) throw new Error('save failed')
+      const { video } = await res.json()
+      setVideos(v => [...v, video])
+      setRecMsg(no ? 'Video lagret på CV-en ✓' : 'Video saved to the CV ✓')
+    } catch {
+      setRecMsg(no ? 'Kunne ikke lagre videoen.' : 'Couldn’t save the video.')
+    }
+  }
 
   const showBrandFooter = hasCompanyFooter(branding)
   const mgmt = cvType === 'management'
@@ -129,6 +164,34 @@ export default function ShareCV({ cv, lang = 'en' }) {
           </button>
         </div>
       </header>
+
+      {/* Record-invite bar — only on a ?record=<token> link. Pick a section, record,
+          and the video is saved back onto this shared CV. */}
+      {canRecord && (
+        <div className="share-recordbar no-print">
+          <span className="share-recordbar-label">
+            {no ? '🎥 Du er invitert til å legge til en video' : '🎥 You’re invited to add a video'}
+          </span>
+          <label className="share-recordbar-in">
+            {no ? 'Seksjon:' : 'Section:'}
+            <select className="share-recordbar-select" value={recAnchor} onChange={e => setRecAnchor(e.target.value)}>
+              <option value="">{no ? 'Hovedvideo-blokk' : 'Main video block'}</option>
+              {recAnchorOptions.map(o => <option key={o.id} value={o.id}>{o.label}</option>)}
+            </select>
+          </label>
+          <button className="share-recordbar-btn" onClick={() => { setRecMsg(''); setRecorderOpen(true) }}>
+            {no ? 'Ta opp' : 'Record a video'}
+          </button>
+          {recMsg && <span className="share-recordbar-msg">{recMsg}</span>}
+        </div>
+      )}
+
+      {canRecord && recorderOpen && (
+        <VideoStudioModal
+          cv={cv} lang={lang} branding={branding} filename={filename}
+          onClose={() => setRecorderOpen(false)} onSave={onRecordSave}
+        />
+      )}
 
       {/* CV sheet */}
       <main className="cv-sheet">

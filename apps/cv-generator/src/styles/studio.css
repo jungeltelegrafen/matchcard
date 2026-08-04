@@ -1,0 +1,433 @@
+/* Recording-studio styles, extracted from app.css so the Next share page
+   can mount VideoStudioModal without pulling in the editor (.cv-*) styles that
+   would collide with share.css. Keep in sync with app.css studio rules. */
+
+.raw-modal .modal-close { color: rgba(255,255,255,0.55); }
+
+.raw-modal .modal-close:hover { color: #fff; }
+
+/* Name-your-video prompt at the review step (explicit naming before saving). */
+.studio-nameblock { display: flex; flex-direction: column; gap: 6px; margin-bottom: 4px; }
+
+.studio-namelabel { font-size: 0.82rem; font-weight: 700; color: #f0ece8; }
+
+.studio-nameinput {
+  font-family: inherit; font-size: 0.95rem; padding: 9px 12px; border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.22); background: rgba(255,255,255,0.06); color: #fff;
+}
+
+.studio-nameinput::placeholder { color: rgba(255,255,255,0.4); }
+
+.studio-nameinput:focus { outline: none; border-color: var(--accent); }
+
+/* ─── Recording studio ─── */
+.studio {
+  background: #14110f;
+  color: #f0ece8;
+  border-radius: 14px;
+  width: 96vw;
+  max-width: 1320px;
+  height: 88vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.5);
+}
+
+/* CV walkthrough: go near-fullscreen and give the CV pane most of the width so
+   there's more room to see the CV while scrolling through it. */
+.studio--cv { width: 98vw; max-width: none; height: 95vh; }
+
+.studio--cv .studio-body { grid-template-columns: minmax(0, 3fr) minmax(280px, 0.66fr); }
+
+.studio-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 18px; border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.studio-title { font-size: 0.95rem; font-weight: 700; }
+
+.studio-header .modal-close { color: rgba(255,255,255,0.6); }
+
+.studio-header .modal-close:hover { color: #fff; }
+
+/* CV (real PDF) is the focus (left, larger); camera is the smaller right column. */
+.studio-body { flex: 1; display: grid; grid-template-columns: minmax(0, 1.75fr) minmax(360px, 0.9fr); gap: 0; min-height: 0; }
+
+.studio-cvpane {
+  background: #2a2723;
+  border-right: 1px solid rgba(0,0,0,0.3);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  min-height: 0;
+}
+
+.studio-pdf { width: 100%; height: 100%; border: none; display: block; }
+
+.studio-pdf-loading { height: 100%; display: flex; align-items: center; justify-content: center; }
+
+.studio-stage {
+  padding: 18px 20px; display: flex; flex-direction: column; justify-content: center;
+  gap: 14px; min-width: 0; overflow-y: auto;
+}
+
+.studio-video-wrap {
+  position: relative; width: 100%; aspect-ratio: 16 / 9; max-height: 100%;
+  background: #000; border-radius: 10px; overflow: hidden;
+}
+
+.studio-video { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.studio-video--mirror { transform: scaleX(-1); }
+
+.studio-video--contain { object-fit: contain; background: #000; }
+
+.studio-overlay {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 12px; text-align: center; padding: 20px;
+}
+
+.studio-overlay--err { background: rgba(0,0,0,0.65); color: #ffb4b4; font-size: 0.85rem; }
+
+.studio-count {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 4px;
+  font-size: 5rem; font-weight: 800; color: #fff; background: rgba(0,0,0,0.45);
+}
+
+.studio-count span { font-size: 0.9rem; font-weight: 600; color: rgba(255,255,255,0.8); }
+
+.studio-uploading {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 12px;
+  background: rgba(0,0,0,0.62); color: #fff; font-size: 0.9rem; font-weight: 700;
+}
+
+.studio-uploadbar { width: 62%; height: 6px; background: rgba(255,255,255,0.22); border-radius: 3px; overflow: hidden; }
+
+.studio-uploadbar > div { height: 100%; background: var(--accent); transition: width 0.2s; }
+
+/* Consent gate — camera stays off until the user explicitly turns it on */
+.studio-consent {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; text-align: center; gap: 10px; padding: 28px;
+}
+
+.studio-consent-icon { font-size: 2.4rem; }
+
+.studio-consent h3 { font-size: 1.15rem; font-weight: 800; margin: 0; }
+
+.studio-consent-note { font-size: 0.85rem; line-height: 1.6; color: rgba(255,255,255,0.7); max-width: 440px; margin: 0 0 6px; }
+
+.studio-consent-err { font-size: 0.9rem; color: #ffb4b4; max-width: 440px; }
+
+/* Camera-on indicator (live, not recording) */
+.studio-camtag {
+  position: absolute; top: 10px; left: 10px; display: flex; align-items: center; gap: 6px;
+  background: rgba(0,0,0,0.55); border-radius: 20px; padding: 4px 11px; font-size: 0.7rem; font-weight: 700;
+}
+
+.studio-camtag-dot { width: 8px; height: 8px; border-radius: 50%; background: #6ad06a; }
+
+/* Recording state — unmissable */
+.studio-video-wrap.recording { box-shadow: inset 0 0 0 3px #ff4b4b; }
+
+.studio-rec.paused .studio-rec-dot { background: #ffcf4b; animation: none; }
+
+.studio-rec.paused { background: rgba(120,90,0,0.6); }
+
+.studio-rec {
+  position: absolute; top: 10px; left: 10px;
+  display: flex; align-items: center; gap: 6px;
+  background: rgba(0,0,0,0.55); border-radius: 20px; padding: 4px 12px;
+  font-size: 0.72rem; font-weight: 700;
+}
+
+.studio-rec-dot { width: 9px; height: 9px; border-radius: 50%; background: #ff4b4b; animation: pulse 1s infinite; }
+
+.studio-rec-target { color: rgba(255,255,255,0.55); font-weight: 500; }
+
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+.studio-teleprompt {
+  background: rgba(201,123,75,0.12);
+  border: 1px solid rgba(201,123,75,0.35);
+  border-radius: 10px;
+  padding: 12px 16px;
+}
+
+.studio-tp-label {
+  font-size: 0.58rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase;
+  color: rgba(255,255,255,0.5);
+}
+
+.studio-tp-current { font-size: 1.3rem; font-weight: 700; color: #fff; margin: 5px 0 3px; line-height: 1.3; }
+
+.studio-tp-next { font-size: 0.95rem; color: rgba(255,255,255,0.55); margin: 0; }
+
+.studio-tp-nav { display: flex; align-items: center; gap: 12px; margin-top: 8px; font-size: 0.75rem; color: rgba(255,255,255,0.6); }
+
+.studio-tp-nav button {
+  background: rgba(255,255,255,0.14); border: none; color: #fff; border-radius: 6px;
+  font-family: inherit; font-size: 0.75rem; padding: 4px 10px; cursor: pointer;
+}
+
+.studio-tp-nav button:disabled { opacity: 0.35; cursor: default; }
+
+.studio-scripts { display: flex; flex-direction: column; gap: 6px; }
+
+.studio-scripts-label {
+  font-size: 0.58rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase;
+  color: rgba(255,255,255,0.4);
+}
+
+.studio-scripts-row { display: flex; flex-wrap: wrap; gap: 7px; }
+
+.studio-script-pill {
+  background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.16);
+  color: rgba(255,255,255,0.85); border-radius: 20px; font-family: inherit;
+  font-size: 0.76rem; font-weight: 600; padding: 5px 12px; cursor: pointer; transition: all 0.15s;
+}
+
+.studio-script-pill.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+.studio-review-note { font-size: 0.78rem; color: rgba(255,255,255,0.6); margin: 0; }
+
+.studio-warn {
+  font-size: 0.76rem; line-height: 1.45; color: #ffd9a8; margin: 0;
+  background: rgba(230,160,40,0.14); border: 1px solid rgba(230,160,40,0.35);
+  border-radius: 8px; padding: 8px 12px;
+}
+
+/* Webcam source for the composite: kept full-size & on-screen (so the browser
+   keeps decoding it) but underneath the opaque canvas that covers it. */
+.studio-camunder { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
+
+/* Native cursor hidden — the highlighted cursor is drawn into the recording so
+   there's no distracting double pointer. */
+.studio-video--composite { position: absolute; inset: 0; z-index: 1; object-fit: contain; cursor: none; }
+
+.studio-scrollhint {
+  font-size: 0.74rem; line-height: 1.4; color: rgba(255,255,255,0.62); margin: 0;
+  text-align: center;
+}
+
+/* "What to record" toggle */
+.studio-mode { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+
+.studio-mode-label {
+  font-size: 0.58rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase;
+  color: rgba(255,255,255,0.4);
+}
+
+.studio-mode-pills {
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 6px;
+  background: rgba(255,255,255,0.06); border-radius: 8px; padding: 3px;
+}
+
+.studio-mode-pills button {
+  background: none; border: none; color: rgba(255,255,255,0.7); font-family: inherit;
+  font-size: 0.76rem; font-weight: 600; padding: 6px 11px; border-radius: 6px; cursor: pointer;
+}
+
+.studio-mode-pills button.active { background: var(--accent); color: #fff; }
+
+/* Screen-share: "choose what to share" overlay + links to open while presenting */
+.studio-sharepick {
+  position: absolute; z-index: 2; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  background: var(--accent); color: #fff; border: none; border-radius: 10px;
+  font-family: inherit; font-size: 0.92rem; font-weight: 700; padding: 13px 24px;
+  cursor: pointer; box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+}
+
+.studio-links { display: flex; flex-direction: column; gap: 6px; }
+
+.studio-links-label {
+  font-size: 0.58rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase;
+  color: rgba(255,255,255,0.4);
+}
+
+/* Persistent webcam source for the face-bubble PiP — present + decoding but out
+   of the way (must NOT be display:none, or the browser stops feeding the PiP). */
+.studio-pip-source {
+  position: fixed; right: 0; bottom: 0; width: 2px; height: 2px;
+  opacity: 0.01; pointer-events: none; z-index: -1;
+}
+
+/* Collapsed recording pill (screen mode) — small floating bar, never a modal */
+/* Recording pill — top-center, prominent, so when you switch back to this tab
+   (via the face bubble's ⧉ or by clicking the tab) it's the obvious place to
+   pause/stop. It also spells out the two universal controls in its help line. */
+.studio-pill {
+  position: fixed; z-index: 300; bottom: 20px; left: 20px;
+  display: flex; flex-direction: column; gap: 7px;
+  background: rgba(20,17,15,0.96); color: #fff; border-radius: 16px;
+  padding: 12px 16px; box-shadow: 0 14px 44px rgba(0,0,0,0.5);
+  font-size: 0.9rem; font-weight: 600; max-width: min(92vw, 560px);
+  border: 1px solid rgba(255,255,255,0.12);
+}
+
+.studio-pill-row { display: flex; align-items: center; gap: 12px; }
+
+.studio-pill-state { margin-right: auto; font-weight: 700; }
+
+.studio-pill-dot {
+  width: 11px; height: 11px; border-radius: 50%; background: #e5484d; flex: none;
+  animation: studio-pill-pulse 1.2s ease-in-out infinite;
+}
+
+.studio-pill.paused .studio-pill-dot { background: #f5a623; animation: none; }
+
+@keyframes studio-pill-pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+
+.studio-pill-time { font-variant-numeric: tabular-nums; }
+
+.studio-pill-help {
+  margin: 0; color: rgba(255,255,255,0.72); font-weight: 400;
+  font-size: 0.78rem; line-height: 1.4;
+}
+
+.studio-pill-btn {
+  background: rgba(255,255,255,0.16); border: none; color: #fff; border-radius: 999px;
+  padding: 7px 14px; cursor: pointer; font-family: inherit; font-size: 0.82rem;
+  font-weight: 600; line-height: 1; white-space: nowrap;
+}
+
+.studio-pill-btn:hover { background: rgba(255,255,255,0.26); }
+
+.studio-pill-btn--stop { background: #e5484d; font-weight: 700; }
+
+.studio-pill-btn--stop:hover { background: #f0575c; }
+
+/* Screen-mode ready: numbered 2-step flow (① float face → ② share & record). */
+.studio-screenready { display: flex; flex-direction: column; gap: 12px; align-items: flex-start; }
+
+.studio-steps { display: flex; flex-direction: column; gap: 16px; margin-bottom: 2px; }
+
+.studio-step { display: flex; gap: 12px; align-items: flex-start; }
+
+.studio-step-num {
+  flex: none; width: 26px; height: 26px; border-radius: 50%;
+  background: #C97B4B; color: #fff; font-weight: 700; font-size: 0.85rem;
+  display: flex; align-items: center; justify-content: center; margin-top: 2px;
+}
+
+.studio-step-body { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; min-width: 0; }
+
+.studio-present { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.studio-step-hint { margin: 0; color: rgba(255,255,255,0.62); font-size: 0.8rem; line-height: 1.45; }
+
+.studio-step-nudge { margin: 0; color: #f5b74e; font-size: 0.8rem; line-height: 1.45; font-weight: 600; }
+
+.studio-screenctl {
+  position: absolute; z-index: 2; left: 0; right: 0; bottom: 20px;
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px;
+  padding: 0 16px;
+}
+
+.studio-screenstatus {
+  position: absolute; z-index: 2; left: 0; right: 0; bottom: 20px;
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+  padding: 0 24px;
+}
+
+.studio-screenstatus-badge {
+  background: rgba(20,17,15,0.82); color: #fff; border-radius: 20px;
+  padding: 8px 18px; font-size: 0.82rem; font-weight: 700;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.35);
+}
+
+.studio-pipbtn { background: rgba(255,255,255,0.14); }
+
+.studio-links-row { display: flex; flex-wrap: wrap; gap: 7px; }
+
+.studio-link-pill {
+  background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.16);
+  color: rgba(255,255,255,0.85); border-radius: 20px; text-decoration: none;
+  font-size: 0.75rem; font-weight: 600; padding: 5px 11px;
+  max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+.studio-link-pill:hover { background: rgba(255,255,255,0.14); color: #fff; }
+
+/* CV page navigation while recording the composite */
+.studio-pagenav {
+  position: absolute; top: 10px; left: 10px; display: flex; align-items: center; gap: 8px;
+  background: rgba(0,0,0,0.6); border-radius: 20px; padding: 4px 10px;
+  font-size: 0.72rem; font-weight: 700; color: #fff;
+}
+
+.studio-pagenav button {
+  background: rgba(255,255,255,0.16); border: none; color: #fff; border-radius: 5px;
+  width: 22px; height: 22px; font-size: 0.9rem; cursor: pointer; padding: 0;
+}
+
+.studio-pagenav button:disabled { opacity: 0.35; cursor: default; }
+
+.studio-controls { display: flex; justify-content: center; gap: 12px; }
+
+.studio-btn {
+  border: none; border-radius: 8px; font-family: inherit; font-size: 0.85rem; font-weight: 700;
+  padding: 10px 22px; cursor: pointer; transition: opacity 0.15s;
+}
+
+.studio-btn:disabled { opacity: 0.4; cursor: default; }
+
+.studio-btn--record { background: #ff4b4b; color: #fff; }
+
+.studio-btn--stop { background: #fff; color: #14110f; }
+
+.studio-btn--primary { background: var(--accent); color: #fff; }
+
+.studio-btn--ghost { background: rgba(255,255,255,0.12); color: #fff; }
+
+.studio-btn:hover:not(:disabled) { opacity: 0.9; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ═══════════════════════════════════════════════════════════════
+   PREVIEW MODAL
+═══════════════════════════════════════════════════════════════ */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 1.4rem;
+  color: var(--muted);
+  cursor: pointer;
+  line-height: 1;
+  padding: 0 4px;
+  transition: color 0.15s;
+}
+
+.modal-close:hover { color: var(--text); }
+
+.spinner-preview {
+  display: inline-block;
+  width: 28px;
+  height: 28px;
+  border: 3px solid rgba(0,0,0,0.1);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+/* Keyframes used by the studio (extracted from app.css). */
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+@keyframes studio-pill-pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+@keyframes spin { to { transform: rotate(360deg); } }
