@@ -1,9 +1,10 @@
 import CVField from './CVField'
+import SectionVideos from './SectionVideos'
 import { getL } from '../../utils/labels'
 
 const emptyItem = { institution: '', degree: '', field: '', startDate: '', endDate: '' }
 
-export default function EducationSection({ items, lang = 'en', meta, onFieldEdit, onChange, onAccept, onDismiss }) {
+export default function EducationSection({ items, lang = 'en', meta, onFieldEdit, onChange, onAccept, onDismiss, videoProps }) {
   const lb = getL(lang)
   return (
     <section className="cv-section">
@@ -43,6 +44,11 @@ export default function EducationSection({ items, lang = 'en', meta, onFieldEdit
       <button className="cv-btn-add" onClick={() => onChange([...items, { ...emptyItem }])}>
         {lb.addEducation}
       </button>
+
+      {videoProps && (
+        <SectionVideos unitId="education" lang={lang} meta={meta}
+          onFieldEdit={onFieldEdit} onAccept={onAccept} onDismiss={onDismiss} {...videoProps} />
+      )}
     </section>
   )
 }

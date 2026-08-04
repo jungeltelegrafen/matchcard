@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import CVField from './CVField'
+import SectionVideos from './SectionVideos'
 import { getL } from '../../utils/labels'
 
 const emptyItem = { requirement: '', level: '', lastUsed: '', yearsRelevant: '', projects: '', detail: '' }
@@ -76,7 +77,7 @@ function ProjectChips({ projects, path, experiences, onEdit }) {
   )
 }
 
-export default function CompetenceTable({ data, lang = 'en', meta, onFieldEdit, onChange, onAccept, onDismiss, experiences }) {
+export default function CompetenceTable({ data, lang = 'en', meta, onFieldEdit, onChange, onAccept, onDismiss, experiences, videoProps }) {
   const lb = getL(lang)
   // Opt-out model: `enabled` defaults true (included). The section only renders
   // in preview/exports when a row is actually filled; toggling `enabled` off
@@ -214,6 +215,11 @@ export default function CompetenceTable({ data, lang = 'en', meta, onFieldEdit, 
       </div>
 
       <button className="cv-btn-add" onClick={addItem}>{lb.addCompetence}</button>
+
+      {videoProps && (
+        <SectionVideos unitId="competences" lang={lang} meta={meta}
+          onFieldEdit={onFieldEdit} onAccept={onAccept} onDismiss={onDismiss} {...videoProps} />
+      )}
     </section>
   )
 }

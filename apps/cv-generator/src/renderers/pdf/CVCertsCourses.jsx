@@ -2,6 +2,8 @@ import { View, Text, StyleSheet } from '@react-pdf/renderer'
 import { theme } from '../../theme'
 import { getL } from '../../utils/labels'
 import SectionHeading from './SectionHeading'
+import { videoCards, hostedVideo } from './CVVideos'
+import { videoItemsForUnit } from '../../utils/videoAnchors'
 
 const styles = StyleSheet.create({
   item:   { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 5 },
@@ -22,7 +24,7 @@ function Item({ name, sub, year }) {
   )
 }
 
-export default function CVCertsCourses({ certifications, courses, lang = 'en' }) {
+export default function CVCertsCourses({ certifications, courses, videos = [], lang = 'en' }) {
   const hasCerts   = certifications?.length > 0
   const hasCourses = courses?.length > 0
   if (!hasCerts && !hasCourses) return null
@@ -37,6 +39,7 @@ export default function CVCertsCourses({ certifications, courses, lang = 'en' })
       {(courses || []).map((item, i) => (
         <Item key={`k-${i}`} name={item.name} sub={item.institution} year={item.year} />
       ))}
+      {videoCards(videoItemsForUnit(videos, 'courses').filter(hostedVideo), lang)}
     </View>
   )
 }

@@ -1,4 +1,5 @@
 import CVField from './CVField'
+import SectionVideos from './SectionVideos'
 import { getL } from '../../utils/labels'
 
 const emptyCert   = { name: '', issuer: '', year: '' }
@@ -7,7 +8,7 @@ const emptyCourse = { name: '', institution: '', year: '' }
 export default function CertsCourseSection({
   certifications, courses, lang = 'en', meta,
   onFieldEdit, onAccept, onDismiss,
-  onCertsChange, onCoursesChange,
+  onCertsChange, onCoursesChange, videoProps,
 }) {
   const lb = getL(lang)
 
@@ -64,6 +65,11 @@ export default function CertsCourseSection({
       <button className="cv-btn-add-minor" onClick={() => onCoursesChange([...courses, { ...emptyCourse }])}>
         {lb.addCourse}
       </button>
+
+      {videoProps && (
+        <SectionVideos unitId="courses" lang={lang} meta={meta}
+          onFieldEdit={onFieldEdit} onAccept={onAccept} onDismiss={onDismiss} {...videoProps} />
+      )}
     </section>
   )
 }

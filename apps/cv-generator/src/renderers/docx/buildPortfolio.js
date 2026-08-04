@@ -2,8 +2,9 @@ import { ExternalHyperlink, Paragraph, TextRun } from 'docx'
 import { theme } from '../../theme'
 import { hex, sectionHeading } from './buildUtils'
 import { getL } from '../../utils/labels'
+import { unitVideoParagraphs } from './buildVideos'
 
-export function buildPortfolio(items, lang = 'en') {
+export function buildPortfolio(items, lang = 'en', videos = []) {
   if (!items?.length) return []
 
   const lb = getL(lang)
@@ -80,5 +81,6 @@ export function buildPortfolio(items, lang = 'en') {
     }
   }
 
+  result.push(...unitVideoParagraphs(videos, 'portfolio', lang))
   return result
 }

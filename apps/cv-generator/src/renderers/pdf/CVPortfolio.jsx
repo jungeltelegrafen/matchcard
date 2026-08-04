@@ -2,6 +2,8 @@ import { View, Text, Link, StyleSheet } from '@react-pdf/renderer'
 import { theme } from '../../theme'
 import SectionHeading from './SectionHeading'
 import { getL } from '../../utils/labels'
+import { videoCards, hostedVideo } from './CVVideos'
+import { videoItemsForUnit } from '../../utils/videoAnchors'
 
 const styles = StyleSheet.create({
   item: {
@@ -40,7 +42,7 @@ const styles = StyleSheet.create({
   },
 })
 
-export default function CVPortfolio({ items, lang = 'en' }) {
+export default function CVPortfolio({ items, videos = [], lang = 'en' }) {
   if (!items?.length) return null
 
   const lb = getL(lang)
@@ -68,6 +70,7 @@ export default function CVPortfolio({ items, lang = 'en' }) {
           </View>
         )
       })}
+      {videoCards(videoItemsForUnit(videos, 'portfolio').filter(hostedVideo), lang)}
     </View>
   )
 }

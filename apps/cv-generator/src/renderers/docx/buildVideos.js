@@ -2,7 +2,7 @@ import { Paragraph, TextRun, ExternalHyperlink } from 'docx'
 import { theme } from '../../theme'
 import { getL, videoPlacement } from '../../utils/labels'
 import { hex, sectionHeading } from './buildUtils'
-import { mainBlockVideos } from '../../utils/videoAnchors'
+import { mainBlockVideos, videoItemsForUnit } from '../../utils/videoAnchors'
 
 const placementLabel = (pl, lang) => videoPlacement(pl, lang).toUpperCase()
 
@@ -42,10 +42,17 @@ export function videoParagraphs(vids = [], lang = 'en') {
   return paras
 }
 
-// Main "Video Presentations" block: hosted videos NOT anchored to an experience.
-export function buildVideos(videos = [], experiences = [], lang = 'en') {
-  const vids = mainBlockVideos(videos, experiences).map(({ v }) => v).filter(hostedVideo)
+// Main "Video Presentations" block: hosted videos NOT anchored to a rendered unit.
+export function buildVideos(videos = [], unitIds = [], lang = 'en') {
+  const vids = mainBlockVideos(videos, unitIds).map(({ v }) => v).filter(hostedVideo)
   if (!vids.length) return []
   const lb = getL(lang)
   return [sectionHeading(lb.videos, { before: 0, after: 80 }), ...videoParagraphs(vids, lang)]
+}
+
+// Inline video paragraphs for one unit (hosted only) — for use inside a section
+// or item builder.
+export function unitVideoParagraphs(videos = [], unitId, lang = 'en') {
+  const vids = videoItemsForUnit(videos, unitId).filter(hostedVideo)
+  return vids.length ? videoParagraphs(vids, lang) : []
 }

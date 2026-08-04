@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import CVField from './CVField'
+import SectionVideos from './SectionVideos'
 import { getL } from '../../utils/labels'
 
 export default function SkillsSection({
   items, lang = 'en', meta,
-  onFieldEdit, onAccept, onDismiss, onSkillsChange,
+  onFieldEdit, onAccept, onDismiss, onSkillsChange, videoProps,
 }) {
   const lb = getL(lang)
   const [newSkillInputs, setNewSkillInputs] = useState({})
@@ -60,6 +61,11 @@ export default function SkillsSection({
       ))}
 
       <button className="cv-btn-add-minor" onClick={addGroup}>{lb.addSkillGroup}</button>
+
+      {videoProps && (
+        <SectionVideos unitId="skills" lang={lang} meta={meta}
+          onFieldEdit={onFieldEdit} onAccept={onAccept} onDismiss={onDismiss} {...videoProps} />
+      )}
     </section>
   )
 }

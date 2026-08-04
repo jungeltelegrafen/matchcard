@@ -2,6 +2,7 @@ import { Paragraph, TextRun } from 'docx'
 import { theme } from '../../theme'
 import { getL } from '../../utils/labels'
 import { hex, rule, sectionHeading } from './buildUtils'
+import { unitVideoParagraphs } from './buildVideos'
 
 function infoRow(label, value, { size = 17 } = {}) {
   if (!value) return null
@@ -14,7 +15,7 @@ function infoRow(label, value, { size = 17 } = {}) {
   })
 }
 
-export function buildHeader(personal, lang = 'en') {
+export function buildHeader(personal, lang = 'en', videos = []) {
   const lb = getL(lang)
   const showContact = personal.showContactInfo !== false
   const paras = []
@@ -60,6 +61,7 @@ export function buildHeader(personal, lang = 'en') {
       children: [new TextRun({ text: personal.summary, size: 20, color: hex(theme.colors.text), font: 'Calibri' })],
       spacing: { after: 80 },
     }))
+    paras.push(...unitVideoParagraphs(videos, 'summary', lang))
   }
 
   return paras

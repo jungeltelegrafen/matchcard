@@ -24,6 +24,7 @@ import CVEditor from './components/CVEditor'
 import AgentsBar from './components/AgentsBar'
 import LeftSidebar from './components/LeftSidebar'
 import RightSidebar from './components/RightSidebar'
+import VideoStudioModal from './components/VideoStudioModal'
 import PreviewModal from './components/PreviewModal'
 import OfferModal from './components/OfferModal'
 import BrandingModal from './components/BrandingModal'
@@ -125,6 +126,10 @@ export default function App() {
   const [genWarning, setGenWarning]   = useState('')
   const [previewOpen, setPreviewOpen] = useState(false)
   const [offerOpen, setOfferOpen] = useState(false)
+  // Video recorder studio (opened from the right-panel hub or from any section's
+  // "record a video" — `anchor` is the CV unit the new video attaches to).
+  const [recorder, setRecorder] = useState({ open: false, anchor: '' })
+  const openRecorder = (anchor = '') => setRecorder({ open: true, anchor })
   const [hoveredSection, setHoveredSection] = useState(null)
   const [changedPaths, setChangedPaths] = useState(new Set())
   // One-level undo for the last chat edit — snapshot of the slices it touched.
@@ -676,6 +681,8 @@ export default function App() {
               onAccept={handleAccept}
               onDismiss={handleDismiss}
               onStructural={handleStructural}
+              onVideosChange={setMasterVideos}
+              onRecord={openRecorder}
               hoveredSection={hoveredSection}
               commentCounts={commentCounts}
               changedPaths={changedPaths}
@@ -698,9 +705,24 @@ export default function App() {
             videos={masterCv.videos || []}
             branding={exportBranding}
             filename={filename}
+            onRecord={openRecorder}
             onVideosChange={setMasterVideos}
           />
         </div>
+
+        {recorder.open && (
+          <VideoStudioModal
+            cv={masterCv}
+            lang={contentLang}
+            branding={exportBranding}
+            filename={filename}
+            onClose={() => setRecorder({ open: false, anchor: '' })}
+            onSave={entry => {
+              setMasterVideos([...(masterCv.videos || []), { ...entry, anchor: recorder.anchor }])
+              setRecorder({ open: false, anchor: '' })
+            }}
+          />
+        )}
 
         {/* In a tailored view the left sidebar is the tailoring panel, so agent
             feedback surfaces here, below the CV. */}

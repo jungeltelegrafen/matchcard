@@ -2,6 +2,8 @@ import { View, Text, StyleSheet } from '@react-pdf/renderer'
 import { theme } from '../../theme'
 import SectionHeading from './SectionHeading'
 import { getL } from '../../utils/labels'
+import { videoCards, hostedVideo } from './CVVideos'
+import { videoItemsForUnit } from '../../utils/videoAnchors'
 
 const styles = StyleSheet.create({
   item: {
@@ -86,7 +88,7 @@ function LevelDots({ level }) {
   )
 }
 
-export default function CVCompetences({ competences, lang = 'en' }) {
+export default function CVCompetences({ competences, videos = [], lang = 'en' }) {
   const lb = getL(lang)
   const { projectLabel, simpleFormat } = competences
   const items = (competences.items || []).filter(it => it.requirement?.trim())
@@ -136,6 +138,7 @@ export default function CVCompetences({ competences, lang = 'en' }) {
 
         </View>
       ))}
+      {videoCards(videoItemsForUnit(videos, 'competences').filter(hostedVideo), lang)}
     </View>
   )
 }

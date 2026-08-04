@@ -3,20 +3,19 @@ import { getL } from '../../utils/labels'
 import { mainBlockVideos } from '../../utils/videoAnchors'
 
 const emptyItem = {
-  title: '', kind: 'intro', description: '', placement: 'general',
+  title: '', kind: 'intro', description: '', anchor: '', placement: 'general',
   experienceId: '', provider: 'link', assetId: '',
   playbackUrl: '', thumbnailUrl: '', duration: '', recordedAt: '',
 }
 
-// The main "Video Presentations" block in the CV body. Shows only videos NOT
-// anchored to an experience — anchored ones render inline in their experience
-// (see ExperienceVideos). Each card carries the "show in section" dropdown.
+// The main "Video Presentations" block: only videos NOT anchored to a unit.
+// Anchored videos render inline in their unit (see SectionVideos).
 export default function VideosSection({
-  items = [], experiences = [], lang = 'en', meta,
+  items = [], anchorOptions = [], unitIds = [], lang = 'en', meta,
   onFieldEdit, onAccept, onDismiss, onChange, candidateName,
 }) {
   const lb = getL(lang)
-  const main = mainBlockVideos(items, experiences) // {video, index} pairs
+  const main = mainBlockVideos(items, unitIds) // {video, index} pairs
   const setItem = (i, next) => onChange(items.map((it, idx) => (idx === i ? next : it)))
   const removeAt = i => onChange(items.filter((_, idx) => idx !== i))
 
@@ -27,7 +26,7 @@ export default function VideosSection({
       <div className="cv-videocards">
         {main.map(({ v, i }) => (
           <VideoCard
-            key={v._id || i} item={v} index={i} experiences={experiences}
+            key={v._id || i} item={v} index={i} anchorOptions={anchorOptions}
             lang={lang} meta={meta} onFieldEdit={onFieldEdit} onAccept={onAccept} onDismiss={onDismiss}
             onChange={next => setItem(i, next)} onRemove={() => removeAt(i)} candidateName={candidateName}
           />

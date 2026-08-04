@@ -2,8 +2,9 @@ import { TextRun } from 'docx'
 import { theme } from '../../theme'
 import { getL } from '../../utils/labels'
 import { hex, sectionHeading, twoColPara } from './buildUtils'
+import { unitVideoParagraphs } from './buildVideos'
 
-export function buildCertsCourses(certifications, courses, lang = 'en') {
+export function buildCertsCourses(certifications, courses, lang = 'en', videos = []) {
   const hasCerts   = certifications?.length > 0
   const hasCourses = courses?.length > 0
   if (!hasCerts && !hasCourses) return []
@@ -28,5 +29,6 @@ export function buildCertsCourses(certifications, courses, lang = 'en') {
 
       return twoColPara(nameRuns, item.year || '', { spacingBefore: idx === 0 ? 0 : 80 })
     }),
+    ...unitVideoParagraphs(videos, 'courses', lang),
   ]
 }

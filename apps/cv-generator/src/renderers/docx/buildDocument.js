@@ -14,6 +14,7 @@ import { buildVideos } from './buildVideos'
 import { buildPortfolio } from './buildPortfolio'
 import { brandHeader, brandFooter } from './buildBranding'
 import { squareCropDataUrl, fitImageBox } from '../../utils/branding'
+import { renderedUnitIds } from '../../utils/videoAnchors'
 
 function section(paras) {
   if (!paras.length) return []
@@ -41,16 +42,16 @@ function buildDoc(data, lang = 'en', branding = {}) {
         headers: { first: brandHeader(branding), default: new Header({ children: [] }) },
         footers: { first: brandFooter(branding), default: new Footer({ children: [] }) },
         children: [
-          ...buildHeader(data.personal, lang),
-          ...section(buildVideos(data.videos, data.experience, lang)),
-          ...section(buildSkills(data.skills, lang)),
-          ...section(buildCompetences(data.competences, lang)),
+          ...buildHeader(data.personal, lang, data.videos),
+          ...section(buildVideos(data.videos, renderedUnitIds(data), lang)),
+          ...section(buildSkills(data.skills, lang, data.videos)),
+          ...section(buildCompetences(data.competences, lang, data.videos)),
           ...section(buildExperience(data.experience, cvType, lang, data.videos)),
-          ...section(buildPositions(data.positions, lang)),
-          ...section(buildEducation(data.education, lang)),
-          ...section(buildCertsCourses(data.certifications, data.courses, lang)),
+          ...section(buildPositions(data.positions, lang, data.videos)),
+          ...section(buildEducation(data.education, lang, data.videos)),
+          ...section(buildCertsCourses(data.certifications, data.courses, lang, data.videos)),
           ...section(buildLanguages(data.languages, lang)),
-          ...section(buildPortfolio(data.portfolio, lang)),
+          ...section(buildPortfolio(data.portfolio, lang, data.videos)),
           new Paragraph({ children: [], spacing: { after: 0 } }),
         ],
       },

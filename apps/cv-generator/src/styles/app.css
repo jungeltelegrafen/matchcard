@@ -2330,14 +2330,17 @@ textarea.cv-field {
 /* ─── Video presentation cards (in the CV body) ─── */
 .cv-videos-section { display: flex; flex-direction: column; gap: 12px; }
 .cv-videocards { display: flex; flex-direction: column; gap: 12px; }
+/* Full-width, CV-integrated media card — a left accent rule ties it to the unit
+   it belongs to rather than reading as a separate floating box. */
 .cv-videocard {
   display: flex;
   gap: 14px;
+  width: 100%;
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-left: 3px solid var(--accent);
+  border-radius: 8px;
   background: var(--surface);
   padding: 12px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
 }
 .cv-videocard-poster {
   position: relative;
@@ -2395,22 +2398,38 @@ textarea.cv-field {
 }
 .cv-videocard-url { flex: 1; min-width: 120px; font-size: 0.72rem; color: var(--muted); }
 
-/* Videos anchored to a specific experience — shown inline at the end of that
-   experience entry in the editor (compact, indented from the entry). */
-.cv-exp-videos {
-  display: flex; flex-direction: column; gap: 10px;
-  margin: 10px 0 4px; padding: 10px 0 0; border-top: 1px dashed var(--border);
+/* Videos anchored to a CV unit (section or item) — shown inline, full width, at
+   the end of that unit in the editor. */
+.cv-unit-videos {
+  display: flex; flex-direction: column; gap: 10px; width: 100%; margin-top: 10px;
 }
-.cv-exp-addvideo {
-  align-self: flex-start; font-size: 0.72rem; font-weight: 600; color: var(--accent);
+.cv-attach-video { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.cv-attach-video-btn {
+  font-size: 0.72rem; font-weight: 600; color: var(--accent);
+  background: var(--accent-lt); border: 1px solid transparent; border-radius: 6px;
+  padding: 5px 11px; font-family: inherit; cursor: pointer;
+}
+.cv-attach-video-btn:hover { background: var(--accent); color: #fff; }
+.cv-attach-video-pick {
+  font-size: 0.72rem; font-weight: 600; color: var(--muted);
   background: var(--bg); border: 1px dashed var(--border); border-radius: 6px;
-  padding: 4px 10px; font-family: inherit; cursor: pointer;
+  padding: 5px 10px; font-family: inherit; cursor: pointer;
 }
 .cv-videocard-remove {
   margin-left: auto; background: none; border: none; color: var(--muted);
   font-size: 0.72rem; font-family: inherit; cursor: pointer; padding: 2px 4px;
 }
 .cv-videocard-remove:hover { color: #c0392b; }
+
+/* Name-your-video prompt at the review step (explicit naming before saving). */
+.studio-nameblock { display: flex; flex-direction: column; gap: 6px; margin-bottom: 4px; }
+.studio-namelabel { font-size: 0.82rem; font-weight: 700; color: #f0ece8; }
+.studio-nameinput {
+  font-family: inherit; font-size: 0.95rem; padding: 9px 12px; border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.22); background: rgba(255,255,255,0.06); color: #fff;
+}
+.studio-nameinput::placeholder { color: rgba(255,255,255,0.4); }
+.studio-nameinput:focus { outline: none; border-color: var(--accent); }
 
 /* ─── Recording studio ─── */
 .studio {

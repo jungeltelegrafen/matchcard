@@ -45,6 +45,7 @@ const T = {
         screenHint: 'Float your face (bottom-right), share your WHOLE screen, then move freely between GitHub, the live site and your portfolio as you talk. On Safari the face bubble has a ⧉ button to jump back here.',
         scrollHint: 'Scroll over your CV to move through it while you talk — your cursor is highlighted so viewers follow along.',
         mp4Warn: 'Heads up: your browser records in a format that may not play for viewers on Safari. For best compatibility, record in Chrome, Edge, or Safari.',
+        nameLabel: 'Name this video — this is what shows on your CV', namePlaceholder: 'e.g. “Why I fit this frontend role”',
         notUploaded: 'Saved to this session only (video hosting isn’t set up yet).',
         recTabTitle: '🔴 Recording — open this tab to Stop' },
   no: { studio: 'Innspillingsstudio', yourCV: 'Din CV', defaultTitle: 'Skjermgjennomgang', script: 'Manus', cues: 'Stikkord — kun du ser disse',
@@ -72,6 +73,7 @@ const T = {
         screenHint: 'La ansiktet flyte (nederst til høyre), del HELE skjermen, og beveg deg fritt mellom GitHub, live side og portefølje mens du snakker. På Safari har ansikts-boblen en ⧉-knapp for å hoppe tilbake hit.',
         scrollHint: 'Bla over CV-en for å bevege deg gjennom den mens du snakker — markøren din er uthevet så seerne følger med.',
         mp4Warn: 'Merk: nettleseren din tar opp i et format som kanskje ikke spilles av for seere på Safari. For best kompatibilitet, ta opp i Chrome, Edge eller Safari.',
+        nameLabel: 'Gi videoen et navn — dette vises på CV-en din', namePlaceholder: 'f.eks. «Derfor passer jeg til frontend-rollen»',
         notUploaded: 'Lagret kun for denne økten (videohosting er ikke satt opp ennå).',
         recTabTitle: '🔴 Tar opp — åpne denne fanen for å stoppe' },
   es: { studio: 'Estudio de grabación', yourCV: 'Tu CV', defaultTitle: 'Recorrido de pantalla', script: 'Guion', cues: 'Notas — solo tú las ves',
@@ -99,6 +101,7 @@ const T = {
         screenHint: 'Haz flotar tu cara (abajo a la derecha), comparte TODA la pantalla y muévete libremente entre GitHub, el sitio en vivo y tu portafolio mientras hablas. En Safari la burbuja tiene un botón ⧉ para volver aquí.',
         scrollHint: 'Desplázate sobre tu CV para recorrerlo mientras hablas — tu cursor se resalta para que los espectadores te sigan.',
         mp4Warn: 'Aviso: tu navegador graba en un formato que puede no reproducirse para quienes usan Safari. Para mayor compatibilidad, graba en Chrome, Edge o Safari.',
+        nameLabel: 'Nombra este vídeo — es lo que aparece en tu CV', namePlaceholder: 'p. ej. «Por qué encajo en este puesto de frontend»',
         notUploaded: 'Guardado solo para esta sesión (el alojamiento de vídeo aún no está configurado).',
         recTabTitle: '🔴 Grabando — abre esta pestaña para Detener' },
 }
@@ -180,6 +183,7 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', branding, filen
   const [count, setCount]       = useState(3)
   const [elapsed, setElapsed]   = useState(0)
   const [recordedUrl, setRecordedUrl] = useState(null)
+  const [videoName, setVideoName] = useState('') // explicit name entered at the review step
   const [errMsg, setErrMsg]     = useState('')
   const [pdfUrl, setPdfUrl]     = useState(null)
   const [uploadPct, setUploadPct] = useState(0)
@@ -563,7 +567,7 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', branding, filen
     } catch { hosted = null }
     savedRef.current = true
     onSave({
-      title: t.defaultTitle, kind: 'general', placement: 'general', description: '',
+      title: videoName.trim() || t.defaultTitle, kind: 'general', description: '',
       provider: hosted ? 'cloudflare' : 'local',
       assetId: hosted?.uid || '',
       playbackUrl: hosted?.playbackUrl || recordedUrl || '',
@@ -753,7 +757,17 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', branding, filen
               <p className="studio-warn">⚠️ {t.mp4Warn}</p>
             )}
 
-            {phase === 'review' && <p className="studio-review-note">{t.review} — {t.notUploaded}</p>}
+            {phase === 'review' && (
+              <div className="studio-nameblock">
+                <label className="studio-namelabel" htmlFor="studio-videoname">{t.nameLabel}</label>
+                <input
+                  id="studio-videoname" className="studio-nameinput" type="text"
+                  value={videoName} onChange={e => setVideoName(e.target.value)}
+                  placeholder={t.namePlaceholder} autoFocus maxLength={80}
+                />
+                <p className="studio-review-note">{t.notUploaded}</p>
+              </div>
+            )}
 
             {/* Controls */}
             <div className="studio-controls">
@@ -764,7 +778,7 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', branding, filen
               ) : phase === 'review' ? (
                 <>
                   <button className="studio-btn studio-btn--ghost" onClick={retake}>↺ {t.retake}</button>
-                  <button className="studio-btn studio-btn--primary" onClick={useRecording}>✓ {t.use}</button>
+                  <button className="studio-btn studio-btn--primary" onClick={useRecording} disabled={!videoName.trim()}>✓ {t.use}</button>
                 </>
               ) : phase === 'recording' ? (
                 // CV / "just me" modes record in-studio, so pause/stop live here.

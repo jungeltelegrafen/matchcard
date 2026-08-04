@@ -11,8 +11,9 @@ import CVEducation from './CVEducation'
 import CVCertsCourses from './CVCertsCourses'
 import CVLanguages from './CVLanguages'
 import SectionHeading from './SectionHeading'
-import CVVideos from './CVVideos'
+import CVVideos, { videoCards, hostedVideo } from './CVVideos'
 import CVPortfolio from './CVPortfolio'
+import { renderedUnitIds, videoItemsForUnit } from '../../utils/videoAnchors'
 
 const styles = StyleSheet.create({
   page: {
@@ -50,6 +51,9 @@ export default function CVDocument({ data, lang = 'en', branding = {} }) {
   const cvType = data.cvType || 'technical'
   const lb = getL(lang)
   const showFooter = hasCompanyFooter(branding)
+  const videos = data.videos || []
+  const unitIds = renderedUnitIds(data)
+  const unitVids = unit => videoItemsForUnit(videos, unit).filter(hostedVideo)
 
   return (
     <Document>
@@ -61,34 +65,35 @@ export default function CVDocument({ data, lang = 'en', branding = {} }) {
           <View style={{ marginBottom: theme.spacing.sectionGap }}>
             <SectionHeading>{lb.summary}</SectionHeading>
             <Text style={styles.summary}>{data.personal.summary}</Text>
+            {videoCards(unitVids('summary'), lang)}
           </View>
         ) : null}
 
-        <CVVideos items={data.videos} experiences={data.experience} lang={lang} />
+        <CVVideos items={videos} unitIds={unitIds} lang={lang} />
 
         {data.skills?.length > 0 && (
-          <CVSkills items={data.skills} lang={lang} />
+          <CVSkills items={data.skills} videos={videos} lang={lang} />
         )}
 
         {data.competences?.enabled !== false && data.competences?.items?.some(c => c.requirement?.trim()) && (
-          <CVCompetences competences={data.competences} lang={lang} />
+          <CVCompetences competences={data.competences} videos={videos} lang={lang} />
         )}
 
         {data.experience?.length > 0 && (
-          <CVExperience items={data.experience} videos={data.videos} cvType={cvType} lang={lang} />
+          <CVExperience items={data.experience} videos={videos} cvType={cvType} lang={lang} />
         )}
 
-        <CVPositions positions={data.positions} lang={lang} />
+        <CVPositions positions={data.positions} videos={videos} lang={lang} />
 
         {data.education?.length > 0 && (
-          <CVEducation items={data.education} lang={lang} />
+          <CVEducation items={data.education} videos={videos} lang={lang} />
         )}
 
-        <CVCertsCourses certifications={data.certifications} courses={data.courses} lang={lang} />
+        <CVCertsCourses certifications={data.certifications} courses={data.courses} videos={videos} lang={lang} />
 
         <CVLanguages items={data.languages} lang={lang} />
 
-        <CVPortfolio items={data.portfolio} lang={lang} />
+        <CVPortfolio items={data.portfolio} videos={videos} lang={lang} />
 
         {showFooter && (
           <View

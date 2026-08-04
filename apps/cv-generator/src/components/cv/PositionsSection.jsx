@@ -1,4 +1,5 @@
 import CVField from './CVField'
+import SectionVideos from './SectionVideos'
 import { getL } from '../../utils/labels'
 
 const emptyItem = {
@@ -6,7 +7,7 @@ const emptyItem = {
   description: '', bullets: [''], technologies: '', methodologies: '',
 }
 
-export default function PositionsSection({ data, lang = 'en', meta, onFieldEdit, onAccept, onDismiss, onChange }) {
+export default function PositionsSection({ data, lang = 'en', meta, onFieldEdit, onAccept, onDismiss, onChange, videoProps }) {
   const lb = getL(lang)
   const items = data.items || []
   const full = data.useProjectFormat
@@ -104,6 +105,11 @@ export default function PositionsSection({ data, lang = 'en', meta, onFieldEdit,
                       className="cv-exp-tech-field" placeholder="e.g. Scrum, PRINCE2, change management…" />
                   </div>
                 </>
+              )}
+
+              {videoProps && (
+                <SectionVideos unitId={item._id} lang={lang} meta={meta}
+                  onFieldEdit={onFieldEdit} onAccept={onAccept} onDismiss={onDismiss} {...videoProps} />
               )}
 
               <button className="cv-btn-remove-item" onClick={() => removeItem(i)}>{lb.remove}</button>

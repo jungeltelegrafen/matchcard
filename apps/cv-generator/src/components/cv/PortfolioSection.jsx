@@ -1,12 +1,13 @@
 import CVField from './CVField'
 import { getL } from '../../utils/labels'
 import { deriveFromUrl } from '../../utils/portfolioHeuristics'
+import SectionVideos from './SectionVideos'
 
 const CATEGORY_VALUES = ['code', 'design', 'project', 'writing', 'other']
 
 const emptyItem = { category: '', label: '', url: '', description: '' }
 
-export default function PortfolioSection({ items = [], lang = 'en', meta, onFieldEdit, onChange, onAccept, onDismiss }) {
+export default function PortfolioSection({ items = [], lang = 'en', meta, onFieldEdit, onChange, onAccept, onDismiss, videoProps }) {
   const lb = getL(lang)
   const cats = lb.portfolioCategories || {}
 
@@ -90,6 +91,11 @@ export default function PortfolioSection({ items = [], lang = 'en', meta, onFiel
       >
         {lb.addLink}
       </button>
+
+      {videoProps && (
+        <SectionVideos unitId="portfolio" lang={lang} meta={meta}
+          onFieldEdit={onFieldEdit} onAccept={onAccept} onDismiss={onDismiss} {...videoProps} />
+      )}
     </section>
   )
 }

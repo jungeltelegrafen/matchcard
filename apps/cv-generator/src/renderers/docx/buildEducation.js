@@ -2,8 +2,9 @@ import { Paragraph, TextRun } from 'docx'
 import { theme } from '../../theme'
 import { getL } from '../../utils/labels'
 import { hex, sectionHeading, twoColPara } from './buildUtils'
+import { unitVideoParagraphs } from './buildVideos'
 
-export function buildEducation(items, lang = 'en') {
+export function buildEducation(items, lang = 'en', videos = []) {
   if (!items?.length) return []
   const lb = getL(lang)
 
@@ -29,5 +30,6 @@ export function buildEducation(items, lang = 'en') {
         }) : null,
       ].filter(Boolean)
     }),
+    ...unitVideoParagraphs(videos, 'education', lang),
   ]
 }

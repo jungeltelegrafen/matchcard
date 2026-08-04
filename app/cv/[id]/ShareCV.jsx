@@ -3,7 +3,7 @@ import './share.css'
 import { useState, Fragment } from 'react'
 import { getL, videoPlacement } from '@/apps/cv-generator/src/utils/labels'
 import { hasCompanyFooter } from '@/apps/cv-generator/src/utils/branding'
-import { mainBlockVideos, experienceVideoItems } from '@/apps/cv-generator/src/utils/videoAnchors'
+import { mainBlockVideos, videoItemsForUnit, renderedUnitIds } from '@/apps/cv-generator/src/utils/videoAnchors'
 
 // Turn a stored playback URL into an embeddable src (or null → external link).
 function videoEmbed(url) {
@@ -52,7 +52,12 @@ export default function ShareCV({ cv, lang = 'en' }) {
   // (matches CVVideos.jsx / buildVideos.js). Videos anchored to an experience
   // render inline in it; the rest form the main block.
   const hosted = v => /^https?:\/\//.test(v.playbackUrl || '')
-  const mainVideos = mainBlockVideos(videos, experience).map(({ v }) => v).filter(hosted)
+  const mainVideos = mainBlockVideos(videos, renderedUnitIds(cv)).map(({ v }) => v).filter(hosted)
+  // Inline video block for a unit (section key or item _id).
+  const unitVideos = unitId => {
+    const vids = videoItemsForUnit(videos, unitId).filter(hosted)
+    return vids.length ? <div className="cv-share-videos cv-entry-videos">{vids.map(renderVideo)}</div> : null
+  }
 
   // One video card. `playing` is keyed by the video's stable id so play state
   // works for both the main block and inline-in-experience cards.
@@ -172,6 +177,7 @@ export default function ShareCV({ cv, lang = 'en' }) {
           <section className="cv-section">
             <h2 className="cv-section-title">{lb.summary}</h2>
             <p className="cv-summary-text">{personal.summary}</p>
+            {unitVideos('summary')}
           </section>
         )}
 
@@ -217,6 +223,7 @@ export default function ShareCV({ cv, lang = 'en' }) {
                 )
               })}
             </div>
+            {unitVideos('competences')}
           </section>
         )}
 
@@ -247,12 +254,7 @@ export default function ShareCV({ cv, lang = 'en' }) {
                 {mgmt && exp.result && (
                   <p className="cv-entry-tech"><span className="cv-entry-tech-label">{lb.result}: </span>{exp.result}</p>
                 )}
-                {(() => {
-                  const expVids = experienceVideoItems(videos, exp._id).filter(hosted)
-                  return expVids.length > 0 ? (
-                    <div className="cv-share-videos cv-entry-videos">{expVids.map(renderVideo)}</div>
-                  ) : null
-                })()}
+                {unitVideos(exp._id)}
               </div>
             ))}
           </section>
@@ -282,6 +284,7 @@ export default function ShareCV({ cv, lang = 'en' }) {
                 {positionsFull && p.methodologies && (
                   <p className="cv-entry-tech"><span className="cv-entry-tech-label">{lb.methodologies}: </span>{p.methodologies}</p>
                 )}
+                {unitVideos(p._id)}
               </div>
             ))}
           </section>
@@ -299,6 +302,7 @@ export default function ShareCV({ cv, lang = 'en' }) {
                 )}
               </div>
             ))}
+            {unitVideos('education')}
           </section>
         )}
 
@@ -313,6 +317,7 @@ export default function ShareCV({ cv, lang = 'en' }) {
                 </div>
               ))}
             </div>
+            {unitVideos('skills')}
           </section>
         )}
 
@@ -339,6 +344,7 @@ export default function ShareCV({ cv, lang = 'en' }) {
                 {c.year && <span className="cv-entry-dates">{c.year}</span>}
               </div>
             ))}
+            {unitVideos('courses')}
           </section>
         )}
 
@@ -370,6 +376,7 @@ export default function ShareCV({ cv, lang = 'en' }) {
                 </div>
               )
             })}
+            {unitVideos('portfolio')}
           </section>
         )}
 

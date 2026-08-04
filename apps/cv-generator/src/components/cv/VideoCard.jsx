@@ -1,33 +1,26 @@
 import { useState } from 'react'
 import CVField from './CVField'
 import VideoProfileModal from '../VideoProfileModal'
-import { getL, videoPlacement } from '../../utils/labels'
+import { getL } from '../../utils/labels'
 import { videoPoster } from '../../utils/videoPoster'
+import { videoAnchorId } from '../../utils/videoAnchors'
 
-const PLACEMENTS = ['intro', 'motivation', 'experience', 'general']
+const T = { inMain: { en: 'Main video block', no: 'Hovedvideo-blokk', es: 'Bloque principal',
+                      sv: 'Huvudvideoblock', da: 'Hovedvideoblok', pl: 'Główny blok wideo' } }
 
-// Local strings for the two anchor controls (kept out of the big labels table).
-const T = {
-  inMain: { en: 'Main video block', no: 'Hovedvideo-blokk', es: 'Bloque principal',
-            sv: 'Huvudvideoblock', da: 'Hovedvideoblok', pl: 'Główny blok wideo' },
-  showIn: { en: 'Shows in', no: 'Vises i', es: 'Aparece en', sv: 'Visas i', da: 'Vises i', pl: 'Widoczne w' },
-}
-const expLabel = e => [e.role, e.company].filter(Boolean).join(' · ').trim()
-
-// One editable video card. Used both in the main "Video Presentations" block and
-// inline within an experience (when the video is anchored to it). `index` is the
-// video's TRUE index in cv.videos so field paths / edits target the right item.
+// One editable video card. Used in the main "Video Presentations" block and
+// inline within any anchored unit (experience, position, section). `index` is
+// the video's TRUE index in cv.videos so field paths / edits target it. The
+// "show in" dropdown re-anchors the video to any unit (or the main block).
 export default function VideoCard({
-  item, index, experiences = [], lang = 'en', meta,
+  item, index, anchorOptions = [], lang = 'en', meta,
   onFieldEdit, onAccept, onDismiss, onChange, onRemove, candidateName,
 }) {
   const lb = getL(lang)
   const no = lang === 'no', es = lang === 'es'
   const sessionOnly = no ? 'Kun denne økten' : es ? 'Solo esta sesión' : 'This session only'
   const [open, setOpen] = useState(false)
-  const tt = k => T[k][lang] || T[k].en
-  const placementLabel = pl => videoPlacement(pl, lang) || pl
-  const anchorable = experiences.filter(e => e && e._id && expLabel(e))
+  const inMain = T.inMain[lang] || T.inMain.en
 
   return (
     <div className="cv-videocard">
@@ -42,10 +35,11 @@ export default function VideoCard({
       </button>
 
       <div className="cv-videocard-body">
-        <div className="cv-videocard-tagrow">
-          <span className="cv-videocard-tag">{placementLabel(item.placement)}</span>
-          {item.provider === 'local' && <span className="cv-video-badge">● {sessionOnly}</span>}
-        </div>
+        {item.provider === 'local' && (
+          <div className="cv-videocard-tagrow">
+            <span className="cv-video-badge">● {sessionOnly}</span>
+          </div>
+        )}
         <CVField
           value={item.title} path={`videos.${index}.title`}
           meta={meta} onEdit={onFieldEdit} onAccept={onAccept} onDismiss={onDismiss}
@@ -60,21 +54,12 @@ export default function VideoCard({
 
         <div className="cv-videocard-manage">
           <select
-            className="cv-videocard-place"
-            value={item.placement || 'general'}
-            onChange={e => onChange({ ...item, placement: e.target.value })}
-          >
-            {PLACEMENTS.map(pl => <option key={pl} value={pl}>{placementLabel(pl)}</option>)}
-          </select>
-          {/* Anchor: which section this video renders inside. */}
-          <select
             className="cv-videocard-attach"
-            title={tt('showIn')}
-            value={item.experienceId || ''}
-            onChange={e => onChange({ ...item, experienceId: e.target.value })}
+            value={videoAnchorId(item)}
+            onChange={e => onChange({ ...item, anchor: e.target.value, experienceId: '' })}
           >
-            <option value="">{tt('inMain')}</option>
-            {anchorable.map(e => <option key={e._id} value={e._id}>{expLabel(e)}</option>)}
+            <option value="">{inMain}</option>
+            {anchorOptions.map(o => <option key={o.id} value={o.id}>{o.label}</option>)}
           </select>
           {item.provider !== 'local' && (
             <CVField

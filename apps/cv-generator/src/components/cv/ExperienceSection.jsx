@@ -1,5 +1,5 @@
 import CVField from './CVField'
-import ExperienceVideos from './ExperienceVideos'
+import SectionVideos from './SectionVideos'
 import { getL } from '../../utils/labels'
 
 const emptyItem = {
@@ -10,8 +10,7 @@ const emptyItem = {
 
 export default function ExperienceSection({
   items, cvType = 'technical', lang = 'en', meta,
-  onFieldEdit, onChange, onAccept, onDismiss,
-  videos = [], onVideosChange, candidateName,
+  onFieldEdit, onChange, onAccept, onDismiss, videoProps,
 }) {
   const lb = getL(lang)
   const isMgmt = cvType === 'management'
@@ -110,11 +109,10 @@ export default function ExperienceSection({
             </>
           )}
 
-          {onVideosChange && (
-            <ExperienceVideos
-              expId={item._id} videos={videos} experiences={items}
-              lang={lang} meta={meta} onFieldEdit={onFieldEdit} onAccept={onAccept} onDismiss={onDismiss}
-              onVideosChange={onVideosChange} candidateName={candidateName}
+          {videoProps && (
+            <SectionVideos
+              unitId={item._id} lang={lang} meta={meta}
+              onFieldEdit={onFieldEdit} onAccept={onAccept} onDismiss={onDismiss} {...videoProps}
             />
           )}
 

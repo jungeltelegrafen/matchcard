@@ -43,9 +43,9 @@ export function videoCards(vids = [], lang = 'en') {
   ))
 }
 
-// Main "Video Presentations" block: hosted videos NOT anchored to an experience.
-export default function CVVideos({ items = [], experiences = [], lang = 'en' }) {
-  const vids = mainBlockVideos(items, experiences).map(({ v }) => v).filter(hostedVideo)
+// Main "Video Presentations" block: hosted videos NOT anchored to a rendered unit.
+export default function CVVideos({ items = [], unitIds = [], lang = 'en' }) {
+  const vids = mainBlockVideos(items, unitIds).map(({ v }) => v).filter(hostedVideo)
   if (!vids.length) return null
   const lb = getL(lang)
 

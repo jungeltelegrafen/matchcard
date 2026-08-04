@@ -2,8 +2,9 @@ import { Paragraph, TextRun } from 'docx'
 import { theme } from '../../theme'
 import { getL } from '../../utils/labels'
 import { hex, sectionHeading, twoColPara, bulletPara } from './buildUtils'
+import { unitVideoParagraphs } from './buildVideos'
 
-export function buildPositions(positions, lang = 'en') {
+export function buildPositions(positions, lang = 'en', videos = []) {
   if (!positions?.enabled || !positions?.items?.length) return []
   const lb = getL(lang)
   const full = positions.useProjectFormat
@@ -65,6 +66,8 @@ export function buildPositions(positions, lang = 'en') {
           }))
         }
       }
+
+      paras.push(...unitVideoParagraphs(videos, item._id, lang))
 
       if (idx < positions.items.length - 1) {
         paras.push(new Paragraph({ children: [], spacing: { before: 80, after: 0 } }))

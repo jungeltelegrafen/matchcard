@@ -2,6 +2,8 @@ import { View, Text, StyleSheet } from '@react-pdf/renderer'
 import { theme } from '../../theme'
 import { getL } from '../../utils/labels'
 import SectionHeading from './SectionHeading'
+import { videoCards, hostedVideo } from './CVVideos'
+import { videoItemsForUnit } from '../../utils/videoAnchors'
 
 const styles = StyleSheet.create({
   item: { marginBottom: theme.spacing.itemGap },
@@ -11,7 +13,7 @@ const styles = StyleSheet.create({
   date:        { fontSize: theme.fonts.sizes.small, color: theme.colors.muted },
 })
 
-export default function CVEducation({ items, lang = 'en' }) {
+export default function CVEducation({ items, videos = [], lang = 'en' }) {
   const lb = getL(lang)
   return (
     <View style={{ marginBottom: theme.spacing.sectionGap }}>
@@ -25,6 +27,7 @@ export default function CVEducation({ items, lang = 'en' }) {
           {item.institution ? <Text style={styles.institution}>{item.institution}</Text> : null}
         </View>
       ))}
+      {videoCards(videoItemsForUnit(videos, 'education').filter(hostedVideo), lang)}
     </View>
   )
 }

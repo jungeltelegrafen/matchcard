@@ -1,7 +1,8 @@
 import CVField from './CVField'
+import SectionVideos from './SectionVideos'
 import { getL } from '../../utils/labels'
 
-export default function PersonalSection({ data, meta, onFieldEdit, onAccept, onDismiss, lang = 'en' }) {
+export default function PersonalSection({ data, meta, onFieldEdit, onAccept, onDismiss, lang = 'en', videoProps }) {
   const lb = getL(lang)
   const p = 'personal'
   const fp = key => `${p}.${key}`
@@ -92,6 +93,11 @@ export default function PersonalSection({ data, meta, onFieldEdit, onAccept, onD
         placeholder="Professional summary — describe your background, key strengths, and what you bring to the table..."
         rows={3}
       />
+
+      {videoProps && (
+        <SectionVideos unitId="summary" lang={lang} meta={meta}
+          onFieldEdit={onFieldEdit} onAccept={onAccept} onDismiss={onDismiss} {...videoProps} />
+      )}
     </section>
   )
 }

@@ -2,6 +2,8 @@ import { View, Text, StyleSheet } from '@react-pdf/renderer'
 import { theme } from '../../theme'
 import { getL } from '../../utils/labels'
 import SectionHeading from './SectionHeading'
+import { videoCards, hostedVideo } from './CVVideos'
+import { videoItemsForUnit } from '../../utils/videoAnchors'
 
 const styles = StyleSheet.create({
   row:      { flexDirection: 'row', flexWrap: 'wrap', marginBottom: theme.spacing.itemGap },
@@ -9,7 +11,7 @@ const styles = StyleSheet.create({
   items:    { fontSize: theme.fonts.sizes.body, color: theme.colors.muted, flex: 1 },
 })
 
-export default function CVSkills({ items, lang = 'en' }) {
+export default function CVSkills({ items, videos = [], lang = 'en' }) {
   if (!items?.length) return null
   const lb = getL(lang)
   return (
@@ -21,6 +23,7 @@ export default function CVSkills({ items, lang = 'en' }) {
           <Text style={styles.items}>{group.items.join(', ')}</Text>
         </View>
       ))}
+      {videoCards(videoItemsForUnit(videos, 'skills').filter(hostedVideo), lang)}
     </View>
   )
 }

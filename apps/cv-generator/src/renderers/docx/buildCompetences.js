@@ -2,6 +2,7 @@ import { Paragraph, TextRun, ShadingType } from 'docx'
 import { theme } from '../../theme'
 import { getL } from '../../utils/labels'
 import { hex, sectionHeading } from './buildUtils'
+import { unitVideoParagraphs } from './buildVideos'
 
 function levelDots(n) {
   const filled = '●'
@@ -13,7 +14,7 @@ function blankLine() {
   return new Paragraph({ children: [], spacing: { before: 0, after: 0 } })
 }
 
-export function buildCompetences(competences, lang = 'en') {
+export function buildCompetences(competences, lang = 'en', videos = []) {
   if (competences?.enabled === false) return []
   const items = (competences?.items || []).filter(it => it.requirement?.trim())
   if (!items.length) return []
@@ -79,5 +80,6 @@ export function buildCompetences(competences, lang = 'en') {
 
       return paras
     }),
+    ...unitVideoParagraphs(videos, 'competences', lang),
   ]
 }

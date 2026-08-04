@@ -2,6 +2,8 @@ import { View, Text, StyleSheet } from '@react-pdf/renderer'
 import { theme } from '../../theme'
 import { getL } from '../../utils/labels'
 import SectionHeading from './SectionHeading'
+import { videoCards, hostedVideo } from './CVVideos'
+import { videoItemsForUnit } from '../../utils/videoAnchors'
 
 const styles = StyleSheet.create({
   item:     { marginBottom: theme.spacing.itemGap + 4 },
@@ -14,7 +16,7 @@ const styles = StyleSheet.create({
   bullet:   { fontSize: theme.fonts.sizes.body, color: theme.colors.muted, marginLeft: 8 },
 })
 
-export default function CVPositions({ positions, lang = 'en' }) {
+export default function CVPositions({ positions, videos = [], lang = 'en' }) {
   if (!positions?.enabled || !positions?.items?.length) return null
   const lb = getL(lang)
   const full = positions.useProjectFormat
@@ -51,6 +53,7 @@ export default function CVPositions({ positions, lang = 'en' }) {
               <Text style={styles.label}>{lb.methodologies}: </Text>{item.methodologies}
             </Text>
           ) : null}
+          {videoCards(videoItemsForUnit(videos, item._id).filter(hostedVideo), lang)}
         </View>
       ))}
     </View>

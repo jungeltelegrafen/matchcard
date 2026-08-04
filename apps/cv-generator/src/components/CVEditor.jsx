@@ -11,6 +11,8 @@ import CertsCourseSection from './cv/CertsCourseSection'
 import LanguagesSection from './cv/LanguagesSection'
 import PortfolioSection from './cv/PortfolioSection'
 import VideosSection from './cv/VideosSection'
+import { getL } from '../utils/labels'
+import { allUnitIds, anchorOptions } from '../utils/videoAnchors'
 
 // A4 aspect ratio (height / width) — used to estimate the page-1 boundary on the
 // single continuous editor sheet, so the footer lands roughly where the printed
@@ -103,10 +105,26 @@ function SectionWrap({ sectionKey, hoveredSection, commentCounts, children }) {
   )
 }
 
-export default function CVEditor({ cv, lang = 'en', uiLang = 'en', meta, onFieldEdit, onAccept, onDismiss, onStructural, hoveredSection, commentCounts, changedPaths, onChangeSeen, branding, includeBranding = true, includeImage = true, onToggleBranding, onToggleImage, onEditBranding, onSetProfilePicture }) {
+export default function CVEditor({ cv, lang = 'en', uiLang = 'en', meta, onFieldEdit, onAccept, onDismiss, onStructural, onVideosChange, onRecord, hoveredSection, commentCounts, changedPaths, onChangeSeen, branding, includeBranding = true, includeImage = true, onToggleBranding, onToggleImage, onEditBranding, onSetProfilePicture }) {
   const shared = { lang, meta, onFieldEdit, onAccept, onDismiss }
   const wrap = sectionKey => ({ sectionKey, hoveredSection, commentCounts })
   const no = uiLang === 'no'
+
+  // Videos anchor to CV units (sections + experience/position items). Compute the
+  // "show in" options + the shared video-attach bundle once, pass to each section.
+  const lb = getL(lang)
+  const secLabel = k => ({ summary: lb.summary, skills: lb.skills, competences: lb.competences,
+    education: lb.education, courses: lb.courses, portfolio: lb.portfolio }[k] || k)
+  const vidAnchorOptions = anchorOptions(cv, secLabel)
+  const vidUnitIds = allUnitIds(cv)
+  const candidateName = [cv.personal?.firstName, cv.personal?.lastName].filter(Boolean).join(' ')
+  const videoProps = {
+    videos: cv.videos || [],
+    // Videos live on the master (shared across variants) — route to the master
+    // setter when provided, else fall back to the structural handler.
+    onVideosChange: onVideosChange || (items => onStructural('videos', items)),
+    candidateName, onRecord, anchorOptions: vidAnchorOptions,
+  }
 
   // Logo + footer follow "branding"; the profile photo follows "image".
   const showLogo   = Boolean(branding) && includeBranding
@@ -128,24 +146,25 @@ export default function CVEditor({ cv, lang = 'en', uiLang = 'en', meta, onField
   const sections = [
     { key: 'summary', node: (
       <SectionWrap {...wrap('summary')}>
-        <PersonalSection data={cv.personal} {...shared} />
+        <PersonalSection data={cv.personal} {...shared} videoProps={videoProps} />
       </SectionWrap>
     ) },
     { key: 'videos', node: (
       <SectionWrap {...wrap('videos')}>
         <VideosSection
           items={cv.videos || []}
-          experiences={cv.experience || []}
+          anchorOptions={vidAnchorOptions}
+          unitIds={vidUnitIds}
           {...shared}
-          candidateName={[cv.personal?.firstName, cv.personal?.lastName].filter(Boolean).join(' ')}
-          onChange={items => onStructural('videos', items)}
+          candidateName={candidateName}
+          onChange={videoProps.onVideosChange}
         />
       </SectionWrap>
     ) },
     { key: 'skills', node: (
       <SectionWrap {...wrap('skills')}>
         <SkillsSection
-          items={cv.skills} {...shared}
+          items={cv.skills} {...shared} videoProps={videoProps}
           onSkillsChange={items => onStructural('skills', items)}
         />
       </SectionWrap>
@@ -155,6 +174,7 @@ export default function CVEditor({ cv, lang = 'en', uiLang = 'en', meta, onField
         data={cv.competences}
         experiences={cv.experience}
         {...shared}
+        videoProps={videoProps}
         onChange={newData => onStructural('competences', newData)}
       />
     ) },
@@ -164,9 +184,7 @@ export default function CVEditor({ cv, lang = 'en', uiLang = 'en', meta, onField
           items={cv.experience}
           cvType={cv.cvType}
           {...shared}
-          videos={cv.videos || []}
-          onVideosChange={items => onStructural('videos', items)}
-          candidateName={[cv.personal?.firstName, cv.personal?.lastName].filter(Boolean).join(' ')}
+          videoProps={videoProps}
           onChange={items => onStructural('experience', items)}
         />
       </SectionWrap>
@@ -175,13 +193,14 @@ export default function CVEditor({ cv, lang = 'en', uiLang = 'en', meta, onField
       <PositionsSection
         data={cv.positions || { enabled: false, useProjectFormat: false, items: [] }}
         {...shared}
+        videoProps={videoProps}
         onChange={newData => onStructural('positions', newData)}
       />
     ) },
     { key: 'education', node: (
       <SectionWrap {...wrap('education')}>
         <EducationSection
-          items={cv.education} {...shared}
+          items={cv.education} {...shared} videoProps={videoProps}
           onChange={items => onStructural('education', items)}
         />
       </SectionWrap>
@@ -191,6 +210,7 @@ export default function CVEditor({ cv, lang = 'en', uiLang = 'en', meta, onField
         certifications={cv.certifications || []}
         courses={cv.courses || []}
         {...shared}
+        videoProps={videoProps}
         onCertsChange={items => onStructural('certifications', items)}
         onCoursesChange={items => onStructural('courses', items)}
       />
@@ -213,6 +233,7 @@ export default function CVEditor({ cv, lang = 'en', uiLang = 'en', meta, onField
           onFieldEdit={onFieldEdit}
           onAccept={onAccept}
           onDismiss={onDismiss}
+          videoProps={videoProps}
           onChange={items => onStructural('portfolio', items)}
         />
       </SectionWrap>
