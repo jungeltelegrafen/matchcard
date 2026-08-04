@@ -2656,28 +2656,50 @@ textarea.cv-field {
 }
 
 /* Collapsed recording pill (screen mode) — small floating bar, never a modal */
+/* Recording pill — top-center, prominent, so when you switch back to this tab
+   (via the face bubble's ⧉ or by clicking the tab) it's the obvious place to
+   pause/stop. It also spells out the two universal controls in its help line. */
 .studio-pill {
-  position: fixed; z-index: 300; left: 20px; bottom: 20px;
-  display: flex; align-items: center; gap: 10px;
-  background: rgba(20,17,15,0.92); color: #fff; border-radius: 999px;
-  padding: 8px 10px 8px 16px; box-shadow: 0 10px 34px rgba(0,0,0,0.45);
-  font-size: 0.82rem; font-weight: 600;
+  position: fixed; z-index: 300; top: 18px; left: 50%; transform: translateX(-50%);
+  display: flex; flex-direction: column; gap: 7px;
+  background: rgba(20,17,15,0.96); color: #fff; border-radius: 16px;
+  padding: 12px 16px; box-shadow: 0 14px 44px rgba(0,0,0,0.5);
+  font-size: 0.9rem; font-weight: 600; max-width: min(92vw, 560px);
+  border: 1px solid rgba(255,255,255,0.12);
 }
+.studio-pill-row { display: flex; align-items: center; gap: 12px; }
+.studio-pill-state { margin-right: auto; font-weight: 700; }
 .studio-pill-dot {
-  width: 10px; height: 10px; border-radius: 50%; background: #e5484d;
+  width: 11px; height: 11px; border-radius: 50%; background: #e5484d; flex: none;
   animation: studio-pill-pulse 1.2s ease-in-out infinite;
 }
 .studio-pill.paused .studio-pill-dot { background: #f5a623; animation: none; }
 @keyframes studio-pill-pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
 .studio-pill-time { font-variant-numeric: tabular-nums; }
-.studio-pill-hint { color: rgba(255,255,255,0.6); font-weight: 400; font-size: 0.74rem; }
-.studio-pill-btn {
-  background: rgba(255,255,255,0.14); border: none; color: #fff; border-radius: 999px;
-  padding: 6px 11px; cursor: pointer; font-family: inherit; font-size: 0.8rem; line-height: 1;
+.studio-pill-help {
+  margin: 0; color: rgba(255,255,255,0.72); font-weight: 400;
+  font-size: 0.78rem; line-height: 1.4;
 }
-.studio-pill-btn:hover { background: rgba(255,255,255,0.24); }
+.studio-pill-btn {
+  background: rgba(255,255,255,0.16); border: none; color: #fff; border-radius: 999px;
+  padding: 7px 14px; cursor: pointer; font-family: inherit; font-size: 0.82rem;
+  font-weight: 600; line-height: 1; white-space: nowrap;
+}
+.studio-pill-btn:hover { background: rgba(255,255,255,0.26); }
 .studio-pill-btn--stop { background: #e5484d; font-weight: 700; }
 .studio-pill-btn--stop:hover { background: #f0575c; }
+
+/* Screen-mode ready: numbered 2-step flow (① float face → ② share & record). */
+.studio-steps { display: flex; flex-direction: column; gap: 16px; margin-bottom: 2px; }
+.studio-step { display: flex; gap: 12px; align-items: flex-start; }
+.studio-step-num {
+  flex: none; width: 26px; height: 26px; border-radius: 50%;
+  background: #C97B4B; color: #fff; font-weight: 700; font-size: 0.85rem;
+  display: flex; align-items: center; justify-content: center; margin-top: 2px;
+}
+.studio-step-body { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; min-width: 0; }
+.studio-step-hint { margin: 0; color: rgba(255,255,255,0.62); font-size: 0.8rem; line-height: 1.45; }
+.studio-step-nudge { margin: 0; color: #f5b74e; font-size: 0.8rem; line-height: 1.45; font-weight: 600; }
 
 .studio-screenctl {
   position: absolute; z-index: 2; left: 0; right: 0; bottom: 20px;
