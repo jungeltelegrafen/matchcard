@@ -104,6 +104,12 @@ const T = {
 
 const MAX_SECONDS = 300 // hard cap so a recording can never run silently forever
 
+// A red-dot favicon shown while recording so the recorder tab stands out in the
+// tab bar even when it's inactive/narrow (where the title text is hidden).
+const REC_FAVICON = 'data:image/svg+xml,' + encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><circle cx="16" cy="16" r="13" fill="#e5484d"/></svg>'
+)
+
 function fmt(sec) {
   const m = Math.floor(sec / 60), s = sec % 60
   return `${m}:${String(s).padStart(2, '0')}`
@@ -417,14 +423,27 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', branding, filen
     return () => document.removeEventListener('keydown', onKey)
   }, [cameraLive, onClose])
 
-  // While recording, flag the recorder tab in its title (🔴) so it's easy to
-  // spot and come back to among many tabs when sharing your whole screen — the
-  // in-app Stop lives on this tab. Restored when recording ends.
+  // While recording, flag the recorder tab with a red-dot favicon + title so it's
+  // easy to spot and come back to among many tabs when sharing your whole screen
+  // — the in-app Stop lives on this tab. The favicon shows even on narrow inactive
+  // tabs where the title text is hidden. Both restored when recording ends.
   useEffect(() => {
     if (phase !== 'recording' && phase !== 'paused') return
-    const prev = document.title
+    const prevTitle = document.title
     document.title = t.recTabTitle
-    return () => { document.title = prev }
+
+    let link = document.querySelector("link[rel~='icon']")
+    const created = !link
+    if (!link) { link = document.createElement('link'); link.rel = 'icon'; document.head.appendChild(link) }
+    const prevHref = link.getAttribute('href')
+    link.setAttribute('href', REC_FAVICON)
+
+    return () => {
+      document.title = prevTitle
+      if (created) link.remove()
+      else if (prevHref != null) link.setAttribute('href', prevHref)
+      else link.removeAttribute('href')
+    }
   }, [phase, t.recTabTitle])
 
   function startTimer() {
@@ -510,8 +529,8 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', branding, filen
 
   function retake() {
     if (recordedUrl) URL.revokeObjectURL(recordedUrl)
-    setRecordedUrl(null); setElapsed(0); setCueIdx(0)
-    enableCamera() // re-acquire the camera for another take
+    setRecordedUrl(null); setElapsed(0)
+    enableCamera() // re-acquire the mic/camera for another take
   }
 
   async function useRecording() {
