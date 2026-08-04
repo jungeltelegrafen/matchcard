@@ -374,22 +374,32 @@ html {
   border-color: rgba(255,255,255,0.28);
 }
 
-/* Expanded raw-text modal */
-.raw-modal { max-width: 780px; }
+/* Expanded raw-text modal — dark, matching the intake panel it lives in.
+   Two-class selectors so these win over the light .modal-* defaults. */
+.modal-box.raw-modal {
+  max-width: 780px;
+  background: var(--primary);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.12);
+}
+.raw-modal .modal-header { border-bottom-color: rgba(255,255,255,0.12); }
+.raw-modal .modal-title { color: #fff; }
+.raw-modal .modal-close { color: rgba(255,255,255,0.55); }
+.raw-modal .modal-close:hover { color: #fff; }
 .raw-modal-textarea {
   width: 100%;
   height: 100%;
   resize: none;
   border: none;
   outline: none;
-  background: var(--surface);
-  color: var(--text);
+  background: transparent;
+  color: rgba(255,255,255,0.92);
   font-family: inherit;
   font-size: 0.9rem;
   line-height: 1.6;
   padding: 20px 24px;
 }
-.raw-modal-textarea::placeholder { color: var(--muted); }
+.raw-modal-textarea::placeholder { color: rgba(255,255,255,0.38); }
 .input-raw-textarea {
   flex: 1;
   background: transparent;
@@ -3344,7 +3354,6 @@ textarea.cv-field {
   text-transform: uppercase;
   color: #b7a996;
 }
-.cv-page1-spacer { flex: none; }
 
 /* No-logo layout: float the photo right so the section content sits beside it. */
 .cv-branding-photofloat {

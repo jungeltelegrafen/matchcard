@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { LANGS, LANG_ENDONYM } from '@lib/cv/lang'
 import FeedbackModal from './FeedbackModal'
 
@@ -26,6 +26,22 @@ export default function AppHeader({
   const [translateMenuOpen, setTranslateMenuOpen] = useState(false)
   const [langMenuOpen, setLangMenuOpen] = useState(false)
   const no = uiLang === 'no'
+
+  const anyMenuOpen = versionMenuOpen || translateMenuOpen || langMenuOpen
+  const closeMenus = () => { setVersionMenuOpen(false); setTranslateMenuOpen(false); setLangMenuOpen(false) }
+
+  // Close any open header dropdown when clicking outside it or pressing Escape.
+  useEffect(() => {
+    if (!anyMenuOpen) return
+    function onDown(e) { if (!e.target.closest('.header-version-wrap')) closeMenus() }
+    function onKey(e) { if (e.key === 'Escape') closeMenus() }
+    document.addEventListener('mousedown', onDown)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDown)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [anyMenuOpen])
 
   const candidateName = [cv.personal.firstName, cv.personal.lastName].filter(Boolean).join(' ')
   const candidateTitle = cv.personal.title
@@ -63,7 +79,7 @@ export default function AppHeader({
             <div className="header-version-wrap">
               <button
                 className={`header-version-btn${activeVariant ? ' header-version-btn--tailored' : ''}`}
-                onClick={() => setVersionMenuOpen(v => !v)}
+                onClick={() => { setTranslateMenuOpen(false); setLangMenuOpen(false); setVersionMenuOpen(v => !v) }}
               >
                 {activeVariant ? `${variantIcon(activeVariant)} ` : ''}{versionLabel} ▾
               </button>
@@ -168,7 +184,7 @@ export default function AppHeader({
             <div className="header-version-wrap">
               <button
                 className="header-version-btn"
-                onClick={() => setLangMenuOpen(o => !o)}
+                onClick={() => { setVersionMenuOpen(false); setTranslateMenuOpen(false); setLangMenuOpen(o => !o) }}
               >
                 {LANG_ENDONYM[contentLang]} ▾
               </button>
@@ -194,7 +210,7 @@ export default function AppHeader({
             <div className="header-version-wrap">
               <button
                 className="header-action-btn"
-                onClick={() => setTranslateMenuOpen(o => !o)}
+                onClick={() => { setVersionMenuOpen(false); setLangMenuOpen(false); setTranslateMenuOpen(o => !o) }}
                 disabled={translating}
               >
                 {translating

@@ -128,7 +128,7 @@ export default function CVEditor({ cv, lang = 'en', uiLang = 'en', meta, onField
   const footerRef    = useRef(null)
   const secRefs      = useRef([])
   // { breaks: [{index, page}], page1End: number, spacer: number }
-  const [layout, setLayout] = useState({ breaks: [], page1End: -1, spacer: 0 })
+  const [layout, setLayout] = useState({ breaks: [], page1End: -1 })
 
   // The ordered content sections. Each is measured to place page gutters and to
   // pin the footer to the bottom of page 1.
@@ -252,18 +252,13 @@ export default function CVEditor({ cv, lang = 'en', uiLang = 'en', meta, onField
       })
 
       const page1End = breaks.length ? breaks[0].index - 1 : sections.length - 1
-      const page1Used = heights.slice(0, page1End + 1).reduce((a, b) => a + b, 0)
-      const spacer = showFooter
-        ? Math.max(0, Math.round(pageContentH - headerH - footerH - page1Used))
-        : 0
 
       setLayout(prev =>
         prev.page1End === page1End
-        && prev.spacer === spacer
         && prev.breaks.length === breaks.length
         && prev.breaks.every((b, i) => b.index === breaks[i].index && b.page === breaks[i].page)
           ? prev
-          : { breaks, page1End, spacer })
+          : { breaks, page1End })
     }
 
     measure()
@@ -329,12 +324,9 @@ export default function CVEditor({ cv, lang = 'en', uiLang = 'en', meta, onField
               {s.node}
             </div>
             {showFooter && isPage1End && (
-              <>
-                {layout.spacer > 0 && <div className="cv-page1-spacer" style={{ height: layout.spacer }} aria-hidden="true" />}
-                <div ref={footerRef}>
-                  <BrandingFooter branding={branding} onEditBranding={onEditBranding} />
-                </div>
-              </>
+              <div ref={footerRef}>
+                <BrandingFooter branding={branding} onEditBranding={onEditBranding} />
+              </div>
             )}
           </Fragment>
         )
