@@ -57,9 +57,10 @@ const T = {
         recording: 'REC', paused: 'Paused', review: 'Review your recording', target: 'Target', starts: 'Recording in',
         next: 'Next ›', prev: '‹ Prev', uploading: 'Uploading…',
         recMode: 'What to record', withCv: '📄 CV + me', withScreen: '🖥️ Screen + me', justMe: '👤 Just me', page: 'Page',
-        pickShare: 'Choose what to share', openLinks: 'Open a link to present',
-        sharingNow: 'Recording your screen — present away', showWebcam: '📹 Show webcam bubble', hideWebcam: '📹 Hide webcam bubble',
-        screenHint: 'Best for a portfolio: share your WHOLE screen, turn on the webcam bubble, then open your GitHub or live site and walk through it — everything you see is recorded, your face in the corner. Finish with the browser’s “Stop sharing”.',
+        pickShare: 'Share screen / window', openLinks: 'Open a link to present',
+        presentNow: '● Recording — switch to your window or screen and present it. Stop from the browser’s share bar.',
+        shareOn: 'Sharing', showWebcam: '📹 Turn on webcam bubble', hideWebcam: '📹 Hide webcam bubble',
+        screenHint: 'To get your face in the corner, share your WHOLE screen: 1) turn on the webcam bubble and drag it bottom-right, 2) share your whole screen, 3) Record, then open your GitHub or live site and walk through it. Everything you see and your cursor are captured. Stop from the browser bar. (A single-window share records that window + your voice, without the webcam bubble.)',
         scrollHint: 'Scroll over your CV to move through it while you talk — your cursor is highlighted so viewers follow along.',
         mp4Warn: 'Heads up: your browser records in a format that may not play for viewers on Safari. For best compatibility, record in Chrome, Edge, or Safari.',
         notUploaded: 'Saved to this session only (video hosting isn’t set up yet).' },
@@ -70,9 +71,10 @@ const T = {
         recording: 'REC', paused: 'Pauset', review: 'Se gjennom opptaket', target: 'Mål', starts: 'Opptak om',
         next: 'Neste ›', prev: '‹ Forrige', uploading: 'Laster opp…',
         recMode: 'Hva skal tas opp', withCv: '📄 CV + meg', withScreen: '🖥️ Skjerm + meg', justMe: '👤 Bare meg', page: 'Side',
-        pickShare: 'Velg hva du vil dele', openLinks: 'Åpne en lenke å presentere',
-        sharingNow: 'Tar opp skjermen — presenter i vei', showWebcam: '📹 Vis webkamera-boble', hideWebcam: '📹 Skjul webkamera-boble',
-        screenHint: 'Best for portefølje: del HELE skjermen, slå på webkamera-boblen, åpne så GitHub eller nettsiden og gå gjennom den — alt du ser tas opp, med ansiktet i hjørnet. Avslutt med nettleserens «Stopp deling».',
+        pickShare: 'Del skjerm / vindu', openLinks: 'Åpne en lenke å presentere',
+        presentNow: '● Tar opp — bytt til vinduet eller skjermen din og presenter. Stopp fra nettleserens delingslinje.',
+        shareOn: 'Deler', showWebcam: '📹 Slå på webkamera-boble', hideWebcam: '📹 Skjul webkamera-boble',
+        screenHint: 'For å få ansiktet i hjørnet, del HELE skjermen: 1) slå på webkamera-boblen og dra den ned til høyre, 2) del hele skjermen, 3) Ta opp, åpne så GitHub eller nettsiden og gå gjennom den. Alt du ser og markøren tas opp. Stopp fra nettleserlinjen. (Deler du bare ett vindu, tas vinduet + stemmen opp, uten webkamera-boblen.)',
         scrollHint: 'Bla over CV-en for å bevege deg gjennom den mens du snakker — markøren din er uthevet så seerne følger med.',
         mp4Warn: 'Merk: nettleseren din tar opp i et format som kanskje ikke spilles av for seere på Safari. For best kompatibilitet, ta opp i Chrome, Edge eller Safari.',
         notUploaded: 'Lagret kun for denne økten (videohosting er ikke satt opp ennå).' },
@@ -83,9 +85,10 @@ const T = {
         recording: 'REC', paused: 'En pausa', review: 'Revisa tu grabación', target: 'Objetivo', starts: 'Grabando en',
         next: 'Siguiente ›', prev: '‹ Anterior', uploading: 'Subiendo…',
         recMode: 'Qué grabar', withCv: '📄 CV + yo', withScreen: '🖥️ Pantalla + yo', justMe: '👤 Solo yo', page: 'Página',
-        pickShare: 'Elige qué compartir', openLinks: 'Abre un enlace para presentar',
-        sharingNow: 'Grabando tu pantalla — adelante', showWebcam: '📹 Mostrar burbuja de cámara', hideWebcam: '📹 Ocultar burbuja de cámara',
-        screenHint: 'Ideal para portafolio: comparte TODA la pantalla, activa la burbuja de la cámara, abre tu GitHub o el sitio en vivo y recórrelo — se graba todo lo que ves, con tu cara en la esquina. Termina con «Dejar de compartir» del navegador.',
+        pickShare: 'Compartir pantalla / ventana', openLinks: 'Abre un enlace para presentar',
+        presentNow: '● Grabando — cambia a tu ventana o pantalla y preséntala. Detén desde la barra del navegador.',
+        shareOn: 'Compartiendo', showWebcam: '📹 Activar burbuja de cámara', hideWebcam: '📹 Ocultar burbuja de cámara',
+        screenHint: 'Para tu cara en la esquina, comparte TODA la pantalla: 1) activa la burbuja de la cámara y arrástrala abajo a la derecha, 2) comparte toda la pantalla, 3) Graba, abre tu GitHub o el sitio en vivo y recórrelo. Se graba todo lo que ves y el cursor. Detén desde la barra del navegador. (Compartir una sola ventana graba esa ventana + tu voz, sin la burbuja de la cámara.)',
         scrollHint: 'Desplázate sobre tu CV para recorrerlo mientras hablas — tu cursor se resalta para que los espectadores te sigan.',
         mp4Warn: 'Aviso: tu navegador graba en un formato que puede no reproducirse para quienes usan Safari. Para mayor compatibilidad, graba en Chrome, Edge o Safari.',
         notUploaded: 'Guardado solo para esta sesión (el alojamiento de vídeo aún no está configurado).' },
@@ -233,12 +236,14 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', onClose, onSave
 
   // Float the webcam as an always-on-top picture-in-picture bubble. When you
   // share your WHOLE SCREEN it sits on the screen, so it lands in the recording.
+  // requestPictureInPicture() must run in the click's user-gesture — do NOT await
+  // anything before it (an earlier `await video.play()` silently killed the PiP).
   async function toggleWebcamOverlay() {
     const v = liveRef.current
     try {
-      if (document.pictureInPictureElement) await document.exitPictureInPicture()
-      else if (v) { await v.play().catch(() => {}); await v.requestPictureInPicture() }
-    } catch { /* PiP unsupported or blocked */ }
+      if (document.pictureInPictureElement) { await document.exitPictureInPicture(); return }
+      if (v) await v.requestPictureInPicture()
+    } catch { /* not supported / not ready — the user can click again */ }
   }
 
   function onScreenEnded() {
@@ -308,7 +313,10 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', onClose, onSave
   // composite, or the visible self-view for "screen" / "just me" modes.
   useEffect(() => {
     const el = mode === 'cv' ? camVideoRef.current : liveRef.current
-    if (el && streamRef.current && cameraLive) el.srcObject = streamRef.current
+    if (el && streamRef.current && cameraLive) {
+      el.srcObject = streamRef.current
+      el.play().catch(() => {}) // ensure it's playing so requestPictureInPicture is ready
+    }
   }, [phase, cameraLive, mode])
 
   // Keep the "webcam bubble on/off" label in sync with the actual PiP window.
@@ -428,10 +436,10 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', onClose, onSave
   function onCanvasLeave() { cursorRef.current = { ...cursorRef.current, active: false } }
 
   useEffect(() => {
-    function onKey(e) { if (e.key === 'Escape' && phase !== 'recording' && phase !== 'paused') onClose() }
+    function onKey(e) { if (e.key === 'Escape' && !cameraLive) onClose() }
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
-  }, [phase, onClose])
+  }, [cameraLive, onClose])
 
   function startTimer() {
     clearInterval(timerRef.current)
@@ -551,8 +559,13 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', onClose, onSave
 
   const busy = phase === 'recording' || phase === 'paused' || phase === 'uploading'
 
+  // Only a click on the dark backdrop BEFORE the camera is on closes the studio —
+  // once you're live (setting up a screen share, recording, etc.) an accidental
+  // outside click must never shut it down.
+  const closeOnBackdrop = !cameraLive && !busy
+
   return (
-    <div className="modal-overlay" onClick={busy ? undefined : onClose}>
+    <div className="modal-overlay" onClick={closeOnBackdrop ? onClose : undefined}>
       <div className="studio" onClick={e => e.stopPropagation()}>
 
         <div className="studio-header">
@@ -587,14 +600,20 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', onClose, onSave
                         shared screen is recorded directly (not shown here), so it
                         never freezes and there's no self-referential mirror. */}
                     <video ref={liveRef} className="studio-video studio-video--mirror" autoPlay muted playsInline />
-                    {!screenOn ? (
-                      <button className="studio-sharepick" onClick={enableScreen}>🖥️ {t.pickShare}</button>
-                    ) : (
+                    {(phase === 'recording' || phase === 'paused') ? (
                       <div className="studio-screenstatus">
-                        <span className="studio-screenstatus-badge">● {t.sharingNow}</span>
+                        <span className="studio-screenstatus-badge">{t.presentNow}</span>
+                      </div>
+                    ) : (
+                      <div className="studio-screenctl">
                         <button className="studio-btn studio-btn--ghost studio-pipbtn" onClick={toggleWebcamOverlay}>
                           {pipOn ? t.hideWebcam : t.showWebcam}
                         </button>
+                        {!screenOn ? (
+                          <button className="studio-btn studio-btn--primary" onClick={enableScreen}>🖥️ {t.pickShare}</button>
+                        ) : (
+                          <span className="studio-screenstatus-badge">✓ {t.shareOn}</span>
+                        )}
                       </div>
                     )}
                   </>
