@@ -3,7 +3,7 @@ import { saveAs } from 'file-saver'
 import { renderPdfBlob } from '../utils/renderPdf'
 import { downloadDocx } from '../renderers/docx/buildDocument'
 import { downloadEmail } from '../utils/generateEmail'
-import { stripIds, cvHasContent } from '@lib/cv/schema'
+import { cvHasContent } from '@lib/cv/schema'
 import { LANGS, LANG_ENDONYM } from '@lib/cv/lang'
 
 // ── Completeness scoring ──────────────────────────────────────────────────────
@@ -85,7 +85,11 @@ export default function ExportFooter({ cvByLang, contentLang, uiLang, filename, 
   const toggleLangs = LANGS.filter(l => l === contentLang || cvHasContent(cvByLang[l]))
 
   const fileFor = lang => `${filename}_${lang.toUpperCase()}`
-  const outputCv = lang => stripIds(cvByLang[lang])
+  // Keep item `_id`s in the export/share output: videos anchored to an experience
+  // reference it (`video.experienceId === experience._id`), and the anchor must
+  // resolve in the PDF/DOCX/share renderers. `_id` is a harmless 8-char field the
+  // renderers ignore. (AI/API paths still strip via their own stripIds calls.)
+  const outputCv = lang => cvByLang[lang]
 
   // Close the email attach-format menu on outside click.
   useEffect(() => {

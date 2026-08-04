@@ -2,6 +2,8 @@ import { View, Text, StyleSheet } from '@react-pdf/renderer'
 import { theme } from '../../theme'
 import SectionHeading from './SectionHeading'
 import { getL } from '../../utils/labels'
+import { experienceVideoItems } from '../../utils/videoAnchors'
+import { videoCards, hostedVideo } from './CVVideos'
 
 const styles = StyleSheet.create({
   item: {
@@ -20,7 +22,7 @@ const styles = StyleSheet.create({
   bullet:  { fontSize: theme.fonts.sizes.body, marginTop: 2, marginLeft: 8, color: theme.colors.text },
 })
 
-export default function CVExperience({ items, cvType = 'technical', lang = 'en' }) {
+export default function CVExperience({ items, videos = [], cvType = 'technical', lang = 'en' }) {
   const lb = getL(lang)
   const isMgmt = cvType === 'management'
 
@@ -78,6 +80,9 @@ export default function CVExperience({ items, cvType = 'technical', lang = 'en' 
               <Text style={styles.value}>{item.result}</Text>
             </View>
           ) : null}
+
+          {/* Videos anchored to this experience, rendered inline. */}
+          {videoCards(experienceVideoItems(videos, item._id).filter(hostedVideo), lang)}
 
         </View>
       ))}

@@ -135,6 +135,7 @@ export default function CVEditor({ cv, lang = 'en', uiLang = 'en', meta, onField
       <SectionWrap {...wrap('videos')}>
         <VideosSection
           items={cv.videos || []}
+          experiences={cv.experience || []}
           {...shared}
           candidateName={[cv.personal?.firstName, cv.personal?.lastName].filter(Boolean).join(' ')}
           onChange={items => onStructural('videos', items)}
@@ -163,6 +164,9 @@ export default function CVEditor({ cv, lang = 'en', uiLang = 'en', meta, onField
           items={cv.experience}
           cvType={cv.cvType}
           {...shared}
+          videos={cv.videos || []}
+          onVideosChange={items => onStructural('videos', items)}
+          candidateName={[cv.personal?.firstName, cv.personal?.lastName].filter(Boolean).join(' ')}
           onChange={items => onStructural('experience', items)}
         />
       </SectionWrap>

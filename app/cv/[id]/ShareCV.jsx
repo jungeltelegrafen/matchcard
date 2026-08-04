@@ -3,6 +3,7 @@ import './share.css'
 import { useState, Fragment } from 'react'
 import { getL, videoPlacement } from '@/apps/cv-generator/src/utils/labels'
 import { hasCompanyFooter } from '@/apps/cv-generator/src/utils/branding'
+import { mainBlockVideos, experienceVideoItems } from '@/apps/cv-generator/src/utils/videoAnchors'
 
 // Turn a stored playback URL into an embeddable src (or null → external link).
 function videoEmbed(url) {
@@ -48,8 +49,40 @@ export default function ShareCV({ cv, lang = 'en' }) {
   const fullName = [personal.firstName, personal.lastName].filter(Boolean).join(' ')
 
   // Only hosted (http) videos resolve for a viewer — session blob: clips don't
-  // (matches CVVideos.jsx / buildVideos.js).
-  const videoItems = (videos || []).filter(v => /^https?:\/\//.test(v.playbackUrl || ''))
+  // (matches CVVideos.jsx / buildVideos.js). Videos anchored to an experience
+  // render inline in it; the rest form the main block.
+  const hosted = v => /^https?:\/\//.test(v.playbackUrl || '')
+  const mainVideos = mainBlockVideos(videos, experience).map(({ v }) => v).filter(hosted)
+
+  // One video card. `playing` is keyed by the video's stable id so play state
+  // works for both the main block and inline-in-experience cards.
+  const renderVideo = (v, idx) => {
+    const embed = videoEmbed(v.playbackUrl)
+    const key = v._id || v.playbackUrl || `v${idx}`
+    const active = playing === key
+    const pl = placementLabel(v.placement, lang)
+    return (
+      <div key={key} className="cv-share-video">
+        <div className="cv-share-video-info">
+          {pl && <span className="cv-share-video-tag">{pl}</span>}
+          <span className="cv-share-video-title">{v.title || 'Video'}</span>
+          {v.description && <p className="cv-share-video-desc">{v.description}</p>}
+        </div>
+        {active && embed ? (
+          <iframe className="cv-share-video-frame" src={embed}
+            allow="autoplay; fullscreen; picture-in-picture" allowFullScreen title={v.title || 'video'} />
+        ) : active && isDirectVideo(v.playbackUrl) ? (
+          <video className="cv-share-video-frame" src={v.playbackUrl} controls autoPlay />
+        ) : (embed || isDirectVideo(v.playbackUrl)) ? (
+          <button className="cv-share-video-play" onClick={() => setPlaying(key)}>{lb.watchVideo}</button>
+        ) : (
+          <a className="cv-share-video-play" href={v.playbackUrl} target="_blank" rel="noopener noreferrer">
+            {lb.watchVideo} ↗
+          </a>
+        )}
+      </div>
+    )
+  }
   const positionItems = positions?.enabled ? (positions.items || []) : []
   const positionsFull = positions?.useProjectFormat
   const competencesSimple = competences?.simpleFormat
@@ -142,36 +175,11 @@ export default function ShareCV({ cv, lang = 'en' }) {
           </section>
         )}
 
-        {videoItems.length > 0 && (
+        {mainVideos.length > 0 && (
           <section className="cv-section">
             <h2 className="cv-section-title">{lb.videos}</h2>
             <div className="cv-share-videos">
-              {videoItems.map((v, i) => {
-                const embed = videoEmbed(v.playbackUrl)
-                const active = playing === i
-                const pl = placementLabel(v.placement, lang)
-                return (
-                  <div key={i} className="cv-share-video">
-                    <div className="cv-share-video-info">
-                      {pl && <span className="cv-share-video-tag">{pl}</span>}
-                      <span className="cv-share-video-title">{v.title || 'Video'}</span>
-                      {v.description && <p className="cv-share-video-desc">{v.description}</p>}
-                    </div>
-                    {active && embed ? (
-                      <iframe className="cv-share-video-frame" src={embed}
-                        allow="autoplay; fullscreen; picture-in-picture" allowFullScreen title={v.title || 'video'} />
-                    ) : active && isDirectVideo(v.playbackUrl) ? (
-                      <video className="cv-share-video-frame" src={v.playbackUrl} controls autoPlay />
-                    ) : (embed || isDirectVideo(v.playbackUrl)) ? (
-                      <button className="cv-share-video-play" onClick={() => setPlaying(i)}>{lb.watchVideo}</button>
-                    ) : (
-                      <a className="cv-share-video-play" href={v.playbackUrl} target="_blank" rel="noopener noreferrer">
-                        {lb.watchVideo} ↗
-                      </a>
-                    )}
-                  </div>
-                )
-              })}
+              {mainVideos.map(renderVideo)}
             </div>
           </section>
         )}
@@ -239,6 +247,12 @@ export default function ShareCV({ cv, lang = 'en' }) {
                 {mgmt && exp.result && (
                   <p className="cv-entry-tech"><span className="cv-entry-tech-label">{lb.result}: </span>{exp.result}</p>
                 )}
+                {(() => {
+                  const expVids = experienceVideoItems(videos, exp._id).filter(hosted)
+                  return expVids.length > 0 ? (
+                    <div className="cv-share-videos cv-entry-videos">{expVids.map(renderVideo)}</div>
+                  ) : null
+                })()}
               </div>
             ))}
           </section>

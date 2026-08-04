@@ -42,10 +42,10 @@ function buildDoc(data, lang = 'en', branding = {}) {
         footers: { first: brandFooter(branding), default: new Footer({ children: [] }) },
         children: [
           ...buildHeader(data.personal, lang),
-          ...section(buildVideos(data.videos, lang)),
+          ...section(buildVideos(data.videos, data.experience, lang)),
           ...section(buildSkills(data.skills, lang)),
           ...section(buildCompetences(data.competences, lang)),
-          ...section(buildExperience(data.experience, cvType, lang)),
+          ...section(buildExperience(data.experience, cvType, lang, data.videos)),
           ...section(buildPositions(data.positions, lang)),
           ...section(buildEducation(data.education, lang)),
           ...section(buildCertsCourses(data.certifications, data.courses, lang)),

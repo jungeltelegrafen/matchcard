@@ -1,4 +1,5 @@
 import CVField from './CVField'
+import ExperienceVideos from './ExperienceVideos'
 import { getL } from '../../utils/labels'
 
 const emptyItem = {
@@ -7,7 +8,11 @@ const emptyItem = {
   technologies: '', methodologies: '', result: '',
 }
 
-export default function ExperienceSection({ items, cvType = 'technical', lang = 'en', meta, onFieldEdit, onChange, onAccept, onDismiss }) {
+export default function ExperienceSection({
+  items, cvType = 'technical', lang = 'en', meta,
+  onFieldEdit, onChange, onAccept, onDismiss,
+  videos = [], onVideosChange, candidateName,
+}) {
   const lb = getL(lang)
   const isMgmt = cvType === 'management'
 
@@ -103,6 +108,14 @@ export default function ExperienceSection({ items, cvType = 'technical', lang = 
                   as="textarea" className="cv-exp-desc-field" rows={2} placeholder="…" />
               </div>
             </>
+          )}
+
+          {onVideosChange && (
+            <ExperienceVideos
+              expId={item._id} videos={videos} experiences={items}
+              lang={lang} meta={meta} onFieldEdit={onFieldEdit} onAccept={onAccept} onDismiss={onDismiss}
+              onVideosChange={onVideosChange} candidateName={candidateName}
+            />
           )}
 
           <button className="cv-btn-remove-item" onClick={() => removeItem(i)}>{lb.remove}</button>

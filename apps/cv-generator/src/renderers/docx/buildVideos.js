@@ -2,19 +2,19 @@ import { Paragraph, TextRun, ExternalHyperlink } from 'docx'
 import { theme } from '../../theme'
 import { getL, videoPlacement } from '../../utils/labels'
 import { hex, sectionHeading } from './buildUtils'
+import { mainBlockVideos } from '../../utils/videoAnchors'
 
 const placementLabel = (pl, lang) => videoPlacement(pl, lang).toUpperCase()
 
 // Only hosted (http) videos — session blob: clips can't resolve in a downloaded
 // document.
-export function buildVideos(videos = [], lang = 'en') {
-  const vids = (videos || []).filter(v => /^https?:\/\//.test(v.playbackUrl || ''))
-  if (!vids.length) return []
-  const lb = getL(lang)
-  const watch = (lb.watchVideo || 'Watch video').replace(/^▶\s*/, '')
+export const hostedVideo = v => /^https?:\/\//.test(v?.playbackUrl || '')
 
-  const paras = [sectionHeading(lb.videos, { before: 0, after: 80 })]
-
+// Per-video paragraphs (no section heading) — reused by the main block and
+// inline inside an experience.
+export function videoParagraphs(vids = [], lang = 'en') {
+  const watch = (getL(lang).watchVideo || 'Watch video').replace(/^▶\s*/, '')
+  const paras = []
   for (const v of vids) {
     const tag = placementLabel(v.placement, lang)
     paras.push(new Paragraph({
@@ -39,6 +39,13 @@ export function buildVideos(videos = [], lang = 'en') {
       spacing: { before: 0, after: 80 },
     }))
   }
-
   return paras
+}
+
+// Main "Video Presentations" block: hosted videos NOT anchored to an experience.
+export function buildVideos(videos = [], experiences = [], lang = 'en') {
+  const vids = mainBlockVideos(videos, experiences).map(({ v }) => v).filter(hostedVideo)
+  if (!vids.length) return []
+  const lb = getL(lang)
+  return [sectionHeading(lb.videos, { before: 0, after: 80 }), ...videoParagraphs(vids, lang)]
 }

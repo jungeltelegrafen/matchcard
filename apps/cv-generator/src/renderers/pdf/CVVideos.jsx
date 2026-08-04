@@ -1,6 +1,7 @@
 import { View, Text, Link, StyleSheet } from '@react-pdf/renderer'
 import { theme } from '../../theme'
 import { getL, videoPlacement } from '../../utils/labels'
+import { mainBlockVideos } from '../../utils/videoAnchors'
 import SectionHeading from './SectionHeading'
 
 const C = theme.colors
@@ -24,25 +25,34 @@ const placementLabel = videoPlacement
 
 // Only videos with a real hosted URL make sense in a downloaded PDF (session
 // blob: clips are excluded — their links wouldn't resolve for anyone else).
-export default function CVVideos({ items = [], lang = 'en' }) {
-  const vids = (items || []).filter(v => /^https?:\/\//.test(v.playbackUrl || ''))
+export const hostedVideo = v => /^https?:\/\//.test(v?.playbackUrl || '')
+
+// Reusable card renderer (no section heading) — used by the main block and
+// inline inside an experience. Returns an array of <View>s.
+export function videoCards(vids = [], lang = 'en') {
+  const watch = getL(lang).watchVideo
+  return vids.map((v, i) => (
+    <View key={v._id || i} style={styles.card}>
+      {placementLabel(v.placement, lang) ? (
+        <Text style={styles.tag}>{placementLabel(v.placement, lang)}</Text>
+      ) : null}
+      <Text style={styles.title}>{v.title || 'Video'}</Text>
+      {v.description ? <Text style={styles.desc}>{v.description}</Text> : null}
+      <Link src={v.playbackUrl} style={styles.link}>{watch} — {v.playbackUrl.replace(/^https?:\/\//, '')}</Link>
+    </View>
+  ))
+}
+
+// Main "Video Presentations" block: hosted videos NOT anchored to an experience.
+export default function CVVideos({ items = [], experiences = [], lang = 'en' }) {
+  const vids = mainBlockVideos(items, experiences).map(({ v }) => v).filter(hostedVideo)
   if (!vids.length) return null
   const lb = getL(lang)
-  const watch = lb.watchVideo
 
   return (
     <View style={styles.wrapper}>
       <SectionHeading>{lb.videos}</SectionHeading>
-      {vids.map((v, i) => (
-        <View key={i} style={styles.card}>
-          {placementLabel(v.placement, lang) ? (
-            <Text style={styles.tag}>{placementLabel(v.placement, lang)}</Text>
-          ) : null}
-          <Text style={styles.title}>{v.title || 'Video'}</Text>
-          {v.description ? <Text style={styles.desc}>{v.description}</Text> : null}
-          <Link src={v.playbackUrl} style={styles.link}>{watch} — {v.playbackUrl.replace(/^https?:\/\//, '')}</Link>
-        </View>
-      ))}
+      {videoCards(vids, lang)}
     </View>
   )
 }

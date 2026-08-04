@@ -368,6 +368,8 @@ a.cv-sheet-meta-value:hover { text-decoration: underline; }
   flex-direction: column;
   gap: 12px;
 }
+/* Videos anchored to a specific experience, shown inline within that entry. */
+.cv-entry-videos { margin-top: 10px; }
 .cv-share-video {
   border: 1px solid var(--border);
   border-left: 3px solid var(--accent);

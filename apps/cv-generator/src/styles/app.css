@@ -2388,7 +2388,24 @@ textarea.cv-field {
   background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
   padding: 3px 8px; font-family: inherit; cursor: pointer;
 }
+.cv-videocard-attach {
+  font-size: 0.68rem; font-weight: 600; color: var(--accent);
+  background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+  padding: 3px 8px; font-family: inherit; cursor: pointer; max-width: 200px;
+}
 .cv-videocard-url { flex: 1; min-width: 120px; font-size: 0.72rem; color: var(--muted); }
+
+/* Videos anchored to a specific experience — shown inline at the end of that
+   experience entry in the editor (compact, indented from the entry). */
+.cv-exp-videos {
+  display: flex; flex-direction: column; gap: 10px;
+  margin: 10px 0 4px; padding: 10px 0 0; border-top: 1px dashed var(--border);
+}
+.cv-exp-addvideo {
+  align-self: flex-start; font-size: 0.72rem; font-weight: 600; color: var(--accent);
+  background: var(--bg); border: 1px dashed var(--border); border-radius: 6px;
+  padding: 4px 10px; font-family: inherit; cursor: pointer;
+}
 .cv-videocard-remove {
   margin-left: auto; background: none; border: none; color: var(--muted);
   font-size: 0.72rem; font-family: inherit; cursor: pointer; padding: 2px 4px;

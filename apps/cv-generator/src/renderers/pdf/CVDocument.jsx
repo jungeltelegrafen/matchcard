@@ -64,7 +64,7 @@ export default function CVDocument({ data, lang = 'en', branding = {} }) {
           </View>
         ) : null}
 
-        <CVVideos items={data.videos} lang={lang} />
+        <CVVideos items={data.videos} experiences={data.experience} lang={lang} />
 
         {data.skills?.length > 0 && (
           <CVSkills items={data.skills} lang={lang} />
@@ -75,7 +75,7 @@ export default function CVDocument({ data, lang = 'en', branding = {} }) {
         )}
 
         {data.experience?.length > 0 && (
-          <CVExperience items={data.experience} cvType={cvType} lang={lang} />
+          <CVExperience items={data.experience} videos={data.videos} cvType={cvType} lang={lang} />
         )}
 
         <CVPositions positions={data.positions} lang={lang} />

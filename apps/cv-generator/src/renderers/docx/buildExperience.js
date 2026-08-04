@@ -2,8 +2,10 @@ import { Paragraph, TextRun } from 'docx'
 import { theme } from '../../theme'
 import { getL } from '../../utils/labels'
 import { hex, sectionHeading, twoColPara, bulletPara } from './buildUtils'
+import { experienceVideoItems } from '../../utils/videoAnchors'
+import { videoParagraphs, hostedVideo } from './buildVideos'
 
-export function buildExperience(items, cvType = 'technical', lang = 'en') {
+export function buildExperience(items, cvType = 'technical', lang = 'en', videos = []) {
   if (!items?.length) return []
   const lb = getL(lang)
   const isMgmt = cvType === 'management'
@@ -84,6 +86,10 @@ export function buildExperience(items, cvType = 'technical', lang = 'en') {
           spacing: { after: 40 },
         }))
       }
+
+      // Videos anchored to this experience, rendered inline.
+      const expVids = experienceVideoItems(videos, item._id).filter(hostedVideo)
+      if (expVids.length) paras.push(...videoParagraphs(expVids, lang))
 
       // Spacer between items (except last)
       if (idx < items.length - 1) {
