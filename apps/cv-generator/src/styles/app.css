@@ -2404,16 +2404,21 @@ textarea.cv-field {
   display: flex; flex-direction: column; gap: 10px; width: 100%; margin-top: 10px;
 }
 .cv-attach-video { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-.cv-attach-video-btn {
-  font-size: 0.72rem; font-weight: 600; color: var(--accent);
-  background: var(--accent-lt); border: 1px solid transparent; border-radius: 6px;
-  padding: 5px 11px; font-family: inherit; cursor: pointer;
-}
-.cv-attach-video-btn:hover { background: var(--accent); color: #fff; }
+/* Deliberately quiet: these repeat on almost every section, so they recede while
+   scrolling (muted text, dashed hairline, no fill) and only warm to the accent on
+   hover/focus — discoverable without competing for attention with the content. */
+.cv-attach-video-btn,
 .cv-attach-video-pick {
-  font-size: 0.72rem; font-weight: 600; color: var(--muted);
-  background: var(--bg); border: 1px dashed var(--border); border-radius: 6px;
-  padding: 5px 10px; font-family: inherit; cursor: pointer;
+  font-size: 0.7rem; font-weight: 500; color: var(--muted);
+  background: transparent; border: 1px dashed var(--border); border-radius: 6px;
+  padding: 4px 10px; font-family: inherit; cursor: pointer;
+  transition: color 0.12s ease, border-color 0.12s ease, background 0.12s ease;
+}
+.cv-attach-video-btn:hover,
+.cv-attach-video-btn:focus-visible,
+.cv-attach-video-pick:hover,
+.cv-attach-video-pick:focus-visible {
+  color: var(--accent); border-color: var(--accent); background: var(--accent-lt);
 }
 .cv-videocard-remove {
   margin-left: auto; background: none; border: none; color: var(--muted);
