@@ -1,4 +1,4 @@
-import { useRef, useState, useLayoutEffect, Fragment } from 'react'
+import { useRef, useState, useLayoutEffect } from 'react'
 import { ChatChangesContext } from './cv/ChatChangesContext'
 import { fileToDataUrl, hasCompanyFooter } from '../utils/branding'
 import PersonalSection from './cv/PersonalSection'
@@ -12,11 +12,11 @@ import LanguagesSection from './cv/LanguagesSection'
 import PortfolioSection from './cv/PortfolioSection'
 import VideosSection from './cv/VideosSection'
 
-// A4 aspect ratio (height / width) — used to estimate where printed pages break
-// so the on-screen CV can show page gutters and pin the footer to page 1.
+// A4 aspect ratio (height / width) — the editor renders content as stacked
+// A4-proportioned page sheets, splitting sections across pages at this ratio.
 const A4_RATIO = 297 / 210
-// Combined top+bottom padding of the .cv-page sheet (see app.css .cv-page).
-const SHEET_PAD_Y = 112
+// Combined top+bottom padding of a .cv-sheet-page (see app.css).
+const SHEET_PAD_Y = 92
 
 // Outer height of an element including its vertical margins.
 function outerHeight(el) {
@@ -78,15 +78,6 @@ function BrandingFooter({ branding, onEditBranding }) {
   )
 }
 
-// Visual gutter marking where a printed page ends and the next begins.
-function PageBreak({ page, no }) {
-  return (
-    <div className="cv-page-break" aria-hidden="true">
-      <span className="cv-page-break-label">{no ? `Side ${page}` : `Page ${page}`}</span>
-    </div>
-  )
-}
-
 function SectionWrap({ sectionKey, hoveredSection, commentCounts, children }) {
   const count      = commentCounts?.[sectionKey] || 0
   const active     = hoveredSection === sectionKey
@@ -127,8 +118,8 @@ export default function CVEditor({ cv, lang = 'en', uiLang = 'en', meta, onField
   const headerRef    = useRef(null)
   const footerRef    = useRef(null)
   const secRefs      = useRef([])
-  // { breaks: [{index, page}], page1End: number, spacer: number }
-  const [layout, setLayout] = useState({ breaks: [], page1End: -1 })
+  // { breaks: [{index, page}], page1End, pageH } — pageH is the A4 sheet height.
+  const [layout, setLayout] = useState({ breaks: [], page1End: -1, pageH: 0 })
 
   // The ordered content sections. Each is measured to place page gutters and to
   // pin the footer to the bottom of page 1.
@@ -227,9 +218,10 @@ export default function CVEditor({ cv, lang = 'en', uiLang = 'en', meta, onField
     if (!container) return
 
     function measure() {
-      const sheet = container.closest('.cv-page')
-      const sheetW = sheet ? sheet.clientWidth : 740
-      const pageContentH = sheetW * A4_RATIO - SHEET_PAD_Y
+      const sheetEl = container.querySelector('.cv-sheet-page')
+      const w = sheetEl ? sheetEl.clientWidth : (container.clientWidth || 740)
+      const pageH = Math.round(w * A4_RATIO)          // full A4 sheet height
+      const pageContentH = pageH - SHEET_PAD_Y        // usable height per page
       if (pageContentH <= 0) return
 
       const headerH = outerHeight(headerRef.current)
@@ -254,26 +246,36 @@ export default function CVEditor({ cv, lang = 'en', uiLang = 'en', meta, onField
       const page1End = breaks.length ? breaks[0].index - 1 : sections.length - 1
 
       setLayout(prev =>
-        prev.page1End === page1End
+        prev.pageH === pageH
+        && prev.page1End === page1End
         && prev.breaks.length === breaks.length
         && prev.breaks.every((b, i) => b.index === breaks[i].index && b.page === breaks[i].page)
           ? prev
-          : { breaks, page1End })
+          : { breaks, page1End, pageH })
     }
 
     measure()
     const ro = new ResizeObserver(() => requestAnimationFrame(measure))
     ro.observe(container)
-    const sheet = container.closest('.cv-page')
-    if (sheet) ro.observe(sheet)
     return () => ro.disconnect()
   }, [cv, lang, showLogo, showPhoto, showFooter, branding])
 
-  const breakAt = i => layout.breaks.find(b => b.index === i)
+  // Group section indices into A4 page sheets at the computed break points.
+  const pageStarts = [0, ...layout.breaks.map(b => b.index)]
+  const pages = pageStarts.map((start, pi) => ({
+    start,
+    end: pageStarts[pi + 1] ?? sections.length,
+    page: pi + 1,
+  }))
+  const multiPage = pages.length > 1
 
   return (
     <ChatChangesContext.Provider value={{ changedPaths, onChangeSeen }}>
-     <div className="cv-editor" ref={containerRef}>
+     <div
+       className="cv-editor"
+       ref={containerRef}
+       style={layout.pageH ? { '--page-h': `${layout.pageH}px` } : undefined}
+     >
 
       {branding && (
         <div className="cv-branding-toggle">
@@ -302,35 +304,40 @@ export default function CVEditor({ cv, lang = 'en', uiLang = 'en', meta, onField
         </div>
       )}
 
-      {showHeader && (
-        <div ref={headerRef} className={!showLogo && showPhoto ? 'cv-branding-photofloat' : undefined}>
-          <BrandingHeader
-            branding={branding}
-            showLogo={showLogo}
-            showPhoto={showPhoto}
-            onEditBranding={onEditBranding}
-            onSetProfilePicture={onSetProfilePicture}
-          />
-        </div>
-      )}
-
-      {sections.map((s, i) => {
-        const brk = breakAt(i)
-        const isPage1End = i === layout.page1End
-        return (
-          <Fragment key={s.key}>
-            {brk && <PageBreak page={brk.page} no={no} />}
-            <div className="cv-sec" ref={el => { secRefs.current[i] = el }}>
-              {s.node}
+      {pages.map(({ start, end, page }) => (
+        <div className="cv-sheet-page" key={page}>
+          {page === 1 && showHeader && (
+            <div ref={headerRef} className={!showLogo && showPhoto ? 'cv-branding-photofloat' : undefined}>
+              <BrandingHeader
+                branding={branding}
+                showLogo={showLogo}
+                showPhoto={showPhoto}
+                onEditBranding={onEditBranding}
+                onSetProfilePicture={onSetProfilePicture}
+              />
             </div>
-            {showFooter && isPage1End && (
+          )}
+
+          {sections.slice(start, end).map((s, j) => {
+            const i = start + j
+            return (
+              <div className="cv-sec" key={s.key} ref={el => { secRefs.current[i] = el }}>
+                {s.node}
+              </div>
+            )
+          })}
+
+          {page === 1 && showFooter && (
+            <div className="cv-sheet-footer">
               <div ref={footerRef}>
                 <BrandingFooter branding={branding} onEditBranding={onEditBranding} />
               </div>
-            )}
-          </Fragment>
-        )
-      })}
+            </div>
+          )}
+
+          {multiPage && <span className="cv-sheet-page-num">{no ? `Side ${page}` : `Page ${page}`}</span>}
+        </div>
+      ))}
      </div>
     </ChatChangesContext.Provider>
   )

@@ -852,15 +852,38 @@ html {
 }
 
 /* The A4-like document card */
+/* Transparent column that holds the stacked A4 page sheets + editor controls. */
 .cv-page {
   width: 100%;
   max-width: 740px;
   flex-shrink: 1;
+}
+
+/* Each editor page is a real A4-proportioned sheet: content flows from the top,
+   the (page-1) footer is pinned to the bottom by flexbox, so short pages still
+   fill a full A4 height instead of looking cramped. */
+.cv-sheet-page {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: var(--page-h, 1040px);
   background: var(--surface);
   box-shadow: var(--shadow);
   border-radius: 4px;
-  padding: 52px 60px 60px;
-  min-height: 900px;
+  padding: 52px 60px 40px;
+}
+.cv-sheet-page + .cv-sheet-page { margin-top: 26px; }
+/* Footer sits at the very bottom of the page sheet. */
+.cv-sheet-footer { margin-top: auto; padding-top: 24px; }
+.cv-sheet-page-num {
+  position: absolute;
+  bottom: 14px;
+  right: 20px;
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #c3b8ab;
+  pointer-events: none;
 }
 
 /* ═══════════════════════════════════════════════════════════════
