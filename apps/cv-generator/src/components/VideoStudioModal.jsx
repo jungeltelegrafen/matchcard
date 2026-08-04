@@ -34,7 +34,7 @@ const T = {
         noFace: 'This browser records screen + voice (no face bubble). Finish from your browser’s “Stop sharing” control; switch back to this tab to pause.',
         floatFaceHint: 'This bubble floats on top of every tab and app — your face lands in the recording, and its ⧉ button brings you back here to pause or stop.',
         faceFloatingHint: 'Your face is floating. Its ⧉ button brings you back to this tab anytime to pause or stop.',
-        recordHint: 'Pick a window or your whole screen, then talk through your best work out loud. When you’re done, click your browser’s “Stop sharing” control — the recording ends and comes back here.',
+        recordHint: 'Pick a window or your whole screen, then talk through your best work out loud. To finish: come back to this tab (its title shows 🔴) and click Stop — or use your browser’s stop-sharing control.',
         floatFirst: 'Float your face first (step 1) so it shows in the recording.',
         openRecorder: 'Recorder', minimize: 'Minimise',
         micErr: 'Could not access your camera or microphone. Check browser permissions.',
@@ -44,7 +44,8 @@ const T = {
         screenHint: 'Float your face (bottom-right), share your WHOLE screen, then move freely between GitHub, the live site and your portfolio as you talk. On Safari the face bubble has a ⧉ button to jump back here.',
         scrollHint: 'Scroll over your CV to move through it while you talk — your cursor is highlighted so viewers follow along.',
         mp4Warn: 'Heads up: your browser records in a format that may not play for viewers on Safari. For best compatibility, record in Chrome, Edge, or Safari.',
-        notUploaded: 'Saved to this session only (video hosting isn’t set up yet).' },
+        notUploaded: 'Saved to this session only (video hosting isn’t set up yet).',
+        recTabTitle: '🔴 Recording — open this tab to Stop' },
   no: { studio: 'Innspillingsstudio', yourCV: 'Din CV', defaultTitle: 'Skjermgjennomgang', script: 'Manus', cues: 'Stikkord — kun du ser disse',
         consentTitle: 'Klar når du er', consentNote: 'Kameraet er av til du slår det på nedenfor. Ingenting tas opp før du trykker Ta opp — et rødt ● REC-merke vises hele tiden mens du tar opp.',
         turnOn: 'Slå på kamera', turnOff: 'Slå av kamera', camOn: 'Kamera på', camErr: 'Fikk ikke tilgang til kamera eller mikrofon. Sjekk tillatelser.',
@@ -60,7 +61,7 @@ const T = {
         noFace: 'Denne nettleseren tar opp skjerm + stemme (uten ansikts-boble). Avslutt fra nettleserens «Stopp deling»; bytt tilbake til denne fanen for å pause.',
         floatFaceHint: 'Denne boblen flyter over alle faner og apper — ansiktet ditt havner i opptaket, og ⧉-knappen tar deg tilbake hit for å pause eller stoppe.',
         faceFloatingHint: 'Ansiktet ditt flyter. ⧉-knappen tar deg tilbake til denne fanen når som helst for å pause eller stoppe.',
-        recordHint: 'Velg et vindu eller hele skjermen, og snakk deg gjennom ditt beste arbeid høyt. Når du er ferdig, klikk nettleserens «stopp deling» — opptaket avsluttes og kommer tilbake hit.',
+        recordHint: 'Velg et vindu eller hele skjermen, og snakk deg gjennom ditt beste arbeid høyt. For å avslutte: gå tilbake til denne fanen (tittelen viser 🔴) og klikk Stopp — eller bruk nettleserens «stopp deling».',
         floatFirst: 'Vis ansiktet ditt først (steg 1) så det vises i opptaket.',
         openRecorder: 'Opptaker', minimize: 'Minimer',
         micErr: 'Fikk ikke tilgang til kamera eller mikrofon. Sjekk tillatelser i nettleseren.',
@@ -70,7 +71,8 @@ const T = {
         screenHint: 'La ansiktet flyte (nederst til høyre), del HELE skjermen, og beveg deg fritt mellom GitHub, live side og portefølje mens du snakker. På Safari har ansikts-boblen en ⧉-knapp for å hoppe tilbake hit.',
         scrollHint: 'Bla over CV-en for å bevege deg gjennom den mens du snakker — markøren din er uthevet så seerne følger med.',
         mp4Warn: 'Merk: nettleseren din tar opp i et format som kanskje ikke spilles av for seere på Safari. For best kompatibilitet, ta opp i Chrome, Edge eller Safari.',
-        notUploaded: 'Lagret kun for denne økten (videohosting er ikke satt opp ennå).' },
+        notUploaded: 'Lagret kun for denne økten (videohosting er ikke satt opp ennå).',
+        recTabTitle: '🔴 Tar opp — åpne denne fanen for å stoppe' },
   es: { studio: 'Estudio de grabación', yourCV: 'Tu CV', defaultTitle: 'Recorrido de pantalla', script: 'Guion', cues: 'Notas — solo tú las ves',
         consentTitle: 'Cuando quieras', consentNote: 'La cámara está apagada hasta que la enciendas abajo. No se graba nada hasta que pulses Grabar — verás una insignia roja ● REC todo el tiempo que grabes.',
         turnOn: 'Encender cámara', turnOff: 'Apagar cámara', camOn: 'Cámara encendida', camErr: 'No se pudo acceder a la cámara o el micrófono. Revisa los permisos.',
@@ -86,7 +88,7 @@ const T = {
         noFace: 'Este navegador graba pantalla + voz (sin burbuja de cara). Termina desde el control «Dejar de compartir» del navegador; vuelve a esta pestaña para pausar.',
         floatFaceHint: 'Esta burbuja flota sobre todas las pestañas y apps — tu cara sale en la grabación, y su botón ⧉ te trae de vuelta aquí para pausar o detener.',
         faceFloatingHint: 'Tu cara está flotando. Su botón ⧉ te trae de vuelta a esta pestaña cuando quieras para pausar o detener.',
-        recordHint: 'Elige una ventana o toda tu pantalla y explica tu mejor trabajo en voz alta. Cuando termines, haz clic en «dejar de compartir» del navegador — la grabación finaliza y vuelve aquí.',
+        recordHint: 'Elige una ventana o toda tu pantalla y explica tu mejor trabajo en voz alta. Para terminar: vuelve a esta pestaña (su título muestra 🔴) y haz clic en Detener — o usa «dejar de compartir» del navegador.',
         floatFirst: 'Muestra tu cara primero (paso 1) para que salga en la grabación.',
         openRecorder: 'Grabadora', minimize: 'Minimizar',
         micErr: 'No se pudo acceder a la cámara o el micrófono. Revisa los permisos del navegador.',
@@ -96,7 +98,8 @@ const T = {
         screenHint: 'Haz flotar tu cara (abajo a la derecha), comparte TODA la pantalla y muévete libremente entre GitHub, el sitio en vivo y tu portafolio mientras hablas. En Safari la burbuja tiene un botón ⧉ para volver aquí.',
         scrollHint: 'Desplázate sobre tu CV para recorrerlo mientras hablas — tu cursor se resalta para que los espectadores te sigan.',
         mp4Warn: 'Aviso: tu navegador graba en un formato que puede no reproducirse para quienes usan Safari. Para mayor compatibilidad, graba en Chrome, Edge o Safari.',
-        notUploaded: 'Guardado solo para esta sesión (el alojamiento de vídeo aún no está configurado).' },
+        notUploaded: 'Guardado solo para esta sesión (el alojamiento de vídeo aún no está configurado).',
+        recTabTitle: '🔴 Grabando — abre esta pestaña para Detener' },
 }
 
 const MAX_SECONDS = 300 // hard cap so a recording can never run silently forever
@@ -413,6 +416,16 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', branding, filen
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
   }, [cameraLive, onClose])
+
+  // While recording, flag the recorder tab in its title (🔴) so it's easy to
+  // spot and come back to among many tabs when sharing your whole screen — the
+  // in-app Stop lives on this tab. Restored when recording ends.
+  useEffect(() => {
+    if (phase !== 'recording' && phase !== 'paused') return
+    const prev = document.title
+    document.title = t.recTabTitle
+    return () => { document.title = prev }
+  }, [phase, t.recTabTitle])
 
   function startTimer() {
     clearInterval(timerRef.current)
