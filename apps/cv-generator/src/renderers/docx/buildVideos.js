@@ -27,7 +27,7 @@ export function videoParagraphs(vids = [], lang = 'en') {
     }))
     if (v.description) {
       paras.push(new Paragraph({
-        children: [new TextRun({ text: v.description, size: 16, color: hex(theme.colors.muted), font: 'Calibri', italics: true })],
+        children: [new TextRun({ text: v.description, size: 18, color: hex(theme.colors.muted), font: 'Calibri', italics: true })],
         spacing: { before: 0, after: 30 },
       }))
     }

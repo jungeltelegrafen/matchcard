@@ -18,7 +18,7 @@ const styles = StyleSheet.create({
     paddingTop: 7, paddingBottom: 8, paddingLeft: 10, paddingRight: 10, marginBottom: 6,
   },
   title: { fontSize: 9, fontFamily: theme.fonts.heading, color: '#C97B4B', marginBottom: 2 },
-  desc: { fontSize: 6.5, color: C.muted, lineHeight: 1.4, marginBottom: 4 },
+  desc: { fontSize: 8, color: C.muted, lineHeight: 1.4, marginBottom: 4 },
   link: { fontSize: 7, color: '#4A90D9' },
 })
 
