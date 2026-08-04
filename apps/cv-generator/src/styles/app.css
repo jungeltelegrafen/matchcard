@@ -2660,7 +2660,7 @@ textarea.cv-field {
    (via the face bubble's ⧉ or by clicking the tab) it's the obvious place to
    pause/stop. It also spells out the two universal controls in its help line. */
 .studio-pill {
-  position: fixed; z-index: 300; top: 18px; left: 50%; transform: translateX(-50%);
+  position: fixed; z-index: 300; bottom: 20px; left: 20px;
   display: flex; flex-direction: column; gap: 7px;
   background: rgba(20,17,15,0.96); color: #fff; border-radius: 16px;
   padding: 12px 16px; box-shadow: 0 14px 44px rgba(0,0,0,0.5);
@@ -2698,6 +2698,7 @@ textarea.cv-field {
   display: flex; align-items: center; justify-content: center; margin-top: 2px;
 }
 .studio-step-body { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; min-width: 0; }
+.studio-present { display: flex; flex-wrap: wrap; gap: 8px; }
 .studio-step-hint { margin: 0; color: rgba(255,255,255,0.62); font-size: 0.8rem; line-height: 1.45; }
 .studio-step-nudge { margin: 0; color: #f5b74e; font-size: 0.8rem; line-height: 1.45; font-weight: 600; }
 

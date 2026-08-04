@@ -1,6 +1,6 @@
 import VideoPanel from './VideoPanel'
 
-export default function RightSidebar({ lang, contentLang, videos, cv, onVideosChange }) {
+export default function RightSidebar({ lang, contentLang, videos, cv, branding, filename, onVideosChange }) {
   const no = lang === 'no', es = lang === 'es'
   return (
     <aside className="side-panel side-panel--right">
@@ -20,6 +20,8 @@ export default function RightSidebar({ lang, contentLang, videos, cv, onVideosCh
         cv={cv}
         uiLang={lang}
         contentLang={contentLang}
+        branding={branding}
+        filename={filename}
         onChange={onVideosChange}
       />
     </aside>

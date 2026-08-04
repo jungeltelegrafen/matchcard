@@ -696,6 +696,8 @@ export default function App() {
             contentLang={contentLang}
             cv={masterCv}
             videos={masterCv.videos || []}
+            branding={exportBranding}
+            filename={filename}
             onVideosChange={setMasterVideos}
           />
         </div>

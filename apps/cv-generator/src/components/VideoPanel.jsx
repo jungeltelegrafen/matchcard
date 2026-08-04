@@ -7,7 +7,7 @@ import { videoPoster } from '../utils/videoPoster'
 // quick play/remove, and the entry point to the recording studio (which opens
 // as a full modal for space). Editing card text/links happens in the main CV
 // "Video Presentations" section; both edit the same cv.videos on the master.
-export default function VideoPanel({ videos = [], cv = {}, uiLang = 'en', contentLang = 'en', onChange }) {
+export default function VideoPanel({ videos = [], cv = {}, uiLang = 'en', contentLang = 'en', branding, filename, onChange }) {
   const [studioOpen, setStudioOpen] = useState(false)
   const [openIdx, setOpenIdx]       = useState(null)
   const no = uiLang === 'no'
@@ -84,6 +84,8 @@ export default function VideoPanel({ videos = [], cv = {}, uiLang = 'en', conten
         <VideoStudioModal
           cv={cv}
           lang={contentLang}
+          branding={branding}
+          filename={filename}
           onClose={() => setStudioOpen(false)}
           onSave={entry => onChange?.([...videos, entry])}
         />

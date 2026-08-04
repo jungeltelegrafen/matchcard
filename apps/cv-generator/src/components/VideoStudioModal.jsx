@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import * as pdfjsLib from 'pdfjs-dist'
+import { stripIds } from '@lib/cv/schema'
 import { renderPdfBlob } from '../utils/renderPdf'
 import { hostRecording } from '../utils/uploadVideo'
 
@@ -35,6 +36,10 @@ const T = {
         faceFloatingHint: 'Your face is floating. Its ⧉ button brings you back to this tab anytime to pause or stop.',
         recordHint: 'Pick “Entire Screen”, then talk through your best work. Finish anytime from the browser’s “Stop sharing” control.',
         floatFirst: 'Float your face first (step 1) so you have a ⧉ button to come back and pause.',
+        presentStep: 'Open a clean copy of your CV to present (optional)',
+        presentHint: 'Opens a clean CV in a new tab — no editor. Then share your whole screen and switch to that tab to talk through it.',
+        webPreview: '🌐 Web preview', pdfPreview: '📄 PDF', opening: 'Opening…',
+        previewErr: 'Couldn’t create a web link (offline?). Use PDF instead.',
         micErr: 'Could not access your camera or microphone. Check browser permissions.',
         screenTitle: 'Record your screen — showcase your best work',
         screenNote: 'Turn on your camera + mic and float your face in a bubble, then share your WHOLE screen and walk through your best work out loud: open your GitHub and show the code, open the live site, and say what you built, your role and the impact.',
@@ -59,6 +64,10 @@ const T = {
         faceFloatingHint: 'Ansiktet ditt flyter. ⧉-knappen tar deg tilbake til denne fanen når som helst for å pause eller stoppe.',
         recordHint: 'Velg «Hele skjermen», og snakk deg gjennom ditt beste arbeid. Avslutt når som helst fra nettleserens «Stopp deling».',
         floatFirst: 'Vis ansiktet ditt først (steg 1) så du har en ⧉-knapp for å komme tilbake og pause.',
+        presentStep: 'Åpne en ren kopi av CV-en for å presentere (valgfritt)',
+        presentHint: 'Åpner en ren CV i en ny fane — uten redigering. Del så hele skjermen og bytt til den fanen for å snakke deg gjennom den.',
+        webPreview: '🌐 Nettforhåndsvisning', pdfPreview: '📄 PDF', opening: 'Åpner…',
+        previewErr: 'Kunne ikke lage en nettlenke (frakoblet?). Bruk PDF i stedet.',
         micErr: 'Fikk ikke tilgang til kamera eller mikrofon. Sjekk tillatelser i nettleseren.',
         screenTitle: 'Ta opp skjermen — vis frem ditt beste arbeid',
         screenNote: 'Slå på kamera + mikrofon og la ansiktet flyte i en boble, del så HELE skjermen og gå gjennom ditt beste arbeid høyt: åpne GitHub og vis koden, åpne den live siden, og si hva du bygde, din rolle og effekten.',
@@ -83,6 +92,10 @@ const T = {
         faceFloatingHint: 'Tu cara está flotando. Su botón ⧉ te trae de vuelta a esta pestaña cuando quieras para pausar o detener.',
         recordHint: 'Elige «Toda la pantalla» y explica tu mejor trabajo. Termina cuando quieras desde el control «Dejar de compartir» del navegador.',
         floatFirst: 'Muestra tu cara primero (paso 1) para tener un botón ⧉ con el que volver y pausar.',
+        presentStep: 'Abre una copia limpia de tu CV para presentar (opcional)',
+        presentHint: 'Abre un CV limpio en una pestaña nueva — sin editor. Luego comparte toda tu pantalla y cambia a esa pestaña para explicarlo.',
+        webPreview: '🌐 Vista web', pdfPreview: '📄 PDF', opening: 'Abriendo…',
+        previewErr: 'No se pudo crear un enlace web (¿sin conexión?). Usa PDF.',
         micErr: 'No se pudo acceder a la cámara o el micrófono. Revisa los permisos del navegador.',
         screenTitle: 'Graba tu pantalla — muestra tu mejor trabajo',
         screenNote: 'Activa tu cámara + micrófono y haz flotar tu cara en una burbuja, luego comparte TODA la pantalla y recorre tu mejor trabajo en voz alta: abre tu GitHub y muestra el código, abre el sitio en vivo, y di qué construiste, tu rol y el impacto.',
@@ -137,7 +150,7 @@ function makeThumb(url) {
   })
 }
 
-export default function VideoStudioModal({ cv = {}, lang = 'en', onClose, onSave }) {
+export default function VideoStudioModal({ cv = {}, lang = 'en', branding, filename = 'cv', onClose, onSave }) {
   const t = T[lang] || T.en
   const mp4Ok = canRecordMp4()
   // Picture-in-Picture = the only way (Safari/Chrome) to float the webcam face
@@ -157,6 +170,9 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', onClose, onSave
   const [uploadPct, setUploadPct] = useState(0)
   const [mode, setMode]         = useState('screen') // 'screen' = screen + voice (default), 'cv' = CV composite, 'me' = webcam only
   const [pipOn, setPipOn]       = useState(false)    // webcam floating as a picture-in-picture face bubble
+  const [webPreviewUrl, setWebPreviewUrl] = useState('') // cached share-link URL for the clean CV preview
+  const [webBusy, setWebBusy]   = useState(false)    // creating the share link
+  const [webErr, setWebErr]     = useState('')       // share-link creation failed
 
   const liveRef   = useRef(null)     // webcam self-view (screen ready / me modes)
   const pipVideoRef = useRef(null)   // persistent webcam source for the face-bubble PiP
@@ -249,6 +265,39 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', onClose, onSave
     } catch { /* not ready / unsupported — the user can click again */ }
   }
 
+  // Open a CLEAN, hiring-manager-facing copy of the CV in a new tab, to screen-
+  // share and talk through — so the editor is never on camera. Two flavours:
+
+  // Web preview: the read-only /cv/<id> share page (scrollable, videos play).
+  // The link is created once and reused on repeat clicks (no snapshot spam).
+  async function openWebPreview() {
+    if (webPreviewUrl) { window.open(webPreviewUrl, '_blank', 'noopener'); return }
+    setWebErr(''); setWebBusy(true)
+    try {
+      const res = await fetch('/api/cv/share', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          cv: { ...stripIds(cv), branding }, lang,
+          filename: `${filename}_${lang.toUpperCase()}`,
+        }),
+      })
+      if (!res.ok) throw new Error('share failed')
+      const { url } = await res.json()
+      setWebPreviewUrl(url)
+      window.open(url, '_blank', 'noopener')
+    } catch {
+      setWebErr(t.previewErr)
+    } finally {
+      setWebBusy(false)
+    }
+  }
+
+  // PDF preview: the exact export document (instant, offline) in a new tab.
+  function openPdfPreview() {
+    if (pdfUrl) window.open(pdfUrl, '_blank', 'noopener')
+  }
+
   // Mode pill click — reset streams and go back to the start for the new mode.
   function selectMode(m) {
     if (m === mode) return
@@ -275,7 +324,7 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', onClose, onSave
     let cancelled = false, url
     ;(async () => {
       try {
-        const blob = await renderPdfBlob(cv, lang)
+        const blob = await renderPdfBlob(cv, lang, branding)
         if (cancelled) return
         url = URL.createObjectURL(blob)
         setPdfUrl(url)
@@ -295,7 +344,7 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', onClose, onSave
       } catch { /* composite falls back to camera-only if page render fails */ }
     })()
     return () => { cancelled = true; if (url) URL.revokeObjectURL(url) }
-  }, [cv, lang])
+  }, [cv, lang, branding])
 
   // Attach the webcam stream to the right elements: a hidden source for the CV
   // composite, the visible self-view (screen/me), and the persistent PiP source.
@@ -700,8 +749,25 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', onClose, onSave
                     )}
                   </div>
                 </div>
+                {/* Optional: open a clean, hiring-manager-facing CV in a new tab
+                    to present — so the editor never appears on camera. */}
                 <div className="studio-step">
                   <span className="studio-step-num">2</span>
+                  <div className="studio-step-body">
+                    <div className="studio-present">
+                      <button className="studio-btn studio-btn--ghost" onClick={openWebPreview} disabled={webBusy}>
+                        {webBusy ? t.opening : t.webPreview}
+                      </button>
+                      <button className="studio-btn studio-btn--ghost" onClick={openPdfPreview} disabled={!pdfUrl}>
+                        {t.pdfPreview}
+                      </button>
+                    </div>
+                    <p className="studio-step-hint">{t.presentStep} — {t.presentHint}</p>
+                    {webErr && <p className="studio-step-nudge">⚠️ {webErr}</p>}
+                  </div>
+                </div>
+                <div className="studio-step">
+                  <span className="studio-step-num">3</span>
                   <div className="studio-step-body">
                     <button className="studio-btn studio-btn--record" onClick={startScreenRecording}>
                       🔴 {t.shareRecord}
