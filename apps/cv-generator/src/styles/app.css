@@ -2408,6 +2408,10 @@ textarea.cv-field {
   overflow: hidden;
   box-shadow: 0 24px 80px rgba(0,0,0,0.5);
 }
+/* CV walkthrough: go near-fullscreen and give the CV pane most of the width so
+   there's more room to see the CV while scrolling through it. */
+.studio--cv { width: 98vw; max-width: none; height: 95vh; }
+.studio--cv .studio-body { grid-template-columns: minmax(0, 3fr) minmax(280px, 0.66fr); }
 .studio-header {
   display: flex; align-items: center; justify-content: space-between;
   padding: 12px 18px; border-bottom: 1px solid rgba(255,255,255,0.1);
