@@ -291,6 +291,11 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', branding, filen
 
   async function openWebPreview() {
     if (webPreviewUrl) { openPreviewTab(webPreviewUrl); return }
+    // Open the tab NOW, synchronously in the click gesture, so Safari doesn't
+    // block it as a popup — creating the share link is async, and a window.open
+    // after the await would be blocked. We navigate this blank tab once ready.
+    const w = window.open('about:blank', '_blank')
+    if (w) previewWinRef.current = w
     setWebErr(''); setWebBusy(true)
     try {
       const res = await fetch('/api/cv/share', {
@@ -304,9 +309,11 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', branding, filen
       if (!res.ok) throw new Error('share failed')
       const { url } = await res.json()
       setWebPreviewUrl(url)
-      openPreviewTab(url)
+      if (w && !w.closed) w.location.href = url
+      else openPreviewTab(url) // pre-open was blocked — try once more
     } catch {
       setWebErr(t.previewErr)
+      if (w && !w.closed) w.close() // don't leave a blank tab on failure
     } finally {
       setWebBusy(false)
     }
@@ -386,16 +393,36 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', branding, filen
       pipVideoRef.current.srcObject = streamRef.current
       pipVideoRef.current.play().catch(() => {})
     }
-  }, [phase, cameraLive, mode])
+    // pipOn is a dep so that dismissing the bubble (studio expands, liveRef
+    // re-mounts) re-attaches the stream — otherwise the self-view stays black
+    // until a pause/resume happens to re-run this effect.
+  }, [phase, cameraLive, mode, pipOn])
 
-  // Keep the "Float / Hide face" label in sync with the actual PiP window.
+  // Keep the "Float / Hide face" label in sync with the actual PiP window, and
+  // repurpose the bubble's own pause control as "return to the recorder".
   useEffect(() => {
     const v = pipVideoRef.current
     if (!v) return
     const on = () => setPipOn(true), off = () => setPipOn(false)
+    // The only control the native face bubble offers (pause) doesn't stop the
+    // recording — it just freezes the little self-view, which is useless. So when
+    // the user pauses the bubble mid-recording, treat it as "take me back": exit
+    // PiP (which returns to this tab + expands the recorder) and keep the source
+    // playing so the face is ready to float again.
+    const onPause = () => {
+      if (document.pictureInPictureElement === v && recRef.current && recRef.current.state !== 'inactive') {
+        document.exitPictureInPicture().catch(() => {})
+        v.play().catch(() => {})
+      }
+    }
     v.addEventListener('enterpictureinpicture', on)
     v.addEventListener('leavepictureinpicture', off)
-    return () => { v.removeEventListener('enterpictureinpicture', on); v.removeEventListener('leavepictureinpicture', off) }
+    v.addEventListener('pause', onPause)
+    return () => {
+      v.removeEventListener('enterpictureinpicture', on)
+      v.removeEventListener('leavepictureinpicture', off)
+      v.removeEventListener('pause', onPause)
+    }
   }, [mode, cameraLive])
 
   // Composite draw loop (CV mode only): the CV pages + webcam PiP on a canvas
