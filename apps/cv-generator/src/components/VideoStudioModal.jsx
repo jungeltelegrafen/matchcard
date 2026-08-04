@@ -1,13 +1,22 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { createPortal } from 'react-dom'
-import * as pdfjsLib from 'pdfjs-dist'
 import { renderPdfBlob } from '../utils/renderPdf'
 import { hostRecording } from '../utils/uploadVideo'
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-  'pdfjs-dist/build/pdf.worker.min.mjs',
-  import.meta.url,
-).toString()
+// pdfjs-dist is only needed for the CV-walkthrough composite mode. It's loaded
+// lazily so the Next.js share-page bundle (which only ever records screen/voice)
+// can ignore it — its ESM worker breaks webpack's Terser pass. See next.config.js.
+let pdfjsPromise
+function loadPdfjs() {
+  pdfjsPromise ||= import('pdfjs-dist').then((pdfjsLib) => {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+      'pdfjs-dist/build/pdf.worker.min.mjs',
+      import.meta.url,
+    ).toString()
+    return pdfjsLib
+  })
+  return pdfjsPromise
+}
 
 function roundRect(ctx, x, y, w, h, r) {
   ctx.beginPath()
@@ -305,6 +314,8 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', branding, filen
         url = URL.createObjectURL(blob)
         setPdfUrl(url)
         const buf = await blob.arrayBuffer()
+        const pdfjsLib = await loadPdfjs()
+        if (cancelled) return
         const pdf = await pdfjsLib.getDocument({ data: buf }).promise
         const pages = []
         for (let i = 1; i <= pdf.numPages && !cancelled; i++) {
