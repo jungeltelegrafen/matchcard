@@ -108,6 +108,12 @@ These are **browser limitations**, not bugs we can code around:
   focus-stealing, popup-blocking, and tab-juggling complexity; removed for
   simplicity. (The share-link creation code still exists via `/api/cv/share`.)
 - **In-app cross-tab Stop** → impossible on Safari; lean on the native stop.
+- **Recording the same MediaStream that's live in a preview `<video>`** → Safari
+  (and some Chromium builds) silently drop the audio track, so "just me" clips
+  came out silent. Always hand `MediaRecorder` a **freshly built** stream
+  (`new MediaStream([...getVideoTracks(), ...getAudioTracks()])`) — never the raw
+  getUserMedia object that an element is also playing. Screen/CV modes did this
+  already; "just me" was the one passing the raw stream. (Fixed `5a96a45`.)
 
 ---
 
