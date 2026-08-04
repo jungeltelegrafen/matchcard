@@ -585,7 +585,8 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', branding, filen
                         browser doesn't throttle its decoding (which froze the
                         composite PiP after a few seconds). The opaque canvas
                         covers it. */}
-                    <video ref={camVideoRef} className="studio-camunder" autoPlay muted playsInline />
+                    <video ref={camVideoRef} className="studio-camunder" autoPlay muted playsInline
+                      onLoadedMetadata={e => e.currentTarget.play().catch(() => {})} />
                     <canvas ref={compositeRef} className="studio-video studio-video--composite"
                       onMouseMove={onCanvasPointer} onMouseLeave={onCanvasLeave} />
                   </>
@@ -598,7 +599,8 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', branding, filen
                     <p className="studio-consent-note">{t.micOnNote}</p>
                   </div>
                 ) : (
-                  <video ref={liveRef} className="studio-video studio-video--mirror" autoPlay muted playsInline />
+                  <video ref={liveRef} className="studio-video studio-video--mirror" autoPlay muted playsInline
+                    onLoadedMetadata={e => e.currentTarget.play().catch(() => {})} />
                 )
               ) : (
                 <div className="studio-consent">
