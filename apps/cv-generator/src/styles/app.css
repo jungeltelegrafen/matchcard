@@ -852,39 +852,23 @@ html {
 }
 
 /* The A4-like document card */
-/* Transparent column that holds the stacked A4 page sheets + editor controls. */
 .cv-page {
   width: 100%;
   max-width: 740px;
   flex-shrink: 1;
 }
 
-/* Each editor page is a real A4-proportioned sheet: content flows from the top,
-   the (page-1) footer is pinned to the bottom by flexbox, so short pages still
-   fill a full A4 height instead of looking cramped. */
-.cv-sheet-page {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  min-height: var(--page-h, 1040px);
+/* One continuous CV sheet. min-height is ~one A4 page so short CVs still look
+   like a page; it grows with content. */
+.cv-editor {
   background: var(--surface);
   box-shadow: var(--shadow);
   border-radius: 4px;
-  padding: 52px 60px 40px;
+  padding: 52px 60px 60px;
+  min-height: var(--page-h, 1040px);
 }
-.cv-sheet-page + .cv-sheet-page { margin-top: 26px; }
-/* Footer sits at the very bottom of the page sheet. */
-.cv-sheet-footer { margin-top: auto; padding-top: 24px; }
-.cv-sheet-page-num {
-  position: absolute;
-  bottom: 14px;
-  right: 20px;
-  font-size: 0.6rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #c3b8ab;
-  pointer-events: none;
-}
+/* Whitespace that nudges the footer down to roughly the A4 page-1 line. */
+.cv-page1-spacer { flex: none; }
 
 /* ═══════════════════════════════════════════════════════════════
    SIDE PANELS (agents + video)
@@ -3352,31 +3336,6 @@ textarea.cv-field {
   padding: 2px 4px;
 }
 .cv-branding-edit-link:hover { text-decoration: underline; }
-
-/* ── Page-break gutter in the editor (approximate print pagination) ──
-   A real band of space so the two pages read as separated: dashed rule at the
-   top, then the page label sitting in the gutter below it (not on the line). */
-.cv-page-break {
-  position: relative;
-  height: 30px;                       /* the visible gutter between pages */
-  margin: 40px -60px 44px;            /* bleed into the sheet's side padding */
-  border-top: 2px dashed #d9cfc4;
-  background: repeating-linear-gradient(
-    -45deg,
-    transparent, transparent 6px,
-    rgba(0,0,0,0.015) 6px, rgba(0,0,0,0.015) 12px
-  );
-}
-.cv-page-break-label {
-  position: absolute;
-  top: 9px;                           /* below the dashed rule, in the gutter */
-  right: 60px;
-  padding: 0 8px;
-  font-size: 0.62rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: #b7a996;
-}
 
 /* No-logo layout: float the photo right so the section content sits beside it. */
 .cv-branding-photofloat {

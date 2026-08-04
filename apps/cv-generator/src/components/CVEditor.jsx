@@ -1,4 +1,4 @@
-import { useRef, useState, useLayoutEffect } from 'react'
+import { useRef, useState, useLayoutEffect, Fragment } from 'react'
 import { ChatChangesContext } from './cv/ChatChangesContext'
 import { fileToDataUrl, hasCompanyFooter } from '../utils/branding'
 import PersonalSection from './cv/PersonalSection'
@@ -12,11 +12,12 @@ import LanguagesSection from './cv/LanguagesSection'
 import PortfolioSection from './cv/PortfolioSection'
 import VideosSection from './cv/VideosSection'
 
-// A4 aspect ratio (height / width) — the editor renders content as stacked
-// A4-proportioned page sheets, splitting sections across pages at this ratio.
+// A4 aspect ratio (height / width) — used to estimate the page-1 boundary on the
+// single continuous editor sheet, so the footer lands roughly where the printed
+// (PDF/Word) footer sits. A guide, not exact.
 const A4_RATIO = 297 / 210
-// Combined top+bottom padding of a .cv-sheet-page (see app.css).
-const SHEET_PAD_Y = 92
+// Combined top+bottom padding of the .cv-editor sheet (see app.css).
+const SHEET_PAD_Y = 112
 
 // Outer height of an element including its vertical margins.
 function outerHeight(el) {
@@ -118,8 +119,9 @@ export default function CVEditor({ cv, lang = 'en', uiLang = 'en', meta, onField
   const headerRef    = useRef(null)
   const footerRef    = useRef(null)
   const secRefs      = useRef([])
-  // { breaks: [{index, page}], page1End, pageH } — pageH is the A4 sheet height.
-  const [layout, setLayout] = useState({ breaks: [], page1End: -1, pageH: 0 })
+  // page1End: section after which the footer is inserted; spacer nudges it to
+  // the A4 page-1 line; pageH is the min sheet height (one A4 page).
+  const [layout, setLayout] = useState({ page1End: -1, spacer: 0, pageH: 0 })
 
   // The ordered content sections. Each is measured to place page gutters and to
   // pin the footer to the bottom of page 1.
@@ -218,40 +220,33 @@ export default function CVEditor({ cv, lang = 'en', uiLang = 'en', meta, onField
     if (!container) return
 
     function measure() {
-      const sheetEl = container.querySelector('.cv-sheet-page')
-      const w = sheetEl ? sheetEl.clientWidth : (container.clientWidth || 740)
-      const pageH = Math.round(w * A4_RATIO)          // full A4 sheet height
-      const pageContentH = pageH - SHEET_PAD_Y        // usable height per page
+      const w = container.clientWidth || 740
+      const pageFullH = Math.round(w * A4_RATIO)       // one A4 page tall
+      const pageContentH = pageFullH - SHEET_PAD_Y     // usable height on page 1
       if (pageContentH <= 0) return
 
       const headerH = outerHeight(headerRef.current)
       const footerH = showFooter ? outerHeight(footerRef.current) : 0
       const heights = secRefs.current.slice(0, sections.length).map(outerHeight)
 
-      // Page 1 has less room (header on top, footer pinned to the bottom).
-      let budget = pageContentH - headerH - footerH
+      // Walk sections until they'd overflow page 1 (header on top, footer at the
+      // bottom) — that boundary is where the footer is inserted.
+      const budget = pageContentH - headerH - footerH
       let fill = 0
-      let page = 1
-      const breaks = []
-      heights.forEach((h, i) => {
-        if (fill > 0 && fill + h > budget) {
-          page += 1
-          breaks.push({ index: i, page })
-          fill = 0
-          budget = pageContentH // pages 2+ have no header/footer band
-        }
-        fill += h
-      })
+      let page1End = sections.length - 1
+      for (let i = 0; i < heights.length; i++) {
+        if (fill > 0 && fill + heights[i] > budget) { page1End = i - 1; break }
+        fill += heights[i]
+      }
 
-      const page1End = breaks.length ? breaks[0].index - 1 : sections.length - 1
+      // Push the footer down to roughly the A4 page-1 line (a guide, not exact).
+      const used = heights.slice(0, page1End + 1).reduce((a, b) => a + b, 0)
+      const spacer = showFooter ? Math.max(0, Math.round(budget - used)) : 0
 
       setLayout(prev =>
-        prev.pageH === pageH
-        && prev.page1End === page1End
-        && prev.breaks.length === breaks.length
-        && prev.breaks.every((b, i) => b.index === breaks[i].index && b.page === breaks[i].page)
+        prev.page1End === page1End && prev.spacer === spacer && prev.pageH === pageFullH
           ? prev
-          : { breaks, page1End, pageH })
+          : { page1End, spacer, pageH: pageFullH })
     }
 
     measure()
@@ -259,15 +254,6 @@ export default function CVEditor({ cv, lang = 'en', uiLang = 'en', meta, onField
     ro.observe(container)
     return () => ro.disconnect()
   }, [cv, lang, showLogo, showPhoto, showFooter, branding])
-
-  // Group section indices into A4 page sheets at the computed break points.
-  const pageStarts = [0, ...layout.breaks.map(b => b.index)]
-  const pages = pageStarts.map((start, pi) => ({
-    start,
-    end: pageStarts[pi + 1] ?? sections.length,
-    page: pi + 1,
-  }))
-  const multiPage = pages.length > 1
 
   return (
     <ChatChangesContext.Provider value={{ changedPaths, onChangeSeen }}>
@@ -304,39 +290,34 @@ export default function CVEditor({ cv, lang = 'en', uiLang = 'en', meta, onField
         </div>
       )}
 
-      {pages.map(({ start, end, page }) => (
-        <div className="cv-sheet-page" key={page}>
-          {page === 1 && showHeader && (
-            <div ref={headerRef} className={!showLogo && showPhoto ? 'cv-branding-photofloat' : undefined}>
-              <BrandingHeader
-                branding={branding}
-                showLogo={showLogo}
-                showPhoto={showPhoto}
-                onEditBranding={onEditBranding}
-                onSetProfilePicture={onSetProfilePicture}
-              />
-            </div>
-          )}
+      {showHeader && (
+        <div ref={headerRef} className={!showLogo && showPhoto ? 'cv-branding-photofloat' : undefined}>
+          <BrandingHeader
+            branding={branding}
+            showLogo={showLogo}
+            showPhoto={showPhoto}
+            onEditBranding={onEditBranding}
+            onSetProfilePicture={onSetProfilePicture}
+          />
+        </div>
+      )}
 
-          {sections.slice(start, end).map((s, j) => {
-            const i = start + j
-            return (
-              <div className="cv-sec" key={s.key} ref={el => { secRefs.current[i] = el }}>
-                {s.node}
-              </div>
-            )
-          })}
-
-          {page === 1 && showFooter && (
-            <div className="cv-sheet-footer">
+      {sections.map((s, i) => (
+        <Fragment key={s.key}>
+          <div className="cv-sec" ref={el => { secRefs.current[i] = el }}>
+            {s.node}
+          </div>
+          {showFooter && i === layout.page1End && (
+            <>
+              {layout.spacer > 0 && (
+                <div className="cv-page1-spacer" style={{ height: layout.spacer }} aria-hidden="true" />
+              )}
               <div ref={footerRef}>
                 <BrandingFooter branding={branding} onEditBranding={onEditBranding} />
               </div>
-            </div>
+            </>
           )}
-
-          {multiPage && <span className="cv-sheet-page-num">{no ? `Side ${page}` : `Page ${page}`}</span>}
-        </div>
+        </Fragment>
       ))}
      </div>
     </ChatChangesContext.Provider>
