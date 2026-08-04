@@ -530,7 +530,16 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', branding, filen
         } catch { /* fall back to mic only */ }
       }
       recStream = new MediaStream([screenTrack, ...(audioTrack ? [audioTrack] : [])])
+    } else {
+      // "Just me" (raw webcam). Record a freshly-built stream from the camera +
+      // mic tracks rather than the exact same MediaStream instance that's live in
+      // the preview <video> — Safari (and some Chromium builds) drop the audio
+      // track when one stream object is both played in an element and recorded.
+      // Screen/CV modes already record a rebuilt stream, which is why they keep
+      // their audio; this brings "just me" in line so it captures your voice too.
+      recStream = new MediaStream([...stream.getVideoTracks(), ...stream.getAudioTracks()])
     }
+    if (!recStream.getAudioTracks().length) console.warn('[studio] recording stream has no audio track')
     const mr = new MediaRecorder(recStream, pickMime() ? { mimeType: pickMime() } : undefined)
     mr.ondataavailable = e => { if (e.data.size) chunksRef.current.push(e.data) }
     mr.onstop = () => {
