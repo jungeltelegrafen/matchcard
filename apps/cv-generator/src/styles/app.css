@@ -2648,6 +2648,16 @@ textarea.cv-field {
   font-size: 0.58rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase;
   color: rgba(255,255,255,0.4);
 }
+.studio-screenstatus {
+  position: absolute; z-index: 2; left: 0; right: 0; bottom: 20px;
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+}
+.studio-screenstatus-badge {
+  background: rgba(20,17,15,0.82); color: #fff; border-radius: 20px;
+  padding: 8px 18px; font-size: 0.82rem; font-weight: 700;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.35);
+}
+.studio-pipbtn { background: rgba(255,255,255,0.14); }
 .studio-links-row { display: flex; flex-wrap: wrap; gap: 7px; }
 .studio-link-pill {
   background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.16);
