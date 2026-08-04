@@ -282,11 +282,20 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', branding, filen
 
   // Web preview: the read-only /cv/<id> share page (scrollable, videos play).
   // The link is created once and reused on repeat clicks (no snapshot spam).
+  // Keep the recorder in front after opening a tab, so the user finishes setting
+  // up here (the tab is brought forward on record). Best-effort — a browser may
+  // ignore programmatic focus.
+  function keepRecorderInFront(w) {
+    try { w.blur() } catch { /* ignored */ }
+    try { window.focus() } catch { /* ignored */ }
+  }
+
   // Open a tab and remember its handle (no 'noopener' — we need the handle so
-  // starting a recording can bring that tab to the front).
+  // starting a recording can bring that tab to the front). Opens in the
+  // background: the recorder stays in front until you hit record.
   function openPreviewTab(url) {
     const w = window.open(url, '_blank')
-    if (w) previewWinRef.current = w
+    if (w) { previewWinRef.current = w; keepRecorderInFront(w) }
   }
 
   async function openWebPreview() {
@@ -295,7 +304,7 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', branding, filen
     // block it as a popup — creating the share link is async, and a window.open
     // after the await would be blocked. We navigate this blank tab once ready.
     const w = window.open('about:blank', '_blank')
-    if (w) previewWinRef.current = w
+    if (w) { previewWinRef.current = w; keepRecorderInFront(w) }
     setWebErr(''); setWebBusy(true)
     try {
       const res = await fetch('/api/cv/share', {
@@ -404,16 +413,12 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', branding, filen
     const v = pipVideoRef.current
     if (!v) return
     const on = () => setPipOn(true), off = () => setPipOn(false)
-    // The only control the native face bubble offers (pause) doesn't stop the
-    // recording — it just freezes the little self-view, which is useless. So when
-    // the user pauses the bubble mid-recording, treat it as "take me back": exit
-    // PiP (which returns to this tab + expands the recorder) and keep the source
-    // playing so the face is ready to float again.
+    // Safari throttles the backgrounded recorder tab and can auto-pause the camera
+    // video, freezing the face bubble. Keep it alive by resuming — don't exit PiP
+    // (that misfired on throttle-pauses and made the bubble vanish). To come back,
+    // use the bubble's ⧉ "return to tab" icon or the browser's Stop-sharing bar.
     const onPause = () => {
-      if (document.pictureInPictureElement === v && recRef.current && recRef.current.state !== 'inactive') {
-        document.exitPictureInPicture().catch(() => {})
-        v.play().catch(() => {})
-      }
+      if (document.pictureInPictureElement === v) v.play().catch(() => {})
     }
     v.addEventListener('enterpictureinpicture', on)
     v.addEventListener('leavepictureinpicture', off)
@@ -424,6 +429,18 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', branding, filen
       v.removeEventListener('pause', onPause)
     }
   }, [mode, cameraLive])
+
+  // When the recorder tab is brought back to the foreground (e.g. via the
+  // bubble's ⧉), re-play the camera videos — a background tab can freeze them.
+  useEffect(() => {
+    const onVis = () => {
+      if (document.visibilityState !== 'visible') return
+      pipVideoRef.current?.play?.().catch(() => {})
+      liveRef.current?.play?.().catch(() => {})
+    }
+    document.addEventListener('visibilitychange', onVis)
+    return () => document.removeEventListener('visibilitychange', onVis)
+  }, [])
 
   // Composite draw loop (CV mode only): the CV pages + webcam PiP on a canvas
   // that gets recorded. (Screen mode records the shared display track directly —
