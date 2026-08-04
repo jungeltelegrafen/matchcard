@@ -2648,6 +2648,13 @@ textarea.cv-field {
   font-size: 0.58rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase;
   color: rgba(255,255,255,0.4);
 }
+/* Persistent webcam source for the face-bubble PiP — present + decoding but out
+   of the way (must NOT be display:none, or the browser stops feeding the PiP). */
+.studio-pip-source {
+  position: fixed; right: 0; bottom: 0; width: 2px; height: 2px;
+  opacity: 0.01; pointer-events: none; z-index: -1;
+}
+
 /* Collapsed recording pill (screen mode) — small floating bar, never a modal */
 .studio-pill {
   position: fixed; z-index: 300; left: 20px; bottom: 20px;
