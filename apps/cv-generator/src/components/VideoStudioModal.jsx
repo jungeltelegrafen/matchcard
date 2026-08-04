@@ -27,7 +27,7 @@ const T = {
         next: 'Next ›', prev: '‹ Prev', uploading: 'Uploading…',
         recMode: 'What to record', withScreen: '🖥️ Screen', withCv: '📄 CV walkthrough', justMe: '👤 Just me', page: 'Page',
         openLinks: 'Open a link to present',
-        pillHint: 'Finish anytime from your browser’s “Stop sharing” control. To pause, click ⧉ on your floating face bubble to come back here.',
+        pillHint: 'Tip: finish anytime from your browser’s stop-screen-sharing control — it ends the take and brings you back here for keep/re-take. To pause, return to this tab.',
         startCam: 'Turn on camera & mic', turnOffMic: 'Turn off camera', shareRecord: 'Share screen & record',
         floatFace: '📹 Float my face', hideFace: '📹 Hide face bubble',
         noFace: 'This browser records screen + voice (no face bubble). Finish from your browser’s “Stop sharing” control; switch back to this tab to pause.',
@@ -52,7 +52,7 @@ const T = {
         next: 'Neste ›', prev: '‹ Forrige', uploading: 'Laster opp…',
         recMode: 'Hva skal tas opp', withScreen: '🖥️ Skjerm', withCv: '📄 CV-gjennomgang', justMe: '👤 Bare meg', page: 'Side',
         openLinks: 'Åpne en lenke å presentere',
-        pillHint: 'Avslutt når som helst fra nettleserens «Stopp deling». For å pause, klikk ⧉ på ansikts-boblen for å komme tilbake hit.',
+        pillHint: 'Tips: avslutt når som helst fra nettleserens «stopp deling» — opptaket avsluttes og du kommer tilbake hit for å beholde/ta på nytt. For å pause, gå tilbake til denne fanen.',
         startCam: 'Slå på kamera og mikrofon', turnOffMic: 'Slå av kamera', shareRecord: 'Del skjerm og ta opp',
         floatFace: '📹 Vis ansiktet mitt', hideFace: '📹 Skjul ansikts-boble',
         noFace: 'Denne nettleseren tar opp skjerm + stemme (uten ansikts-boble). Avslutt fra nettleserens «Stopp deling»; bytt tilbake til denne fanen for å pause.',
@@ -77,7 +77,7 @@ const T = {
         next: 'Siguiente ›', prev: '‹ Anterior', uploading: 'Subiendo…',
         recMode: 'Qué grabar', withScreen: '🖥️ Pantalla', withCv: '📄 Recorrido del CV', justMe: '👤 Solo yo', page: 'Página',
         openLinks: 'Abre un enlace para presentar',
-        pillHint: 'Termina cuando quieras desde el control «Dejar de compartir» del navegador. Para pausar, haz clic en ⧉ de tu burbuja de cara para volver aquí.',
+        pillHint: 'Consejo: termina cuando quieras desde el control «dejar de compartir» del navegador — finaliza la toma y vuelves aquí para conservar/regrabar. Para pausar, vuelve a esta pestaña.',
         startCam: 'Activar cámara y micrófono', turnOffMic: 'Apagar cámara', shareRecord: 'Compartir pantalla y grabar',
         floatFace: '📹 Mostrar mi cara', hideFace: '📹 Ocultar burbuja',
         noFace: 'Este navegador graba pantalla + voz (sin burbuja de cara). Termina desde el control «Dejar de compartir» del navegador; vuelve a esta pestaña para pausar.',
@@ -334,7 +334,15 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', branding, filen
   useEffect(() => {
     const v = pipVideoRef.current
     if (!v) return
-    const on = () => setPipOn(true), off = () => setPipOn(false)
+    const recording = () => recRef.current && recRef.current.state !== 'inactive'
+    // Floating the face bubble = "presenting" (collapse to the operator pill);
+    // dismissing it (the bubble's ⧉ icon) = "come back" — show the full recorder
+    // and best-effort pull this tab to the front.
+    const on = () => { setPipOn(true); if (recording()) setExpanded(false) }
+    const off = () => {
+      setPipOn(false)
+      if (recording()) { setExpanded(true); try { window.focus() } catch { /* ignored */ } }
+    }
     // Safari throttles the backgrounded recorder tab and can auto-pause the camera
     // video, freezing the face bubble. Keep it alive by resuming — don't exit PiP
     // (that misfired on throttle-pauses and made the bubble vanish). To come back,
@@ -632,6 +640,7 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', branding, filen
             <button className="studio-pill-btn studio-pill-btn--stop" onClick={stopRecording}>■ {t.stop}</button>
             <button className="studio-pill-btn" onClick={() => setExpanded(true)}>⤢ {t.openRecorder}</button>
           </div>
+          <p className="studio-pill-help">{t.pillHint}</p>
         </div>
       ) : (
       <div className="modal-overlay" onClick={closeOnBackdrop ? onClose : undefined}>
