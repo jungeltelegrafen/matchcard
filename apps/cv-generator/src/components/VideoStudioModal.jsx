@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import * as pdfjsLib from 'pdfjs-dist'
 import { renderPdfBlob } from '../utils/renderPdf'
 import { hostRecording } from '../utils/uploadVideo'
@@ -599,16 +600,20 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', branding, filen
       {showPill ? (
         // Screen recording: a small bottom-left operator that never blocks the
         // screen you present. Finish from here or (from any window) the browser's
-        // own Stop-sharing control.
-        <div className="studio-pill">
-          <div className="studio-pill-row">
-            <span className="studio-pill-dot" />
-            <span className="studio-pill-time">{fmt(elapsed)}</span>
-            <span className="studio-pill-state">{t.recording}</span>
-            <button className="studio-pill-btn studio-pill-btn--stop" onClick={stopRecording}>■ {t.stop}</button>
-          </div>
-          <p className="studio-pill-help">{t.pillHint}</p>
-        </div>
+        // own Stop-sharing control. Portaled to <body> so it sits above the export
+        // footer (a taller footer, e.g. with the share-link bar, can't cover it).
+        createPortal(
+          <div className="studio-pill">
+            <div className="studio-pill-row">
+              <span className="studio-pill-dot" />
+              <span className="studio-pill-time">{fmt(elapsed)}</span>
+              <span className="studio-pill-state">{t.recording}</span>
+              <button className="studio-pill-btn studio-pill-btn--stop" onClick={stopRecording}>■ {t.stop}</button>
+            </div>
+            <p className="studio-pill-help">{t.pillHint}</p>
+          </div>,
+          document.body,
+        )
       ) : (
       <div className="modal-overlay" onClick={closeOnBackdrop ? onClose : undefined}>
         <div className={`studio${mode === 'cv' ? ' studio--cv' : ''}`} onClick={e => e.stopPropagation()}>
