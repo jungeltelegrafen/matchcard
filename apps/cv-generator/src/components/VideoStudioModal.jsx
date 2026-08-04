@@ -40,6 +40,7 @@ const T = {
         presentHint: 'Opens a clean CV in a new tab — no editor. Then share your whole screen and switch to that tab to talk through it.',
         webPreview: '🌐 Web preview', pdfPreview: '📄 PDF', opening: 'Opening…',
         previewErr: 'Couldn’t create a web link (offline?). Use PDF instead.',
+        backToPresenting: '📹 Float my face & present',
         micErr: 'Could not access your camera or microphone. Check browser permissions.',
         screenTitle: 'Record your screen — showcase your best work',
         screenNote: 'Turn on your camera + mic and float your face in a bubble, then share your WHOLE screen and walk through your best work out loud: open your GitHub and show the code, open the live site, and say what you built, your role and the impact.',
@@ -68,6 +69,7 @@ const T = {
         presentHint: 'Åpner en ren CV i en ny fane — uten redigering. Del så hele skjermen og bytt til den fanen for å snakke deg gjennom den.',
         webPreview: '🌐 Nettforhåndsvisning', pdfPreview: '📄 PDF', opening: 'Åpner…',
         previewErr: 'Kunne ikke lage en nettlenke (frakoblet?). Bruk PDF i stedet.',
+        backToPresenting: '📹 Vis ansiktet og presenter',
         micErr: 'Fikk ikke tilgang til kamera eller mikrofon. Sjekk tillatelser i nettleseren.',
         screenTitle: 'Ta opp skjermen — vis frem ditt beste arbeid',
         screenNote: 'Slå på kamera + mikrofon og la ansiktet flyte i en boble, del så HELE skjermen og gå gjennom ditt beste arbeid høyt: åpne GitHub og vis koden, åpne den live siden, og si hva du bygde, din rolle og effekten.',
@@ -96,6 +98,7 @@ const T = {
         presentHint: 'Abre un CV limpio en una pestaña nueva — sin editor. Luego comparte toda tu pantalla y cambia a esa pestaña para explicarlo.',
         webPreview: '🌐 Vista web', pdfPreview: '📄 PDF', opening: 'Abriendo…',
         previewErr: 'No se pudo crear un enlace web (¿sin conexión?). Usa PDF.',
+        backToPresenting: '📹 Muestra tu cara y presenta',
         micErr: 'No se pudo acceder a la cámara o el micrófono. Revisa los permisos del navegador.',
         screenTitle: 'Graba tu pantalla — muestra tu mejor trabajo',
         screenNote: 'Activa tu cámara + micrófono y haz flotar tu cara en una burbuja, luego comparte TODA la pantalla y recorre tu mejor trabajo en voz alta: abre tu GitHub y muestra el código, abre el sitio en vivo, y di qué construiste, tu rol y el impacto.',
@@ -173,6 +176,7 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', branding, filen
   const [webPreviewUrl, setWebPreviewUrl] = useState('') // cached share-link URL for the clean CV preview
   const [webBusy, setWebBusy]   = useState(false)    // creating the share link
   const [webErr, setWebErr]     = useState('')       // share-link creation failed
+  const previewWinRef = useRef(null)                 // the clean-CV tab we opened, so record can bring it to the front
 
   const liveRef   = useRef(null)     // webcam self-view (screen ready / me modes)
   const pipVideoRef = useRef(null)   // persistent webcam source for the face-bubble PiP
@@ -246,6 +250,9 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', branding, filen
     const vt = s.getVideoTracks()[0]
     if (vt) vt.addEventListener('ended', onScreenEnded)
     startRecording()
+    // Bring the clean-CV preview tab to the front so the user starts talking
+    // about the CV straight away instead of the editor.
+    focusPreview()
   }
 
   function onScreenEnded() {
@@ -261,7 +268,12 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', branding, filen
     const v = pipVideoRef.current
     try {
       if (document.pictureInPictureElement) { await document.exitPictureInPicture(); return }
-      if (v) await v.requestPictureInPicture()
+      if (v) {
+        await v.requestPictureInPicture()
+        // Re-floating mid-recording = "back to presenting": bring the clean-CV
+        // tab forward again so the user picks up where they left off.
+        if (recRef.current && recRef.current.state !== 'inactive') focusPreview()
+      }
     } catch { /* not ready / unsupported — the user can click again */ }
   }
 
@@ -270,8 +282,15 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', branding, filen
 
   // Web preview: the read-only /cv/<id> share page (scrollable, videos play).
   // The link is created once and reused on repeat clicks (no snapshot spam).
+  // Open a tab and remember its handle (no 'noopener' — we need the handle so
+  // starting a recording can bring that tab to the front).
+  function openPreviewTab(url) {
+    const w = window.open(url, '_blank')
+    if (w) previewWinRef.current = w
+  }
+
   async function openWebPreview() {
-    if (webPreviewUrl) { window.open(webPreviewUrl, '_blank', 'noopener'); return }
+    if (webPreviewUrl) { openPreviewTab(webPreviewUrl); return }
     setWebErr(''); setWebBusy(true)
     try {
       const res = await fetch('/api/cv/share', {
@@ -285,7 +304,7 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', branding, filen
       if (!res.ok) throw new Error('share failed')
       const { url } = await res.json()
       setWebPreviewUrl(url)
-      window.open(url, '_blank', 'noopener')
+      openPreviewTab(url)
     } catch {
       setWebErr(t.previewErr)
     } finally {
@@ -295,7 +314,14 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', branding, filen
 
   // PDF preview: the exact export document (instant, offline) in a new tab.
   function openPdfPreview() {
-    if (pdfUrl) window.open(pdfUrl, '_blank', 'noopener')
+    if (pdfUrl) openPreviewTab(pdfUrl)
+  }
+
+  // Bring the clean-CV preview tab to the front (called when recording starts /
+  // resumes presenting) so the user talks about the CV, not the editor.
+  function focusPreview() {
+    const w = previewWinRef.current
+    if (w && !w.closed) { try { w.focus() } catch { /* focus may be denied */ } }
   }
 
   // Mode pill click — reset streams and go back to the start for the new mode.
@@ -543,6 +569,10 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', branding, filen
       blobRef.current = blob
       setRecordedUrl(URL.createObjectURL(blob))
       stopStream()          // camera OFF the instant recording ends
+      // Bring the recorder tab forward so keep/retake is right there, even when
+      // the take was ended from the browser's Stop-sharing bar on another tab.
+      // Best-effort: a backgrounded tab may not be allowed to focus itself.
+      try { window.focus() } catch { /* focus may be denied */ }
       setPhase('review')
     }
     recRef.current = mr
@@ -603,6 +633,10 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', branding, filen
   const busy = phase === 'recording' || phase === 'paused' || phase === 'uploading'
 
   const screenRec = mode === 'screen' && (phase === 'recording' || phase === 'paused')
+  // Collapse to the pill only while the face is actually floating (you're
+  // presenting). The moment the bubble is dismissed — e.g. Safari's ⧉ "return to
+  // tab" — expand back to the full recorder so it's obvious you're back.
+  const showPill = screenRec && pipOn
 
   // Only a click on the dark backdrop BEFORE the camera is on closes the studio —
   // once you're live an accidental outside click must never shut it down.
@@ -617,7 +651,7 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', branding, filen
         <video ref={pipVideoRef} className="studio-pip-source" autoPlay muted playsInline />
       )}
 
-      {screenRec ? (
+      {showPill ? (
         // While screen-recording, collapse to a small floating pill so the studio
         // never blocks the screen you present. Your face floats above via PiP;
         // stop from here or the browser's own "Stop sharing" bar.
@@ -827,11 +861,17 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', branding, filen
                 <>
                   <button className="studio-btn studio-btn--ghost" onClick={pauseRecording}>❙❙ {t.pause}</button>
                   <button className="studio-btn studio-btn--stop" onClick={stopRecording}>■ {t.stop}</button>
+                  {mode === 'screen' && canPip && !pipOn && (
+                    <button className="studio-btn studio-btn--record" onClick={toggleWebcamOverlay}>{t.backToPresenting}</button>
+                  )}
                 </>
               ) : phase === 'paused' ? (
                 <>
                   <button className="studio-btn studio-btn--primary" onClick={resumeRecording}>▶ {t.resume}</button>
                   <button className="studio-btn studio-btn--stop" onClick={stopRecording}>■ {t.stop}</button>
+                  {mode === 'screen' && canPip && !pipOn && (
+                    <button className="studio-btn studio-btn--record" onClick={toggleWebcamOverlay}>{t.backToPresenting}</button>
+                  )}
                 </>
               ) : phase === 'ready' ? (
                 // Screen mode's record button lives in the numbered steps above,
