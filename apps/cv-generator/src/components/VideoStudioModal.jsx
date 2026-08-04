@@ -56,7 +56,9 @@ const T = {
         record: 'Record', pause: 'Pause', resume: 'Resume', stop: 'Stop', retake: 'Re-take', use: 'Use this recording',
         recording: 'REC', paused: 'Paused', review: 'Review your recording', target: 'Target', starts: 'Recording in',
         next: 'Next ›', prev: '‹ Prev', uploading: 'Uploading…',
-        recMode: 'What to record', withCv: '📄 CV + me', justMe: '👤 Just me', page: 'Page',
+        recMode: 'What to record', withCv: '📄 CV + me', withScreen: '🖥️ Screen + me', justMe: '👤 Just me', page: 'Page',
+        pickShare: 'Choose a window or screen to share', openLinks: 'Open a link to present',
+        screenHint: 'Pick a window, tab, or whole screen to share. Open your portfolio or GitHub in a tab, then share that tab and walk through it — your webcam stays in the corner.',
         scrollHint: 'Scroll over your CV to move through it while you talk — your cursor is highlighted so viewers follow along.',
         mp4Warn: 'Heads up: your browser records in a format that may not play for viewers on Safari. For best compatibility, record in Chrome, Edge, or Safari.',
         notUploaded: 'Saved to this session only (video hosting isn’t set up yet).' },
@@ -66,7 +68,9 @@ const T = {
         record: 'Ta opp', pause: 'Pause', resume: 'Fortsett', stop: 'Stopp', retake: 'Ta opp på nytt', use: 'Bruk dette opptaket',
         recording: 'REC', paused: 'Pauset', review: 'Se gjennom opptaket', target: 'Mål', starts: 'Opptak om',
         next: 'Neste ›', prev: '‹ Forrige', uploading: 'Laster opp…',
-        recMode: 'Hva skal tas opp', withCv: '📄 CV + meg', justMe: '👤 Bare meg', page: 'Side',
+        recMode: 'Hva skal tas opp', withCv: '📄 CV + meg', withScreen: '🖥️ Skjerm + meg', justMe: '👤 Bare meg', page: 'Side',
+        pickShare: 'Velg et vindu eller en skjerm å dele', openLinks: 'Åpne en lenke å presentere',
+        screenHint: 'Velg et vindu, en fane eller hele skjermen å dele. Åpne porteføljen eller GitHub i en fane, del den fanen og gå gjennom den — webkameraet blir liggende i hjørnet.',
         scrollHint: 'Bla over CV-en for å bevege deg gjennom den mens du snakker — markøren din er uthevet så seerne følger med.',
         mp4Warn: 'Merk: nettleseren din tar opp i et format som kanskje ikke spilles av for seere på Safari. For best kompatibilitet, ta opp i Chrome, Edge eller Safari.',
         notUploaded: 'Lagret kun for denne økten (videohosting er ikke satt opp ennå).' },
@@ -76,7 +80,9 @@ const T = {
         record: 'Grabar', pause: 'Pausar', resume: 'Reanudar', stop: 'Detener', retake: 'Regrabar', use: 'Usar esta grabación',
         recording: 'REC', paused: 'En pausa', review: 'Revisa tu grabación', target: 'Objetivo', starts: 'Grabando en',
         next: 'Siguiente ›', prev: '‹ Anterior', uploading: 'Subiendo…',
-        recMode: 'Qué grabar', withCv: '📄 CV + yo', justMe: '👤 Solo yo', page: 'Página',
+        recMode: 'Qué grabar', withCv: '📄 CV + yo', withScreen: '🖥️ Pantalla + yo', justMe: '👤 Solo yo', page: 'Página',
+        pickShare: 'Elige una ventana o pantalla para compartir', openLinks: 'Abre un enlace para presentar',
+        screenHint: 'Elige una ventana, pestaña o pantalla completa para compartir. Abre tu portafolio o GitHub en una pestaña, compártela y recórrela — tu cámara queda en la esquina.',
         scrollHint: 'Desplázate sobre tu CV para recorrerlo mientras hablas — tu cursor se resalta para que los espectadores te sigan.',
         mp4Warn: 'Aviso: tu navegador graba en un formato que puede no reproducirse para quienes usan Safari. Para mayor compatibilidad, graba en Chrome, Edge o Safari.',
         notUploaded: 'Guardado solo para esta sesión (el alojamiento de vídeo aún no está configurado).' },
@@ -130,6 +136,10 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', onClose, onSave
   const t = T[lang] || T.en
   const scripts = SCRIPTS[lang] || SCRIPTS.en
   const mp4Ok = canRecordMp4()
+  // Links from the CV to open and share while presenting (screen mode).
+  const portfolioLinks = (cv.portfolio || [])
+    .filter(p => p && p.url)
+    .map(p => ({ url: p.url, label: p.label || p.url }))
 
   const [scriptId, setScriptId] = useState(scripts[0].id)
   const [phase, setPhase]       = useState('consent') // consent | ready | countdown | recording | paused | review | error
@@ -140,11 +150,15 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', onClose, onSave
   const [errMsg, setErrMsg]     = useState('')
   const [pdfUrl, setPdfUrl]     = useState(null)
   const [uploadPct, setUploadPct] = useState(0)
-  const [mode, setMode]         = useState('cv')  // 'cv' = CV + face composite, 'me' = webcam only
+  const [mode, setMode]         = useState('cv')  // 'cv' = CV composite, 'screen' = screen-share composite, 'me' = webcam only
+  const [screenOn, setScreenOn] = useState(false) // a display source is being shared
 
   const liveRef   = useRef(null)
   const camVideoRef = useRef(null)   // hidden webcam source for the composite
-  const compositeRef = useRef(null)  // canvas we draw + record in CV mode
+  const screenVideoRef = useRef(null) // hidden screen-share source for the composite
+  const screenStreamRef = useRef(null) // getDisplayMedia stream
+  const audioCtxRef = useRef(null)    // mixes mic + shared-tab audio when recording a screen
+  const compositeRef = useRef(null)  // canvas we draw + record in CV / screen mode
   const pagesRef  = useRef([])       // CV pages rendered to canvases
   const scrollRef = useRef(0)        // vertical scroll offset (dest px) into the CV strip
   const scrollMaxRef = useRef(0)     // max scrollable distance, computed each frame
@@ -161,12 +175,21 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', onClose, onSave
 
   const script = scripts.find(s => s.id === scriptId) || scripts[0]
   const cameraLive = ['ready', 'countdown', 'recording', 'paused'].includes(phase)
+  const usesComposite = mode === 'cv' || mode === 'screen'
+
+  const stopScreen = useCallback(() => {
+    if (screenStreamRef.current) screenStreamRef.current.getTracks().forEach(tr => tr.stop())
+    screenStreamRef.current = null
+    setScreenOn(false)
+  }, [])
 
   const stopStream = useCallback(() => {
     if (streamRef.current) streamRef.current.getTracks().forEach(tr => tr.stop())
     streamRef.current = null
     if (compStreamRef.current) { compStreamRef.current.getTracks().forEach(tr => tr.stop()); compStreamRef.current = null }
-  }, [])
+    stopScreen()
+    if (audioCtxRef.current) { audioCtxRef.current.close().catch(() => {}); audioCtxRef.current = null }
+  }, [stopScreen])
 
   async function enableCamera() {
     setErrMsg('')
@@ -185,6 +208,46 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', onClose, onSave
   function turnOffCamera() {
     stopStream()
     setPhase('consent')
+  }
+
+  // The browser's native picker chooses a window, a tab, or a whole screen — so
+  // "specific windows" and "whole screens" need no custom UI.
+  async function enableScreen() {
+    try {
+      const s = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: 30 }, audio: true })
+      screenStreamRef.current = s
+      // The user can stop sharing from the browser's own bar — end gracefully.
+      const vt = s.getVideoTracks()[0]
+      if (vt) vt.addEventListener('ended', onScreenEnded)
+      if (screenVideoRef.current) { screenVideoRef.current.srcObject = s; screenVideoRef.current.play().catch(() => {}) }
+      setScreenOn(true)
+      return true
+    } catch {
+      return false // user cancelled the picker or denied
+    }
+  }
+
+  function onScreenEnded() {
+    stopScreen()
+    // If they stop sharing mid-take, end the recording; otherwise drop to webcam.
+    if (recRef.current && recRef.current.state !== 'inactive') stopRecording()
+    else setMode('me')
+  }
+
+  // Mode pill click. Picking "screen" while the camera is live opens the native
+  // share picker straight away (this click is the required user gesture).
+  async function selectMode(m) {
+    if (m === mode) return
+    if (m === 'screen') {
+      if (cameraLive && !screenStreamRef.current) {
+        const ok = await enableScreen()
+        if (!ok) return // keep current mode if they cancel the picker
+      }
+      setMode('screen')
+    } else {
+      if (screenStreamRef.current) stopScreen()
+      setMode(m)
+    }
   }
 
   // Clean everything up on close — no lingering camera, ever.
@@ -227,18 +290,23 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', onClose, onSave
     return () => { cancelled = true; if (url) URL.revokeObjectURL(url) }
   }, [cv, lang])
 
-  // Attach the webcam stream to the right element: a hidden source in CV mode
-  // (the composite draws from it), or the visible video in "just me" mode.
+  // Attach the webcam stream to the right element: a hidden source in the
+  // composite modes (CV / screen), or the visible video in "just me" mode.
   useEffect(() => {
-    const el = mode === 'cv' ? camVideoRef.current : liveRef.current
+    const el = usesComposite ? camVideoRef.current : liveRef.current
     if (el && streamRef.current && cameraLive) el.srcObject = streamRef.current
-  }, [phase, cameraLive, mode])
+    // Re-bind the shared screen after any remount so the composite keeps drawing.
+    if (mode === 'screen' && screenVideoRef.current && screenStreamRef.current && cameraLive) {
+      screenVideoRef.current.srcObject = screenStreamRef.current
+      screenVideoRef.current.play().catch(() => {})
+    }
+  }, [phase, cameraLive, mode, usesComposite, screenOn])
 
-  // Composite draw loop (CV mode): the full CV (all pages stacked) as a
-  // scrollable frame + webcam PiP in the corner. This canvas is what gets
-  // recorded, so the CV is in the video.
+  // Composite draw loop (CV / screen mode): the background (CV pages, or the
+  // shared screen) + webcam PiP in the corner. This canvas is what gets
+  // recorded, so the CV or the screen is in the video.
   useEffect(() => {
-    if (mode !== 'cv' || !cameraLive) { cancelAnimationFrame(rafRef.current); return }
+    if (!usesComposite || !cameraLive) { cancelAnimationFrame(rafRef.current); return }
     const canvas = compositeRef.current
     if (!canvas) return
     canvas.width = 1280; canvas.height = 720
@@ -249,14 +317,11 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', onClose, onSave
       if (stop) return
       const W = canvas.width, H = canvas.height
       ctx.fillStyle = '#14110f'; ctx.fillRect(0, 0, W, H)
-      // CV page rendered fit-to-WIDTH so it's large and readable, scrolled
-      // vertically by scrollRef — this is what lets you scroll the CV while
-      // talking (Loom-style). Only the visible slice lands in the frame.
-      // All CV pages stacked into one continuous vertical strip, fit-to-width,
-      // scrolled by scrollRef — so wheel scrolling runs through the ENTIRE CV
-      // (every page), not just page 1. Only on-screen slices are drawn.
+      // ── Background ──
       const pages = pagesRef.current
-      if (pages.length && pages[0].width) {
+      if (mode === 'cv' && pages.length && pages[0].width) {
+        // CV pages fit-to-WIDTH, stacked into one vertical strip, scrolled by
+        // scrollRef — so wheel scrolling runs through the ENTIRE CV (every page).
         const s = W / pages[0].width
         const gap = 14 // dark seam between stacked pages
         let totalH = 0
@@ -283,6 +348,16 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', onClose, onSave
           ctx.fillStyle = 'rgba(20,17,15,0.12)'; roundRect(ctx, W - 9, trackY, 4, trackH, 2); ctx.fill()
           ctx.fillStyle = 'rgba(201,123,75,0.75)'; roundRect(ctx, W - 9, thumbY, 4, thumbH, 2); ctx.fill()
         }
+      } else if (mode === 'screen') {
+        // Shared window/tab/screen, fit inside the frame (letterboxed).
+        const sv = screenVideoRef.current
+        if (sv && sv.readyState >= 2 && sv.videoWidth) {
+          const vr = sv.videoWidth / sv.videoHeight, cr = W / H
+          let dw, dh, dx, dy
+          if (vr > cr) { dw = W; dh = W / vr; dx = 0; dy = (H - dh) / 2 }
+          else { dh = H; dw = H * vr; dy = 0; dx = (W - dw) / 2 }
+          ctx.drawImage(sv, dx, dy, dw, dh)
+        }
       }
       const v = camVideoRef.current
       if (v && v.readyState >= 2 && v.videoWidth) {
@@ -298,10 +373,10 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', onClose, onSave
         ctx.strokeStyle = 'rgba(255,255,255,0.92)'; ctx.lineWidth = 3
         roundRect(ctx, px, py, pipW, pipH, 14); ctx.stroke()
       }
-      // Highlighted cursor (drawn last, on top) so viewers can follow where the
-      // candidate is pointing as they talk through the CV.
+      // Highlighted cursor (CV mode only — a shared screen already shows the
+      // real cursor) so viewers follow where the candidate points on the CV.
       const cur = cursorRef.current
-      if (cur.active) {
+      if (cur.active && mode === 'cv') {
         ctx.beginPath(); ctx.arc(cur.x, cur.y, 27, 0, Math.PI * 2)
         ctx.fillStyle = 'rgba(255,179,71,0.22)'; ctx.fill()
         ctx.beginPath(); ctx.arc(cur.x, cur.y, 16, 0, Math.PI * 2)
@@ -313,7 +388,7 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', onClose, onSave
     }
     draw()
     return () => { stop = true; cancelAnimationFrame(rafRef.current) }
-  }, [mode, cameraLive])
+  }, [mode, cameraLive, usesComposite, screenOn])
 
   // Wheel over the composite scrolls the CV (captured in the recording). Native
   // listener with passive:false so we can preventDefault the page from scrolling.
@@ -372,12 +447,28 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', onClose, onSave
     const stream = streamRef.current
     if (!stream) { setPhase('ready'); return }
     chunksRef.current = []
-    // In CV mode, record the composite canvas (CV + face) + the mic audio.
+    // In CV / screen mode, record the composite canvas (background + face).
     let recStream = stream
-    if (mode === 'cv' && compositeRef.current) {
+    if (usesComposite && compositeRef.current) {
       const cs = compositeRef.current.captureStream(30)
       compStreamRef.current = cs
-      recStream = new MediaStream([...cs.getVideoTracks(), ...stream.getAudioTracks()])
+      // Audio: the mic, plus the shared tab/system audio if the screen carries it
+      // (mixed into one track via WebAudio so a demo's sound is captured too).
+      let audioTrack = stream.getAudioTracks()[0] || null
+      const dispAudio = mode === 'screen' && screenStreamRef.current
+        ? screenStreamRef.current.getAudioTracks() : []
+      if (dispAudio.length) {
+        try {
+          const ac = new (window.AudioContext || window.webkitAudioContext)()
+          audioCtxRef.current = ac
+          const dest = ac.createMediaStreamDestination()
+          if (stream.getAudioTracks().length)
+            ac.createMediaStreamSource(new MediaStream(stream.getAudioTracks())).connect(dest)
+          ac.createMediaStreamSource(new MediaStream(dispAudio)).connect(dest)
+          audioTrack = dest.stream.getAudioTracks()[0]
+        } catch { /* fall back to mic only */ }
+      }
+      recStream = new MediaStream([...cs.getVideoTracks(), ...(audioTrack ? [audioTrack] : [])])
     }
     const mr = new MediaRecorder(recStream, pickMime() ? { mimeType: pickMime() } : undefined)
     mr.ondataavailable = e => { if (e.data.size) chunksRef.current.push(e.data) }
@@ -466,15 +557,22 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', onClose, onSave
                 <video className="studio-video studio-video--contain" src={recordedUrl} controls playsInline
                   preload="auto" onLoadedMetadata={fixMediaDuration} />
               ) : cameraLive ? (
-                mode === 'cv' ? (
+                usesComposite ? (
                   <>
                     {/* Full-size webcam kept on-screen BEHIND the canvas so the
                         browser doesn't throttle its decoding (which froze the
                         composite PiP after a few seconds). The opaque canvas
-                        covers it. */}
+                        covers it. The shared screen sits behind it too. */}
                     <video ref={camVideoRef} className="studio-camunder" autoPlay muted playsInline />
+                    {mode === 'screen' && (
+                      <video ref={screenVideoRef} className="studio-camunder" autoPlay muted playsInline />
+                    )}
                     <canvas ref={compositeRef} className="studio-video studio-video--composite"
-                      onMouseMove={onCanvasPointer} onMouseLeave={onCanvasLeave} />
+                      onMouseMove={mode === 'cv' ? onCanvasPointer : undefined}
+                      onMouseLeave={mode === 'cv' ? onCanvasLeave : undefined} />
+                    {mode === 'screen' && !screenOn && (
+                      <button className="studio-sharepick" onClick={enableScreen}>🖥️ {t.pickShare}</button>
+                    )}
                   </>
                 ) : (
                   <video ref={liveRef} className="studio-video studio-video--mirror" autoPlay muted playsInline />
@@ -525,14 +623,32 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', onClose, onSave
             {mode === 'cv' && cameraLive && (
               <p className="studio-scrollhint">🖱️ {t.scrollHint}</p>
             )}
+            {mode === 'screen' && cameraLive && (
+              <p className="studio-scrollhint">🖥️ {t.screenHint}</p>
+            )}
+
+            {/* Portfolio / links to open, then share that tab while you present */}
+            {mode === 'screen' && cameraLive && portfolioLinks.length > 0 && (
+              <div className="studio-links">
+                <span className="studio-links-label">{t.openLinks}</span>
+                <div className="studio-links-row">
+                  {portfolioLinks.map((l, i) => (
+                    <a key={i} className="studio-link-pill" href={l.url} target="_blank" rel="noopener noreferrer">
+                      ↗ {l.label}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* What to record: CV + face composite, or just the webcam */}
             {(phase === 'consent' || phase === 'ready') && (
               <div className="studio-mode">
                 <span className="studio-mode-label">{t.recMode}</span>
                 <div className="studio-mode-pills">
-                  <button className={mode === 'cv' ? 'active' : ''} onClick={() => setMode('cv')}>{t.withCv}</button>
-                  <button className={mode === 'me' ? 'active' : ''} onClick={() => setMode('me')}>{t.justMe}</button>
+                  <button className={mode === 'cv' ? 'active' : ''} onClick={() => selectMode('cv')}>{t.withCv}</button>
+                  <button className={mode === 'screen' ? 'active' : ''} onClick={() => selectMode('screen')}>{t.withScreen}</button>
+                  <button className={mode === 'me' ? 'active' : ''} onClick={() => selectMode('me')}>{t.justMe}</button>
                 </div>
               </div>
             )}
