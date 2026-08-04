@@ -350,6 +350,46 @@ html {
   font-size: 0.74rem;
   color: rgba(255,255,255,0.5);
 }
+/* Expand-to-modal control, top-right of the raw-text box */
+.input-raw-expand {
+  margin-left: auto;
+  align-self: center;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.14);
+  color: rgba(255,255,255,0.7);
+  border-radius: 6px;
+  width: 26px;
+  height: 26px;
+  font-size: 0.9rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.input-raw-expand:hover {
+  background: rgba(255,255,255,0.12);
+  color: #fff;
+  border-color: rgba(255,255,255,0.28);
+}
+
+/* Expanded raw-text modal */
+.raw-modal { max-width: 780px; }
+.raw-modal-textarea {
+  width: 100%;
+  height: 100%;
+  resize: none;
+  border: none;
+  outline: none;
+  background: var(--surface);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  padding: 20px 24px;
+}
+.raw-modal-textarea::placeholder { color: var(--muted); }
 .input-raw-textarea {
   flex: 1;
   background: transparent;

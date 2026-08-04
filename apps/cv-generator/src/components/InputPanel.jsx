@@ -11,6 +11,7 @@ export default function InputPanel({ cv, lang, onGenerate, generating, error, wa
   const lb = getL(lang)
   const [files, setFiles]         = useState([])
   const [rawText, setRawText]     = useState('')
+  const [rawExpanded, setRawExpanded] = useState(false)
   const [dragging, setDragging]   = useState(false)
   const [messages, setMessages]   = useState([])
   const [chatInput, setChatInput] = useState('')
@@ -73,7 +74,16 @@ export default function InputPanel({ cv, lang, onGenerate, generating, error, wa
     }
   }
 
+  // Close the expanded raw-text modal on Escape.
+  useEffect(() => {
+    if (!rawExpanded) return
+    function onKey(e) { if (e.key === 'Escape') setRawExpanded(false) }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [rawExpanded])
+
   const cvIsEmpty = !cv?.personal?.firstName && !cv?.personal?.summary && !cv?.experience?.length
+  const rawChars = rawText.trim().length
 
   return (
     <div className="input-panel">
@@ -136,6 +146,15 @@ export default function InputPanel({ cv, lang, onGenerate, generating, error, wa
                   <div className="input-raw-box-header">
                     <span className="input-raw-box-title">…or paste raw text</span>
                     <span className="input-raw-box-hint">email, job posting, notes…</span>
+                    <button
+                      type="button"
+                      className="input-raw-expand"
+                      title="Expand to view / edit all text"
+                      aria-label="Expand raw text"
+                      onClick={() => setRawExpanded(true)}
+                    >
+                      ⤢
+                    </button>
                   </div>
                   <textarea
                     className="input-raw-textarea"
@@ -256,6 +275,29 @@ export default function InputPanel({ cv, lang, onGenerate, generating, error, wa
         </section>
 
       </div>
+
+      {/* Expanded view of everything pasted / fetched — scrollable + editable */}
+      {rawExpanded && (
+        <div className="modal-overlay" onClick={() => setRawExpanded(false)}>
+          <div className="modal-box raw-modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <span className="modal-title">
+                Pasted text{rawChars > 0 ? ` · ${rawChars.toLocaleString()} chars` : ''}
+              </span>
+              <button className="modal-close" onClick={() => setRawExpanded(false)}>×</button>
+            </div>
+            <div className="modal-body">
+              <textarea
+                className="raw-modal-textarea"
+                value={rawText}
+                onChange={e => setRawText(e.target.value)}
+                placeholder="Nothing pasted or fetched yet. Paste text or fetch a link to see it here."
+                autoFocus
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
