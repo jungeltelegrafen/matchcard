@@ -28,17 +28,18 @@ const T = {
         recMode: 'What to record', withScreen: '🖥️ Screen', withCv: '📄 CV walkthrough', justMe: '👤 Just me', page: 'Page',
         openLinks: 'Open a link to present',
         pillHint: 'Tip: finish anytime from your browser’s stop-screen-sharing control — it ends the take and brings you back here for keep/re-take. To pause, return to this tab.',
-        startCam: 'Turn on camera & mic', turnOffMic: 'Turn off camera', shareRecord: 'Share screen & record',
+        startCam: 'Turn on camera & mic', turnOffMic: 'Turn off camera', shareRecord: 'Share a window or screen & record',
+        startMic: 'Turn on microphone', micOnTitle: 'Microphone on', micOnNote: 'Share a window or your whole screen to start — your voice records with it.',
         floatFace: '📹 Float my face', hideFace: '📹 Hide face bubble',
         noFace: 'This browser records screen + voice (no face bubble). Finish from your browser’s “Stop sharing” control; switch back to this tab to pause.',
         floatFaceHint: 'This bubble floats on top of every tab and app — your face lands in the recording, and its ⧉ button brings you back here to pause or stop.',
         faceFloatingHint: 'Your face is floating. Its ⧉ button brings you back to this tab anytime to pause or stop.',
-        recordHint: 'Share a window or your whole screen, then talk through your best work. A whole-screen share also captures your floating face. Finish anytime from the browser’s “Stop sharing” control.',
+        recordHint: 'Pick a window or your whole screen, then talk through your best work out loud. When you’re done, click your browser’s “Stop sharing” control — the recording ends and comes back here.',
         floatFirst: 'Float your face first (step 1) so it shows in the recording.',
         openRecorder: 'Recorder', minimize: 'Minimise',
         micErr: 'Could not access your camera or microphone. Check browser permissions.',
         screenTitle: 'Record your screen — showcase your best work',
-        screenNote: 'Turn on your camera + mic and float your face in a bubble, then share your WHOLE screen and walk through your best work out loud: open your GitHub and show the code, open the live site, and say what you built, your role and the impact.',
+        screenNote: 'Turn on your microphone, then share a window or your whole screen and walk through your best work out loud: open your GitHub and show the code, open the live site, and say what you built, your role and the impact.',
         screenReadyTitle: 'Ready', screenReadyNote: '',
         screenHint: 'Float your face (bottom-right), share your WHOLE screen, then move freely between GitHub, the live site and your portfolio as you talk. On Safari the face bubble has a ⧉ button to jump back here.',
         scrollHint: 'Scroll over your CV to move through it while you talk — your cursor is highlighted so viewers follow along.',
@@ -53,17 +54,18 @@ const T = {
         recMode: 'Hva skal tas opp', withScreen: '🖥️ Skjerm', withCv: '📄 CV-gjennomgang', justMe: '👤 Bare meg', page: 'Side',
         openLinks: 'Åpne en lenke å presentere',
         pillHint: 'Tips: avslutt når som helst fra nettleserens «stopp deling» — opptaket avsluttes og du kommer tilbake hit for å beholde/ta på nytt. For å pause, gå tilbake til denne fanen.',
-        startCam: 'Slå på kamera og mikrofon', turnOffMic: 'Slå av kamera', shareRecord: 'Del skjerm og ta opp',
+        startCam: 'Slå på kamera og mikrofon', turnOffMic: 'Slå av kamera', shareRecord: 'Del et vindu eller skjerm og ta opp',
+        startMic: 'Slå på mikrofon', micOnTitle: 'Mikrofon på', micOnNote: 'Del et vindu eller hele skjermen for å starte — stemmen din tas opp sammen med den.',
         floatFace: '📹 Vis ansiktet mitt', hideFace: '📹 Skjul ansikts-boble',
         noFace: 'Denne nettleseren tar opp skjerm + stemme (uten ansikts-boble). Avslutt fra nettleserens «Stopp deling»; bytt tilbake til denne fanen for å pause.',
         floatFaceHint: 'Denne boblen flyter over alle faner og apper — ansiktet ditt havner i opptaket, og ⧉-knappen tar deg tilbake hit for å pause eller stoppe.',
         faceFloatingHint: 'Ansiktet ditt flyter. ⧉-knappen tar deg tilbake til denne fanen når som helst for å pause eller stoppe.',
-        recordHint: 'Del et vindu eller hele skjermen, og snakk deg gjennom ditt beste arbeid. Deling av hele skjermen tar også med ansikts-boblen. Avslutt når som helst fra nettleserens «Stopp deling».',
+        recordHint: 'Velg et vindu eller hele skjermen, og snakk deg gjennom ditt beste arbeid høyt. Når du er ferdig, klikk nettleserens «stopp deling» — opptaket avsluttes og kommer tilbake hit.',
         floatFirst: 'Vis ansiktet ditt først (steg 1) så det vises i opptaket.',
         openRecorder: 'Opptaker', minimize: 'Minimer',
         micErr: 'Fikk ikke tilgang til kamera eller mikrofon. Sjekk tillatelser i nettleseren.',
         screenTitle: 'Ta opp skjermen — vis frem ditt beste arbeid',
-        screenNote: 'Slå på kamera + mikrofon og la ansiktet flyte i en boble, del så HELE skjermen og gå gjennom ditt beste arbeid høyt: åpne GitHub og vis koden, åpne den live siden, og si hva du bygde, din rolle og effekten.',
+        screenNote: 'Slå på mikrofonen, del så et vindu eller hele skjermen og gå gjennom ditt beste arbeid høyt: åpne GitHub og vis koden, åpne den live siden, og si hva du bygde, din rolle og effekten.',
         screenReadyTitle: 'Klar', screenReadyNote: '',
         screenHint: 'La ansiktet flyte (nederst til høyre), del HELE skjermen, og beveg deg fritt mellom GitHub, live side og portefølje mens du snakker. På Safari har ansikts-boblen en ⧉-knapp for å hoppe tilbake hit.',
         scrollHint: 'Bla over CV-en for å bevege deg gjennom den mens du snakker — markøren din er uthevet så seerne følger med.',
@@ -78,17 +80,18 @@ const T = {
         recMode: 'Qué grabar', withScreen: '🖥️ Pantalla', withCv: '📄 Recorrido del CV', justMe: '👤 Solo yo', page: 'Página',
         openLinks: 'Abre un enlace para presentar',
         pillHint: 'Consejo: termina cuando quieras desde el control «dejar de compartir» del navegador — finaliza la toma y vuelves aquí para conservar/regrabar. Para pausar, vuelve a esta pestaña.',
-        startCam: 'Activar cámara y micrófono', turnOffMic: 'Apagar cámara', shareRecord: 'Compartir pantalla y grabar',
+        startCam: 'Activar cámara y micrófono', turnOffMic: 'Apagar cámara', shareRecord: 'Compartir una ventana o pantalla y grabar',
+        startMic: 'Activar micrófono', micOnTitle: 'Micrófono activado', micOnNote: 'Comparte una ventana o toda tu pantalla para empezar — tu voz se graba con ella.',
         floatFace: '📹 Mostrar mi cara', hideFace: '📹 Ocultar burbuja',
         noFace: 'Este navegador graba pantalla + voz (sin burbuja de cara). Termina desde el control «Dejar de compartir» del navegador; vuelve a esta pestaña para pausar.',
         floatFaceHint: 'Esta burbuja flota sobre todas las pestañas y apps — tu cara sale en la grabación, y su botón ⧉ te trae de vuelta aquí para pausar o detener.',
         faceFloatingHint: 'Tu cara está flotando. Su botón ⧉ te trae de vuelta a esta pestaña cuando quieras para pausar o detener.',
-        recordHint: 'Comparte una ventana o toda tu pantalla y explica tu mejor trabajo. Compartir toda la pantalla también incluye tu cara flotante. Termina cuando quieras desde el control «Dejar de compartir» del navegador.',
+        recordHint: 'Elige una ventana o toda tu pantalla y explica tu mejor trabajo en voz alta. Cuando termines, haz clic en «dejar de compartir» del navegador — la grabación finaliza y vuelve aquí.',
         floatFirst: 'Muestra tu cara primero (paso 1) para que salga en la grabación.',
         openRecorder: 'Grabadora', minimize: 'Minimizar',
         micErr: 'No se pudo acceder a la cámara o el micrófono. Revisa los permisos del navegador.',
         screenTitle: 'Graba tu pantalla — muestra tu mejor trabajo',
-        screenNote: 'Activa tu cámara + micrófono y haz flotar tu cara en una burbuja, luego comparte TODA la pantalla y recorre tu mejor trabajo en voz alta: abre tu GitHub y muestra el código, abre el sitio en vivo, y di qué construiste, tu rol y el impacto.',
+        screenNote: 'Activa tu micrófono, luego comparte una ventana o toda tu pantalla y recorre tu mejor trabajo en voz alta: abre tu GitHub y muestra el código, abre el sitio en vivo, y di qué construiste, tu rol y el impacto.',
         screenReadyTitle: 'Listo', screenReadyNote: '',
         screenHint: 'Haz flotar tu cara (abajo a la derecha), comparte TODA la pantalla y muévete libremente entre GitHub, el sitio en vivo y tu portafolio mientras hablas. En Safari la burbuja tiene un botón ⧉ para volver aquí.',
         scrollHint: 'Desplázate sobre tu CV para recorrerlo mientras hablas — tu cursor se resalta para que los espectadores te sigan.',
@@ -143,9 +146,6 @@ function makeThumb(url) {
 export default function VideoStudioModal({ cv = {}, lang = 'en', branding, filename = 'cv', onClose, onSave }) {
   const t = T[lang] || T.en
   const mp4Ok = canRecordMp4()
-  // Picture-in-Picture = the only way (Safari/Chrome) to float the webcam face
-  // over other tabs. Firefox has no scriptable PiP, so the face bubble is hidden.
-  const canPip = typeof document !== 'undefined' && document.pictureInPictureEnabled
   // Links from the CV to open and share while presenting (screen mode).
   const portfolioLinks = (cv.portfolio || [])
     .filter(p => p && p.url)
@@ -159,11 +159,8 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', branding, filen
   const [pdfUrl, setPdfUrl]     = useState(null)
   const [uploadPct, setUploadPct] = useState(0)
   const [mode, setMode]         = useState('screen') // 'screen' = screen + voice (default), 'cv' = CV composite, 'me' = webcam only
-  const [pipOn, setPipOn]       = useState(false)    // webcam floating as a picture-in-picture face bubble
-  const [expanded, setExpanded] = useState(false)    // screen recording: full recorder window vs. the small operator pill
 
-  const liveRef   = useRef(null)     // webcam self-view (screen ready / me modes)
-  const pipVideoRef = useRef(null)   // persistent webcam source for the face-bubble PiP
+  const liveRef   = useRef(null)     // webcam self-view ("just me" mode)
   const camVideoRef = useRef(null)   // hidden webcam source for the CV composite
   const screenStreamRef = useRef(null) // getDisplayMedia stream (recorded directly)
   const audioCtxRef = useRef(null)    // mixes mic + shared-tab audio when recording a screen
@@ -195,16 +192,17 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', branding, filen
     if (compStreamRef.current) { compStreamRef.current.getTracks().forEach(tr => tr.stop()); compStreamRef.current = null }
     stopScreen()
     if (audioCtxRef.current) { audioCtxRef.current.close().catch(() => {}); audioCtxRef.current = null }
-    if (document.pictureInPictureElement) document.exitPictureInPicture().catch(() => {})
-    setPipOn(false)
   }, [stopScreen])
 
   async function enableCamera() {
     setErrMsg('')
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { width: { ideal: 1280 }, height: { ideal: 720 } }, audio: true,
-      })
+      // Screen mode records your screen + voice only (no webcam), so it just needs
+      // the microphone. CV / "just me" modes need the camera too.
+      const constraints = mode === 'screen'
+        ? { audio: true }
+        : { video: { width: { ideal: 1280 }, height: { ideal: 720 } }, audio: true }
+      const stream = await navigator.mediaDevices.getUserMedia(constraints)
       streamRef.current = stream
       setPhase('ready')
     } catch {
@@ -230,32 +228,15 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', branding, filen
       return // user cancelled the picker
     }
     screenStreamRef.current = s
-    // Stopping from the browser's own "Stop sharing" bar ends the take.
+    // Stopping from the browser's own "Stop sharing" control ends the take.
     const vt = s.getVideoTracks()[0]
     if (vt) vt.addEventListener('ended', onScreenEnded)
-    setExpanded(false) // start collapsed to the small operator pill
     startRecording()
   }
 
   function onScreenEnded() {
     stopScreen()
     if (recRef.current && recRef.current.state !== 'inactive') stopRecording()
-  }
-
-  // Float the webcam as a native picture-in-picture bubble. It floats over every
-  // tab/app, so your face lands in a whole-screen recording (personality) and, on
-  // Safari, its window has a built-in "return to tab" button. Must run in the
-  // click's user-gesture — no `await` before requestPictureInPicture().
-  async function toggleWebcamOverlay() {
-    const v = pipVideoRef.current
-    try {
-      if (document.pictureInPictureElement) { await document.exitPictureInPicture(); return }
-      if (v) {
-        await v.requestPictureInPicture()
-        // Re-floating mid-recording collapses back to the small operator pill.
-        if (recRef.current && recRef.current.state !== 'inactive') setExpanded(false)
-      }
-    } catch { /* not ready / unsupported — the user can click again */ }
   }
 
   // (The "open a clean CV in a tab" preview — web share link + PDF — was removed
@@ -310,67 +291,16 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', branding, filen
     return () => { cancelled = true; if (url) URL.revokeObjectURL(url) }
   }, [cv, lang, branding])
 
-  // Attach the webcam stream to the right elements: a hidden source for the CV
-  // composite, the visible self-view (screen/me), and the persistent PiP source.
+  // Attach the webcam stream to the visible element for the modes that show it:
+  // the hidden source for the CV composite, or the self-view in "just me" mode.
+  // (Screen mode has no webcam — it records the shared screen + your voice.)
   useEffect(() => {
     const el = mode === 'cv' ? camVideoRef.current : liveRef.current
-    if (el && streamRef.current && cameraLive) {
+    if (mode !== 'screen' && el && streamRef.current && cameraLive) {
       el.srcObject = streamRef.current
       el.play().catch(() => {})
     }
-    // Keep the always-mounted PiP source fed + playing so the face bubble is
-    // ready to pop and never goes black when the studio collapses to the pill.
-    if (mode === 'screen' && cameraLive && pipVideoRef.current && streamRef.current) {
-      pipVideoRef.current.srcObject = streamRef.current
-      pipVideoRef.current.play().catch(() => {})
-    }
-    // pipOn / expanded are deps so that when the studio expands from the pill and
-    // liveRef re-mounts, the stream re-attaches — otherwise the self-view stays
-    // black until a pause/resume happens to re-run this effect.
-  }, [phase, cameraLive, mode, pipOn, expanded])
-
-  // Keep the "Float / Hide face" label in sync with the actual PiP window, and
-  // repurpose the bubble's own pause control as "return to the recorder".
-  useEffect(() => {
-    const v = pipVideoRef.current
-    if (!v) return
-    const recording = () => recRef.current && recRef.current.state !== 'inactive'
-    // Floating the face bubble = "presenting" (collapse to the operator pill);
-    // dismissing it (the bubble's ⧉ icon) = "come back" — show the full recorder
-    // and best-effort pull this tab to the front.
-    const on = () => { setPipOn(true); if (recording()) setExpanded(false) }
-    const off = () => {
-      setPipOn(false)
-      if (recording()) { setExpanded(true); try { window.focus() } catch { /* ignored */ } }
-    }
-    // Safari throttles the backgrounded recorder tab and can auto-pause the camera
-    // video, freezing the face bubble. Keep it alive by resuming — don't exit PiP
-    // (that misfired on throttle-pauses and made the bubble vanish). To come back,
-    // use the bubble's ⧉ "return to tab" icon or the browser's Stop-sharing bar.
-    const onPause = () => {
-      if (document.pictureInPictureElement === v) v.play().catch(() => {})
-    }
-    v.addEventListener('enterpictureinpicture', on)
-    v.addEventListener('leavepictureinpicture', off)
-    v.addEventListener('pause', onPause)
-    return () => {
-      v.removeEventListener('enterpictureinpicture', on)
-      v.removeEventListener('leavepictureinpicture', off)
-      v.removeEventListener('pause', onPause)
-    }
-  }, [mode, cameraLive])
-
-  // When the recorder tab is brought back to the foreground (e.g. via the
-  // bubble's ⧉), re-play the camera videos — a background tab can freeze them.
-  useEffect(() => {
-    const onVis = () => {
-      if (document.visibilityState !== 'visible') return
-      pipVideoRef.current?.play?.().catch(() => {})
-      liveRef.current?.play?.().catch(() => {})
-    }
-    document.addEventListener('visibilitychange', onVis)
-    return () => document.removeEventListener('visibilitychange', onVis)
-  }, [])
+  }, [phase, cameraLive, mode])
 
   // Composite draw loop (CV mode only): the CV pages + webcam PiP on a canvas
   // that gets recorded. (Screen mode records the shared display track directly —
@@ -606,10 +536,9 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', branding, filen
 
   const busy = phase === 'recording' || phase === 'paused' || phase === 'uploading'
 
-  const screenRec = mode === 'screen' && (phase === 'recording' || phase === 'paused')
-  // While screen-recording, show the small bottom-left operator pill unless the
-  // user clicked "open recorder" to bring the full window back.
-  const showPill = screenRec && !expanded
+  // While screen-recording, the studio collapses to a small bottom-left operator
+  // (no pause — finish with the browser's own Stop-sharing control).
+  const showPill = mode === 'screen' && phase === 'recording'
 
   // Only a click on the dark backdrop BEFORE the camera is on closes the studio —
   // once you're live an accidental outside click must never shut it down.
@@ -617,28 +546,16 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', branding, filen
 
   return (
     <>
-      {/* Persistent webcam source for the floating face bubble (picture-in-
-          picture). Kept mounted across ready↔recording so the bubble never loses
-          its feed and goes black when the studio collapses to the pill. */}
-      {mode === 'screen' && cameraLive && (
-        <video ref={pipVideoRef} className="studio-pip-source" autoPlay muted playsInline />
-      )}
-
       {showPill ? (
-        // While screen-recording, the studio collapses to a small bottom-left
-        // operator so it never blocks the screen you present. Three buttons:
-        // pause/resume, stop, and open the full recorder window. Your face floats
-        // bottom-right via PiP.
-        <div className={`studio-pill${phase === 'paused' ? ' paused' : ''}`}>
+        // Screen recording: a small bottom-left operator that never blocks the
+        // screen you present. Finish from here or (from any window) the browser's
+        // own Stop-sharing control.
+        <div className="studio-pill">
           <div className="studio-pill-row">
             <span className="studio-pill-dot" />
             <span className="studio-pill-time">{fmt(elapsed)}</span>
-            <span className="studio-pill-state">{phase === 'paused' ? t.paused : t.recording}</span>
-            {phase === 'recording'
-              ? <button className="studio-pill-btn" onClick={pauseRecording}>❙❙ {t.pause}</button>
-              : <button className="studio-pill-btn" onClick={resumeRecording}>▶ {t.resume}</button>}
+            <span className="studio-pill-state">{t.recording}</span>
             <button className="studio-pill-btn studio-pill-btn--stop" onClick={stopRecording}>■ {t.stop}</button>
-            <button className="studio-pill-btn" onClick={() => setExpanded(true)}>⤢ {t.openRecorder}</button>
           </div>
           <p className="studio-pill-help">{t.pillHint}</p>
         </div>
@@ -673,9 +590,13 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', branding, filen
                       onMouseMove={onCanvasPointer} onMouseLeave={onCanvasLeave} />
                   </>
                 ) : mode === 'screen' ? (
-                  // Camera + mic on; self-view so you can frame your face bubble.
-                  // The "float my face" control lives in the numbered steps (right).
-                  <video ref={liveRef} className="studio-video studio-video--mirror" autoPlay muted playsInline />
+                  // Screen mode has no webcam — a simple placeholder while you get
+                  // ready to pick a window/screen to share.
+                  <div className="studio-consent">
+                    <span className="studio-consent-icon" aria-hidden>🎤</span>
+                    <h3>{t.micOnTitle}</h3>
+                    <p className="studio-consent-note">{t.micOnNote}</p>
+                  </div>
                 ) : (
                   <video ref={liveRef} className="studio-video studio-video--mirror" autoPlay muted playsInline />
                 )
@@ -685,7 +606,7 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', branding, filen
                     <>
                       <p className="studio-consent-err">{errMsg}</p>
                       <button className="studio-btn studio-btn--primary" onClick={enableCamera}>
-                        {mode === 'screen' ? `🎥 ${t.startCam}` : t.turnOn}
+                        {mode === 'screen' ? `🎤 ${t.startMic}` : t.turnOn}
                       </button>
                     </>
                   ) : mode === 'screen' ? (
@@ -693,7 +614,7 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', branding, filen
                       <span className="studio-consent-icon" aria-hidden>🖥️</span>
                       <h3>{t.screenTitle}</h3>
                       <p className="studio-consent-note">{t.screenNote}</p>
-                      <button className="studio-btn studio-btn--primary" onClick={enableCamera}>🎥 {t.startCam}</button>
+                      <button className="studio-btn studio-btn--primary" onClick={enableCamera}>🎤 {t.startMic}</button>
                     </>
                   ) : (
                     <>
@@ -733,40 +654,14 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', branding, filen
             {mode === 'cv' && cameraLive && (
               <p className="studio-scrollhint">🖱️ {t.scrollHint}</p>
             )}
-            {/* Screen mode ready: a simple 2-step flow. Step 1 floats your face
-                as a bottom-right bubble; step 2 shares a window/screen and records.
-                Two separate clicks because requestPictureInPicture() and
-                getDisplayMedia() each need their own user gesture. */}
+            {/* Screen mode ready: one button. Pick a window or screen and record;
+                finish with the browser's own Stop-sharing control. */}
             {mode === 'screen' && phase === 'ready' && (
-              <div className="studio-steps">
-                <div className="studio-step">
-                  <span className="studio-step-num">1</span>
-                  <div className="studio-step-body">
-                    {canPip ? (
-                      <>
-                        <button
-                          className={`studio-btn ${pipOn ? 'studio-btn--ghost' : 'studio-btn--primary'}`}
-                          onClick={toggleWebcamOverlay}
-                        >
-                          {pipOn ? t.hideFace : t.floatFace}
-                        </button>
-                        <p className="studio-step-hint">{pipOn ? t.faceFloatingHint : t.floatFaceHint}</p>
-                      </>
-                    ) : (
-                      <p className="studio-step-hint">{t.noFace}</p>
-                    )}
-                  </div>
-                </div>
-                <div className="studio-step">
-                  <span className="studio-step-num">2</span>
-                  <div className="studio-step-body">
-                    <button className="studio-btn studio-btn--record" onClick={startScreenRecording}>
-                      🔴 {t.shareRecord}
-                    </button>
-                    <p className="studio-step-hint">{t.recordHint}</p>
-                    {canPip && !pipOn && <p className="studio-step-nudge">⚠️ {t.floatFirst}</p>}
-                  </div>
-                </div>
+              <div className="studio-screenready">
+                <button className="studio-btn studio-btn--record" onClick={startScreenRecording}>
+                  🔴 {t.shareRecord}
+                </button>
+                <p className="studio-step-hint">{t.recordHint}</p>
               </div>
             )}
 
@@ -815,31 +710,21 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', branding, filen
                   <button className="studio-btn studio-btn--primary" onClick={useRecording}>✓ {t.use}</button>
                 </>
               ) : phase === 'recording' ? (
+                // CV / "just me" modes record in-studio, so pause/stop live here.
+                // (Screen mode collapses to the operator pill, not this modal.)
                 <>
                   <button className="studio-btn studio-btn--ghost" onClick={pauseRecording}>❙❙ {t.pause}</button>
                   <button className="studio-btn studio-btn--stop" onClick={stopRecording}>■ {t.stop}</button>
-                  {mode === 'screen' && canPip && !pipOn && (
-                    <button className="studio-btn studio-btn--record" onClick={toggleWebcamOverlay}>{t.floatFace}</button>
-                  )}
-                  {screenRec && (
-                    <button className="studio-btn studio-btn--ghost" onClick={() => setExpanded(false)}>▽ {t.minimize}</button>
-                  )}
                 </>
               ) : phase === 'paused' ? (
                 <>
                   <button className="studio-btn studio-btn--primary" onClick={resumeRecording}>▶ {t.resume}</button>
                   <button className="studio-btn studio-btn--stop" onClick={stopRecording}>■ {t.stop}</button>
-                  {mode === 'screen' && canPip && !pipOn && (
-                    <button className="studio-btn studio-btn--record" onClick={toggleWebcamOverlay}>{t.floatFace}</button>
-                  )}
-                  {screenRec && (
-                    <button className="studio-btn studio-btn--ghost" onClick={() => setExpanded(false)}>▽ {t.minimize}</button>
-                  )}
                 </>
               ) : phase === 'ready' ? (
-                // Screen mode's record button lives in the numbered steps above,
-                // so here we only offer "turn off camera". CV / me modes keep the
-                // countdown record button alongside it.
+                // Screen mode's record button lives in the step above, so here we
+                // only offer "turn off mic". CV / me modes keep the countdown
+                // record button alongside it.
                 mode === 'screen' ? (
                   <button className="studio-btn studio-btn--ghost" onClick={turnOffCamera}>{t.turnOff}</button>
                 ) : (

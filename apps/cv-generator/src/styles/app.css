@@ -2694,6 +2694,7 @@ textarea.cv-field {
 .studio-pill-btn--stop:hover { background: #f0575c; }
 
 /* Screen-mode ready: numbered 2-step flow (① float face → ② share & record). */
+.studio-screenready { display: flex; flex-direction: column; gap: 12px; align-items: flex-start; }
 .studio-steps { display: flex; flex-direction: column; gap: 16px; margin-bottom: 2px; }
 .studio-step { display: flex; gap: 12px; align-items: flex-start; }
 .studio-step-num {
