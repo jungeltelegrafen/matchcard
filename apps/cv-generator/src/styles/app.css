@@ -2242,7 +2242,7 @@ textarea.cv-field {
 }
 .abar-top {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 8px;
 }
@@ -2250,18 +2250,15 @@ textarea.cv-field {
   font-size: 0.73rem;
   font-weight: 700;
   color: var(--primary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  min-width: 0;
 }
+/* Show the full agent description (no clamp) so it's evident what each one
+   checks. Cards are equal-width flex items and stretch to the tallest, so the
+   whole row stays aligned. */
 .abar-desc {
   font-size: 0.62rem;
   color: var(--muted);
   line-height: 1.45;
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
 }
 .abar-btn {
   background: var(--primary);
