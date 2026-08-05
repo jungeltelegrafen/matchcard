@@ -133,7 +133,7 @@ export default function ExportFooter({ cvByLang, contentLang, uiLang, filename, 
 
   function handleEmail(attachFormat) {
     run(no ? 'Klargjør e-post…' : 'Preparing email…', () =>
-      downloadEmail(outputCv(contentLang), fileFor(contentLang), attachFormat, contentLang, offer))
+      downloadEmail(outputCv(contentLang), fileFor(contentLang), attachFormat, contentLang, offer, branding))
   }
 
   function handleCopyLink() {

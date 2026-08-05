@@ -7,10 +7,10 @@ import { composeOffer, composeOfferHtml, offerForExport, offerSubject } from './
 // "Email Offer" modal — filled from CV facts + whatever was drafted/edited there.
 // Sent as multipart/alternative (a formatted HTML part + a plain-text fallback)
 // so Outlook shows the bold/sized formatting. The chosen CV file is attached.
-export async function downloadEmail(cv, filename, attachFormat, lang, offer) {
+export async function downloadEmail(cv, filename, attachFormat, lang, offer, branding) {
   const [pdfB64, docxB64] = await Promise.all([
-    (attachFormat === 'pdf' || attachFormat === 'both') ? getPdfBase64(cv, lang) : Promise.resolve(null),
-    (attachFormat === 'docx' || attachFormat === 'both') ? getDocxBase64(cv, lang) : Promise.resolve(null),
+    (attachFormat === 'pdf' || attachFormat === 'both') ? getPdfBase64(cv, lang, branding) : Promise.resolve(null),
+    (attachFormat === 'docx' || attachFormat === 'both') ? getDocxBase64(cv, lang, branding) : Promise.resolve(null),
   ])
 
   const attachments = []
@@ -78,13 +78,13 @@ function buildEml({ subject, text, html, attachments = [] }) {
   ].join('\r\n')
 }
 
-async function getPdfBase64(cv, lang) {
-  const blob = await renderPdfBlob(cv, lang)
+async function getPdfBase64(cv, lang, branding) {
+  const blob = await renderPdfBlob(cv, lang, branding)
   return blobToBase64(blob)
 }
 
-async function getDocxBase64(cv, lang) {
-  const blob = await buildDocxBlob(cv, lang)
+async function getDocxBase64(cv, lang, branding) {
+  const blob = await buildDocxBlob(cv, lang, branding)
   return blobToBase64(blob)
 }
 

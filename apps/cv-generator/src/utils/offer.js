@@ -117,7 +117,9 @@ export function composeOfferHtml(offer, cv, lang = 'en') {
 
   const relevance = [escHtml(offer.relevance || ''), escHtml(kw)].filter(Boolean).join('<br>')
 
-  return `<div style="font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:1.5;color:#111;">
+  // No explicit text color — let the mail client apply the composer's default
+  // (e.g. the user's navy in Outlook), matching the Copy / Open-in-email paths.
+  return `<div style="font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:1.5;">
 <div style="font-weight:bold;font-size:13pt;margin:0 0 10px;">${escHtml(name)}</div>
 ${header}
 <div style="margin:12px 0 2px;"><strong>${escHtml(lb.offerRelevance)}:</strong></div>
