@@ -35,6 +35,12 @@ export async function downloadEmail(cv, filename, attachFormat, lang, offer) {
     'From: ',
     'To: ',
     `Subject: ${subject}`,
+    `Date: ${new Date().toUTCString()}`,
+    // Tells Outlook/Windows Mail to open this as an unsent DRAFT (a compose
+    // window ready to address & send), not a received message. Harmless to
+    // clients that ignore it. Note: which app opens a .eml at all is decided by
+    // the OS file association, which a downloaded file can't override.
+    'X-Unsent: 1',
     'MIME-Version: 1.0',
     `Content-Type: multipart/mixed; boundary="${boundary}"`,
     '',

@@ -89,6 +89,15 @@ export default function OfferModal({ cv, offer, onChange, lang = 'en', uiLang = 
     ['workMode', lb.offerWorkMode], ['languages', lb.offerLanguages],
   ]
 
+  // Fill from what the CV has, leave the rest blank — and tell the user exactly
+  // which fields couldn't be filled so they can complete them manually (no
+  // back-and-forth: the modal never blocks asking for missing data).
+  const missing = [
+    ...HEADER_FIELDS,
+    ['relevance', lb.offerRelevance],
+  ].filter(([k]) => !String(offer[k] || '').trim()).map(([, label]) => label)
+  if (!splitKw(kwText).length) missing.push(lb.offerKeywords)
+
   return (
     <div className="feedback-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="feedback-box offer-box" role="dialog" aria-modal="true">
@@ -101,6 +110,13 @@ export default function OfferModal({ cv, offer, onChange, lang = 'en', uiLang = 
         </div>
 
         <div className="offer-body">
+          {!drafting && missing.length > 0 && (
+            <div className="offer-missing">
+              <strong>{uiLang === 'no' ? 'Ikke funnet i CV-en — fyll inn manuelt:' : 'Not found in the CV — fill in manually:'}</strong>{' '}
+              {missing.join(', ')}
+            </div>
+          )}
+
           <div className="offer-grid">
             {HEADER_FIELDS.map(([key, label]) => (
               <label key={key} className="offer-field">
