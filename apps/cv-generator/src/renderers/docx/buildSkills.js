@@ -21,7 +21,7 @@ export function buildSkills(items, lang = 'en', videos = []) {
   // starting at a different x per label. Label column ≈ the widest category
   // (~110 twips/char at bold 10pt), clamped so the items keep room.
   const maxLen = items.reduce((m, g) => Math.max(m, (g.category || '').length), 0)
-  const labelW = Math.min(Math.max(maxLen * 110 + 160, 1500), 3300)
+  const labelW = Math.min(Math.max(maxLen * 120 + 260, 1250), 3250)
 
   const cell = (runs, width, right) => new TableCell({
     width: { size: width, type: WidthType.DXA },

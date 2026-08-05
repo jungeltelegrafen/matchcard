@@ -19,7 +19,7 @@ export default function CVSkills({ items, videos = [], lang = 'en' }) {
   // every row's items line up in one column instead of indenting per label.
   const bodySize = theme.fonts.sizes.body
   const maxLen = items.reduce((m, g) => Math.max(m, (g.category || '').length), 0)
-  const labelWidth = Math.min(Math.max(maxLen * bodySize * 0.55 + 6, 78), 165)
+  const labelWidth = Math.min(Math.max(maxLen * bodySize * 0.6 + 5, 50), 158)
   return (
     <View style={{ marginBottom: theme.spacing.sectionGap }}>
       <SectionHeading>{lb.skills}</SectionHeading>
