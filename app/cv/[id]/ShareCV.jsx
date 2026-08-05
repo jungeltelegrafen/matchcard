@@ -249,6 +249,23 @@ export default function ShareCV({ cv, lang = 'en', filename = 'cv', id = '', can
           </section>
         )}
 
+        {skills.length > 0 && (
+          <section className="cv-section">
+            <h2 className="cv-section-title">{lb.skills}</h2>
+            <div className="cv-skills">
+              {skills.map((group, i) => (
+                <div key={i} className="cv-skills-row">
+                  {/* Always emit the label cell (empty when absent) so the grid
+                      columns stay aligned across every row. */}
+                  <span className="cv-skills-group">{group.category || ''}</span>
+                  <span className="cv-skills-items">{group.items?.filter(Boolean).join(', ')}</span>
+                </div>
+              ))}
+            </div>
+            {unitVideos('skills')}
+          </section>
+        )}
+
         {competenceItems.length > 0 && (
           <section className="cv-section">
             <h2 className="cv-section-title">
@@ -362,23 +379,6 @@ export default function ShareCV({ cv, lang = 'en', filename = 'cv', id = '', can
               </div>
             ))}
             {unitVideos('education')}
-          </section>
-        )}
-
-        {skills.length > 0 && (
-          <section className="cv-section">
-            <h2 className="cv-section-title">{lb.skills}</h2>
-            <div className="cv-skills">
-              {skills.map((group, i) => (
-                <div key={i} className="cv-skills-row">
-                  {/* Always emit the label cell (empty when absent) so the grid
-                      columns stay aligned across every row. */}
-                  <span className="cv-skills-group">{group.category || ''}</span>
-                  <span className="cv-skills-items">{group.items?.filter(Boolean).join(', ')}</span>
-                </div>
-              ))}
-            </div>
-            {unitVideos('skills')}
           </section>
         )}
 
