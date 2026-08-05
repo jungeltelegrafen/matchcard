@@ -29,6 +29,7 @@ import PreviewModal from './components/PreviewModal'
 import OfferModal from './components/OfferModal'
 import BrandingModal from './components/BrandingModal'
 import ExportFooter from './components/ExportFooter'
+import MobileNotice from './components/MobileNotice'
 import TailorPanel from './components/TailorPanel'
 import TailoringReview from './components/TailoringReview'
 import FeedbackStrip from './components/FeedbackStrip'
@@ -550,6 +551,7 @@ export default function App() {
 
   return (
     <div className="app-layout">
+      <MobileNotice uiLang={uiLang} />
       <AppHeader
         cv={masterCv}
         uiLang={uiLang}
