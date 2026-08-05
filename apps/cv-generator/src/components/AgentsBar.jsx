@@ -35,9 +35,14 @@ Find every bullet point or description that states a task or responsibility rath
     title: 'Consistency Check',
     desc: 'Audits date formats, tense shifts, capitalisation and tone inconsistencies across all sections',
     color: '#8B5CF6',
-    prompt: `You are a CV proofreader checking for internal consistency.
-Look for: mixed date formats, inconsistent tense (past vs present tense), varying capitalisation, punctuation style inconsistencies, and shifts in tone or person (first vs third).
-For each inconsistency, say where it occurs and how to fix it. If the CV is fully consistent, report no findings.`,
+    prompt: `You are a CV proofreader checking ONLY for genuine internal STYLE inconsistencies — two places that use a different CONVENTION for the same kind of thing. Report an item only when you can quote two concrete instances that truly differ in convention.
+
+Check for:
+- Date FORMAT differences, e.g. "Jan 2020" vs "2020-01" vs "03/2020". CRITICAL: different date VALUES are NOT an inconsistency — "2008" and "2026" are the SAME format (a 4-digit year); only flag when the written pattern itself differs. Never flag a date for being in the future or for its value.
+- Tense: flag ONLY if some entries are written in past tense and comparable others in present tense. You must quote one past-tense example AND one present-tense example. If everything is already the same tense, report nothing here.
+- Capitalisation, punctuation style, or person (first vs third) applied inconsistently to the same kind of item — again, quote the two differing instances.
+
+An inconsistency requires at least TWO conflicting instances that you quote verbatim. Do not judge factual correctness or plausibility. If the CV is consistent, report no findings — this is common and correct.`,
   },
   {
     id: 'claims',

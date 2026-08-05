@@ -47,16 +47,26 @@ export async function POST(request) {
 
     const langNote = `Write finding titles and details in ${LANG_NAME[lang] || 'English'}.`
 
+    // Evidence-first guardrail for every agent — the common failure mode is
+    // confidently reporting issues that aren't real (a false positive costs the
+    // user's trust more than a missed nitpick).
+    const system = `You are a meticulous, conservative CV review agent. Absolute rules, in priority order:
+1. EVIDENCE ONLY. Report an issue only if you can prove it by quoting the exact offending text from the CV in the detail. For any inconsistency/comparison, quote BOTH pieces of text that conflict. If you cannot quote the specific text, do not report it.
+2. NO SPECULATION. Never flag something that is merely possible, likely, or "worth checking". If you are not certain it is a genuine issue, leave it out. An empty findings list is the correct answer for a clean CV.
+3. JUDGE ONLY WHAT IS WRITTEN. Do not assess factual correctness, real-world plausibility, or whether dates are in the future/past — that is out of scope and not an error.
+4. A false positive is worse than a missed issue. When in doubt, do not report.`
+
     const msg = await client.messages.create({
-      model: 'claude-haiku-4-5-20251001',
+      model: 'claude-sonnet-4-6',
       max_tokens: 4096,
+      system,
       tools: [FINDINGS_TOOL],
       tool_choice: { type: 'tool', name: 'report_findings' },
       messages: [{
         role: 'user',
         content: `${prompt}
 
-Report every issue via the report_findings tool. ${langNote}
+Report only genuine, evidence-backed issues via the report_findings tool (an empty array if there are none). ${langNote}
 
 CV Data:
 ${JSON.stringify(cv, null, 2)}`,
