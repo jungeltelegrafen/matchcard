@@ -371,7 +371,9 @@ export default function ShareCV({ cv, lang = 'en', filename = 'cv', id = '', can
             <div className="cv-skills">
               {skills.map((group, i) => (
                 <div key={i} className="cv-skills-row">
-                  {group.category && <span className="cv-skills-group">{group.category}</span>}
+                  {/* Always emit the label cell (empty when absent) so the grid
+                      columns stay aligned across every row. */}
+                  <span className="cv-skills-group">{group.category || ''}</span>
                   <span className="cv-skills-items">{group.items?.filter(Boolean).join(', ')}</span>
                 </div>
               ))}
