@@ -24,12 +24,6 @@ export async function downloadEmail(cv, filename, attachFormat, lang, offer) {
   saveAs(offerEmlBlob(cv, lang, offer, attachments), `${filename}.eml`)
 }
 
-// The offer modal's "Open in email" — same formatted body & subject, no CV
-// attachment (the modal is offer-only).
-export function downloadOfferEml(cv, filename, lang, offer) {
-  saveAs(offerEmlBlob(cv, lang, offer, []), `${filename}.eml`)
-}
-
 function offerEmlBlob(cv, lang, offer, attachments) {
   const exp = offerForExport(offer, cv)
   const eml = buildEml({

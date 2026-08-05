@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react'
 import { getL } from '../utils/labels'
 import { draftOffer } from '../utils/parseWithClaude'
-import { factsFromCv, composeOffer, composeOfferHtml } from '../utils/offer'
-import { downloadOfferEml } from '../utils/generateEmail'
+import { factsFromCv, composeOffer, composeOfferHtml, offerSubject } from '../utils/offer'
 
 const splitKw = s => String(s || '').split(',').map(x => x.trim()).filter(Boolean)
 
@@ -90,12 +89,14 @@ export default function OfferModal({ cv, offer, onChange, lang = 'en', uiLang = 
     }
   }
 
-  // "Open in email" → a formatted .eml draft (bold name + labels), matching the
-  // Email Export. mailto can only carry plain text, so an .eml is the only way to
-  // hand the mail client a formatted, ready-to-send draft.
+  // "Open in email" → open the user's mail client via mailto (the only way to
+  // actually launch a compose window). mailto bodies are plain text only, so for
+  // a FORMATTED draft use Copy (paste keeps the bold) or the Email Export .eml.
   function handleEmail() {
-    const safe = (name || 'consultant').replace(/\s+/g, '_')
-    downloadOfferEml(cv, `${safe}_offer`, lang, exportOffer())
+    const o = exportOffer()
+    const subject = offerSubject(o, cv, lang)
+    const body = composeOffer(o, cv, lang)
+    window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
   }
 
   const HEADER_FIELDS = [
