@@ -74,6 +74,59 @@ export function offerForExport(offer, cv) {
 const candidateName = cv =>
   [cv?.personal?.firstName, cv?.personal?.lastName].filter(Boolean).join(' ').trim()
 
+// Standardized email subject used by BOTH the offer modal and the email export:
+// "Consultant proposal: Name - Title".
+const PROPOSAL_WORD = {
+  en: 'Consultant proposal', no: 'Konsulentforslag', sv: 'Konsultförslag',
+  da: 'Konsulentforslag', es: 'Propuesta de consultor', pl: 'Propozycja konsultanta',
+}
+export function offerSubject(offer, cv, lang = 'en') {
+  const name = candidateName(cv)
+  const title = String(offer?.role || cv?.personal?.title || '').trim()
+  const word = PROPOSAL_WORD[lang] || PROPOSAL_WORD.en
+  const tail = [name, title].filter(Boolean).join(' - ')
+  return tail ? `${word}: ${tail}` : word
+}
+
+const escHtml = s => String(s ?? '')
+  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+
+// HTML version of the offer for rich email (Outlook draft / rich clipboard):
+// the name is bold and 2pt larger; each data label is bold with a NON-bold value
+// after it. Every labelled line ends outside the <strong>, so when the user
+// clicks after a label to type, the cursor is already in normal (unbolded) text —
+// no need to switch bold off first.
+export function composeOfferHtml(offer, cv, lang = 'en') {
+  const lb = getL(lang)
+  const name = candidateName(cv) || (lb.offerFormat || 'Offer')
+  const kw = Array.isArray(offer.keywords) ? offer.keywords.filter(Boolean).join(', ') : ''
+
+  const row = (label, val) =>
+    `<div style="margin:0 0 2px;"><strong>${escHtml(label)}:</strong> ${escHtml(val || '')}</div>`
+
+  const header = [
+    [lb.offerRole,          offer.role],
+    [lb.offerLocation,      offer.location],
+    [lb.offerAvailableFrom, offer.availableFrom],
+    [lb.offerHourlyRate,    offer.hourlyRate],
+    [lb.offerSeniority,     offer.seniority],
+    [lb.offerCapacity,      offer.capacity],
+    [lb.offerWorkMode,      offer.workMode],
+    [lb.offerLanguages,     offer.languages],
+  ].map(([l, v]) => row(l, v)).join('')
+
+  const relevance = [escHtml(offer.relevance || ''), escHtml(kw)].filter(Boolean).join('<br>')
+
+  return `<div style="font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:1.5;color:#111;">
+<div style="font-weight:bold;font-size:13pt;margin:0 0 10px;">${escHtml(name)}</div>
+${header}
+<div style="margin:12px 0 2px;"><strong>${escHtml(lb.offerRelevance)}:</strong></div>
+<div style="margin:0;">${relevance || '&nbsp;'}</div>
+<div style="margin:12px 0 2px;"><strong>${escHtml(lb.offerGeneralInfo)}:</strong></div>
+<div style="margin:0;">${escHtml(offer.generalInfo || '') || '&nbsp;'}</div>
+</div>`
+}
+
 // Compose the localized plain-text offer for copy / email export. Empty fields
 // still render their label (a blank the recruiter can fill after pasting).
 export function composeOffer(offer, cv, lang = 'en') {

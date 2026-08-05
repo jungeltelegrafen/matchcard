@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { getL } from '../utils/labels'
 import { draftOffer } from '../utils/parseWithClaude'
-import { factsFromCv, composeOffer } from '../utils/offer'
+import { factsFromCv, composeOffer, composeOfferHtml } from '../utils/offer'
+import { downloadOfferEml } from '../utils/generateEmail'
 
 const splitKw = s => String(s || '').split(',').map(x => x.trim()).filter(Boolean)
 
@@ -70,16 +71,31 @@ export default function OfferModal({ cv, offer, onChange, lang = 'en', uiLang = 
   // Always compose from the freshest keyword text (may be unblurred).
   const exportOffer = () => ({ ...offer, keywords: splitKw(kwText) })
 
+  // Copy as RICH text (HTML) with a plain-text fallback, so pasting into Outlook /
+  // Gmail / Word keeps the bold name and bold labels. Falls back to plain text on
+  // browsers without the async clipboard API.
   function handleCopy() {
-    navigator.clipboard.writeText(composeOffer(exportOffer(), cv, lang))
-      .then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000) })
-      .catch(() => {})
+    const o = exportOffer()
+    const html = composeOfferHtml(o, cv, lang)
+    const text = composeOffer(o, cv, lang)
+    const done = () => { setCopied(true); setTimeout(() => setCopied(false), 2000) }
+    if (navigator.clipboard?.write && typeof ClipboardItem !== 'undefined') {
+      navigator.clipboard.write([new ClipboardItem({
+        'text/html':  new Blob([html], { type: 'text/html' }),
+        'text/plain': new Blob([text], { type: 'text/plain' }),
+      })]).then(done).catch(() =>
+        navigator.clipboard.writeText(text).then(done).catch(() => {}))
+    } else {
+      navigator.clipboard.writeText(text).then(done).catch(() => {})
+    }
   }
 
+  // "Open in email" → a formatted .eml draft (bold name + labels), matching the
+  // Email Export. mailto can only carry plain text, so an .eml is the only way to
+  // hand the mail client a formatted, ready-to-send draft.
   function handleEmail() {
-    const subject = `${lb.offerFormat}: ${name}${offer.role ? ` — ${offer.role}` : ''}`
-    const body = composeOffer(exportOffer(), cv, lang)
-    window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+    const safe = (name || 'consultant').replace(/\s+/g, '_')
+    downloadOfferEml(cv, `${safe}_offer`, lang, exportOffer())
   }
 
   const HEADER_FIELDS = [
