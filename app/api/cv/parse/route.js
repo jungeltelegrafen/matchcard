@@ -166,6 +166,24 @@ export async function POST(request) {
     return Response.json(normalizeCv(merged))
   } catch (err) {
     console.error('[cv/parse]', err)
-    return Response.json({ error: 'Failed to parse CV' }, { status: 500 })
+    // Give the client an ACTIONABLE reason instead of a bare 500. The common
+    // cause is uploading many documents at once: the combined source is large,
+    // so the first-pass read runs past the 60s cap and aborts. Guide the user to
+    // parse fewer at a time rather than leaving them staring at a silent error.
+    const status = err?.status
+    const aborted = err?.name === 'AbortError' || /abort|deadline|timed? ?out/i.test(err?.message || '')
+    if (aborted) {
+      return Response.json(
+        { error: 'This took too long — likely too many documents at once. Upload one CV (or the few most relevant documents) at a time and try again.', code: 'timeout' },
+        { status: 504 },
+      )
+    }
+    if (status === 429 || status === 529 || status === 503) {
+      return Response.json(
+        { error: 'The AI service is busy right now. Please wait a moment and try again.', code: 'overloaded' },
+        { status: 503 },
+      )
+    }
+    return Response.json({ error: 'Failed to parse CV', code: 'error' }, { status: 500 })
   }
 }
