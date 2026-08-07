@@ -192,6 +192,7 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', branding, filen
   const [count, setCount]       = useState(3)
   const [elapsed, setElapsed]   = useState(0)
   const [recordedUrl, setRecordedUrl] = useState(null)
+  const [reviewPoster, setReviewPoster] = useState('') // poster frame for the review player
   const [videoName, setVideoName] = useState('') // explicit name entered at the review step
   const [errMsg, setErrMsg]     = useState('')
   const [pdfUrl, setPdfUrl]     = useState(null)
@@ -203,6 +204,7 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', branding, filen
   const screenStreamRef = useRef(null) // getDisplayMedia stream (recorded directly)
   const audioCtxRef = useRef(null)    // mixes mic + shared-tab audio when recording a screen
   const compositeRef = useRef(null)  // canvas we draw + record in CV / screen mode
+  const recCloneRef = useRef(null)   // cloned cam/mic tracks recorded in "just me" mode
   const pagesRef  = useRef([])       // CV pages rendered to canvases
   const scrollRef = useRef(0)        // vertical scroll offset (dest px) into the CV strip
   const scrollMaxRef = useRef(0)     // max scrollable distance, computed each frame
@@ -228,6 +230,9 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', branding, filen
     if (streamRef.current) streamRef.current.getTracks().forEach(tr => tr.stop())
     streamRef.current = null
     if (compStreamRef.current) { compStreamRef.current.getTracks().forEach(tr => tr.stop()); compStreamRef.current = null }
+    // Cloned recording tracks ("just me" mode) are independent of the preview's
+    // camera/mic, so stopStream() must stop them too or the camera stays live.
+    if (recCloneRef.current) { recCloneRef.current.getTracks().forEach(tr => tr.stop()); recCloneRef.current = null }
     stopScreen()
     if (audioCtxRef.current) { audioCtxRef.current.close().catch(() => {}); audioCtxRef.current = null }
   }, [stopScreen])
@@ -531,13 +536,18 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', branding, filen
       }
       recStream = new MediaStream([screenTrack, ...(audioTrack ? [audioTrack] : [])])
     } else {
-      // "Just me" (raw webcam). Record a freshly-built stream from the camera +
-      // mic tracks rather than the exact same MediaStream instance that's live in
-      // the preview <video> — Safari (and some Chromium builds) drop the audio
-      // track when one stream object is both played in an element and recorded.
-      // Screen/CV modes already record a rebuilt stream, which is why they keep
-      // their audio; this brings "just me" in line so it captures your voice too.
-      recStream = new MediaStream([...stream.getVideoTracks(), ...stream.getAudioTracks()])
+      // "Just me" (raw webcam). Record CLONED camera + mic tracks, not the live
+      // tracks that are attached to the visible preview <video>. The browser
+      // throttles the decode pipeline of an on-screen camera element (see the CV
+      // composite note above), which starved the recorder of frames — the clip
+      // came out black, and a black/malformed clip also swallowed the mic audio
+      // on playback. Cloned tracks are independent sinks not gated by the preview
+      // element, so both video and voice record. stopStream() stops these clones.
+      recStream = new MediaStream([
+        ...stream.getVideoTracks().map(tr => tr.clone()),
+        ...stream.getAudioTracks().map(tr => tr.clone()),
+      ])
+      recCloneRef.current = recStream
     }
     if (!recStream.getAudioTracks().length) console.warn('[studio] recording stream has no audio track')
     const mr = new MediaRecorder(recStream, pickMime() ? { mimeType: pickMime() } : undefined)
@@ -546,7 +556,14 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', branding, filen
       const type = recRef.current?.mimeType || chunksRef.current[0]?.type || 'video/webm'
       const blob = new Blob(chunksRef.current, { type })
       blobRef.current = blob
-      setRecordedUrl(URL.createObjectURL(blob))
+      const url = URL.createObjectURL(blob)
+      setRecordedUrl(url)
+      // Generate a poster frame off a detached element (a safe, in-range seek) so
+      // the review player shows a real frame instead of a black one. The player
+      // itself stays a plain <video> — seeking the live element wedged these
+      // MediaRecorder MP4 blobs black.
+      setReviewPoster('')
+      makeThumb(url).then(setReviewPoster)
       stopStream()          // camera OFF the instant recording ends
       // Bring the recorder tab forward so keep/retake is right there, even when
       // the take was ended from the browser's Stop-sharing bar on another tab.
@@ -572,7 +589,7 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', branding, filen
 
   function retake() {
     if (recordedUrl) URL.revokeObjectURL(recordedUrl)
-    setRecordedUrl(null); setElapsed(0)
+    setRecordedUrl(null); setReviewPoster(''); setElapsed(0)
     enableCamera() // re-acquire the mic/camera for another take
   }
 
@@ -595,18 +612,6 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', branding, filen
       duration: fmt(elapsed), recordedAt: new Date().toISOString(),
     })
     onClose()
-  }
-
-  // MediaRecorder blobs report duration:Infinity, which leaves the review
-  // player's timeline broken and can block playback. Force the browser to
-  // compute a real duration by seeking to the end and back.
-  function fixMediaDuration(e) {
-    const v = e.currentTarget
-    if (!isFinite(v.duration) || v.duration === 0) {
-      const onSeek = () => { v.removeEventListener('timeupdate', onSeek); v.currentTime = 0 }
-      v.addEventListener('timeupdate', onSeek)
-      v.currentTime = 1e101
-    }
   }
 
   const busy = phase === 'recording' || phase === 'paused' || phase === 'uploading'
@@ -656,7 +661,7 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', branding, filen
             <div className={`studio-video-wrap${phase === 'recording' ? ' recording' : ''}`}>
               {phase === 'review' || phase === 'uploading' ? (
                 <video className="studio-video studio-video--contain" src={recordedUrl} controls playsInline
-                  preload="auto" onLoadedMetadata={fixMediaDuration} />
+                  preload="auto" poster={reviewPoster || undefined} />
               ) : cameraLive ? (
                 mode === 'cv' ? (
                   <>
