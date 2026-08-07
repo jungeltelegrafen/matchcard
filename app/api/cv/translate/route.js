@@ -1,7 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { LANG_NAME } from '@/lib/cv/lang'
 import { buildCvJsonSchema, normalizeCv, CV_SECTIONS } from '@/lib/cv/schema'
-import { checkRateLimit, rateLimitedResponse, LIMITS } from '@/lib/rateLimit'
+import { checkAiRateLimit, rateLimitedResponse } from '@/lib/rateLimit'
 import { mapLimit, withDeadline } from '@/lib/aiConcurrency'
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
@@ -49,7 +49,7 @@ ${JSON.stringify(fragment)}`,
 
 
 export async function POST(request) {
-  const limit = await checkRateLimit(request, LIMITS.ai)
+  const limit = await checkAiRateLimit(request)
   if (!limit.ok) return rateLimitedResponse(limit.retryAfter)
 
   try {
