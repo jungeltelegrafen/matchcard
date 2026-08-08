@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { saveAs } from 'file-saver'
 import { renderPdfBlob } from '../utils/renderPdf'
-import { downloadDocx } from '../renderers/docx/buildDocument'
 import { downloadEmail } from '../utils/generateEmail'
 import { cvHasContent } from '@lib/cv/schema'
 import { LANGS, LANG_ENDONYM } from '@lib/cv/lang'
@@ -127,8 +126,12 @@ export default function ExportFooter({ cvByLang, contentLang, uiLang, filename, 
   }
 
   function handleDocx() {
-    run(no ? 'Klargjør Word…' : 'Preparing Word…', () =>
-      downloadDocx(outputCv(contentLang), `${fileFor(contentLang)}.docx`, contentLang, branding))
+    // docx + the .docx builders are dynamically imported so they code-split out
+    // of the main bundle (only fetched when someone exports Word).
+    run(no ? 'Klargjør Word…' : 'Preparing Word…', async () => {
+      const { downloadDocx } = await import('../renderers/docx/buildDocument')
+      await downloadDocx(outputCv(contentLang), `${fileFor(contentLang)}.docx`, contentLang, branding)
+    })
   }
 
   function handleEmail(attachFormat) {

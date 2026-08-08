@@ -1,29 +1,31 @@
 import { useState } from 'react'
 
-// The CV generator isn't optimized for phones/small screens yet. This overlay is
-// hidden by default and only shown under a small-screen width (see app.css); the
-// user can dismiss it to continue anyway.
+const KEY = 'cvgen_mobile_notice_dismissed'
+
+// A slim, dismissible hint shown once on small screens. The CV generator is now
+// responsive (see app.css / MobileVideoStudio), so this is no longer a blocker —
+// just a gentle "a desktop is comfier for heavy editing" nudge, remembered after
+// the first dismiss. Only displayed under the phone breakpoint (see app.css).
 export default function MobileNotice({ uiLang = 'en' }) {
-  const [dismissed, setDismissed] = useState(false)
+  const [dismissed, setDismissed] = useState(() => {
+    try { return localStorage.getItem(KEY) === '1' } catch { return false }
+  })
   if (dismissed) return null
   const no = uiLang === 'no'
 
+  function dismiss() {
+    try { localStorage.setItem(KEY, '1') } catch { /* private mode */ }
+    setDismissed(true)
+  }
+
   return (
     <div className="mobile-notice">
-      <div className="mobile-notice-card">
-        <div className="mobile-notice-icon">🖥️</div>
-        <h2 className="mobile-notice-title">
-          {no ? 'Åpne på PC eller Mac' : 'Best on a desktop or laptop'}
-        </h2>
-        <p className="mobile-notice-text">
-          {no
-            ? 'CV-generatoren er laget for større skjermer og er ikke tilpasset mobil ennå. For en god opplevelse, åpne den på en datamaskin.'
-            : 'The CV generator is built for larger screens and isn’t mobile-friendly yet. For the best experience, open it on a computer.'}
-        </p>
-        <button className="mobile-notice-btn" onClick={() => setDismissed(true)}>
-          {no ? 'Fortsett likevel' : 'Continue anyway'}
-        </button>
-      </div>
+      <span className="mobile-notice-text">
+        {no
+          ? 'Mobil er nytt her — for tung redigering er en PC eller Mac romsligere.'
+          : 'Mobile is new here — for heavy editing a desktop or laptop is comfier.'}
+      </span>
+      <button className="mobile-notice-dismiss" onClick={dismiss} aria-label={no ? 'Lukk' : 'Dismiss'}>×</button>
     </div>
   )
 }
