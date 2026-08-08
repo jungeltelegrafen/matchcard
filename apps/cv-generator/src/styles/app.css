@@ -4282,8 +4282,8 @@ textarea.cv-field {
   .export-actions-row { flex-wrap: wrap; gap: 8px; }
   .export-progress-row { flex-wrap: wrap; }
   .export-menu { max-width: 100vw; }
-  /* No fixed bar on mobile → reclaim the reserved clearance */
-  .cv-main { padding-bottom: 24px; }
+  /* Clear the always-present fixed Export bar at the bottom (collapsed height) */
+  .cv-main { padding-bottom: 64px; }
 
   /* Modals → full-screen sheets */
   .modal-overlay, .feedback-overlay { padding: 0; }
@@ -4349,6 +4349,29 @@ textarea.cv-field {
 .m-accordion-body { padding: 0; }
 /* Panels inside an accordion body drop their own frame — the item is the frame */
 .m-accordion-body .side-panel { border: none; border-radius: 0; }
+
+/* Comments/Tailoring: cap the height (≈5 items) and scroll the rest inside, so a
+   long comment list can't push the page down and hide what's below. */
+.m-acc--comments .m-accordion-body { max-height: 58vh; overflow-y: auto; }
+
+/* Export: an always-present fixed bar at the bottom of the viewport. Collapsed it
+   is a slim tap bar (user is always "caught" in the footer); tapping expands the
+   full export actions upward as a bottom sheet. */
+.m-export-sheet {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 90;
+  border: none; border-radius: 0;
+  display: flex; flex-direction: column;
+  max-height: 82vh;
+  background: var(--primary);
+  box-shadow: 0 -2px 20px rgba(0,0,0,0.28);
+}
+.m-export-sheet .m-accordion-head {
+  background: var(--primary); color: #fff;
+  padding: 13px 16px; border-bottom: none;
+}
+.m-export-sheet.m-accordion-item--open .m-accordion-head { border-bottom: 1px solid rgba(255,255,255,0.15); }
+.m-export-sheet .m-accordion-chevron { color: rgba(255,255,255,0.7); }
+.m-export-sheet .m-accordion-body { overflow-y: auto; padding-bottom: env(safe-area-inset-bottom); }
 
 /* ═══════════════════════════════════════════════════════════════
    MOBILE VIDEO STUDIO — full-screen portrait talking-head recorder.

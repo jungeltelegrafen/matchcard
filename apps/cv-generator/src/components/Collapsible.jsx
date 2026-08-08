@@ -3,11 +3,11 @@ import { useState } from 'react'
 // A presentational collapsible section used to stack the desktop side-panels /
 // agents bar / export footer below the CV editor on mobile. No feature logic —
 // it just owns its open/closed state and renders whatever children it's given.
-export default function Collapsible({ title, badge, defaultOpen = false, children }) {
+export default function Collapsible({ title, badge, defaultOpen = false, className = '', children }) {
   const [open, setOpen] = useState(defaultOpen)
 
   return (
-    <section className={`m-accordion-item${open ? ' m-accordion-item--open' : ''}`}>
+    <section className={`m-accordion-item${open ? ' m-accordion-item--open' : ''}${className ? ` ${className}` : ''}`}>
       <button
         type="button"
         className="m-accordion-head"

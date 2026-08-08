@@ -785,6 +785,9 @@ export default function App() {
           <>
             {editorEl}
             <div className="m-accordion">
+              <Collapsible title={uiLang === 'no' ? 'Videoer' : 'Videos'}>
+                {rightEl}
+              </Collapsible>
               <Collapsible title={uiLang === 'no' ? 'KI-gjennomgang' : 'AI Review'}>
                 {agentsEl}
               </Collapsible>
@@ -793,16 +796,16 @@ export default function App() {
                   ? (uiLang === 'no' ? 'Tilpasning' : 'Tailoring')
                   : (uiLang === 'no' ? 'Kommentarer' : 'Comments')}
                 badge={activeVariant ? undefined : unresolvedCount}
+                className="m-acc--comments"
               >
                 {leftEl}
               </Collapsible>
-              <Collapsible title={uiLang === 'no' ? 'Videoer' : 'Videos'}>
-                {rightEl}
-              </Collapsible>
-              <Collapsible title={uiLang === 'no' ? 'Eksporter' : 'Export'}>
-                {exportEl}
-              </Collapsible>
             </div>
+            {/* Export is always anchored at the bottom (fixed) so it's reachable no
+                matter how far the user has scrolled; tap to expand the actions. */}
+            <Collapsible title={uiLang === 'no' ? '⬆ Eksporter' : '⬆ Export'} className="m-export-sheet">
+              {exportEl}
+            </Collapsible>
           </>
         ) : (
           <>
