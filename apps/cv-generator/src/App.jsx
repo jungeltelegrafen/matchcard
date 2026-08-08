@@ -25,6 +25,7 @@ import AgentsBar from './components/AgentsBar'
 import LeftSidebar from './components/LeftSidebar'
 import RightSidebar from './components/RightSidebar'
 import VideoStudioModal from './components/VideoStudioModal'
+import MobileVideoStudio from './components/MobileVideoStudio'
 import PreviewModal from './components/PreviewModal'
 import OfferModal from './components/OfferModal'
 import BrandingModal from './components/BrandingModal'
@@ -33,6 +34,8 @@ import MobileNotice from './components/MobileNotice'
 import TailorPanel from './components/TailorPanel'
 import TailoringReview from './components/TailoringReview'
 import FeedbackStrip from './components/FeedbackStrip'
+import Collapsible from './components/Collapsible'
+import { useMediaQuery, MOBILE_QUERY } from './hooks/useMediaQuery'
 import './styles/app.css'
 
 const slug = s => (s || '').replace(/[^a-z0-9]+/gi, '_').replace(/^_+|_+$/g, '') || 'version'
@@ -549,6 +552,131 @@ export default function App() {
     .filter(Boolean).join('_').replace(/\s+/g, '_') || 'CV'
   const filename = activeVariant ? `${baseName}_${slug(activeVariant.name)}` : baseName
 
+  // Phones get a single-column accordion layout; desktop keeps the 3-column view.
+  // The same breakpoint decides which video recorder mounts (see below).
+  const isMobile = useMediaQuery(MOBILE_QUERY)
+  const unresolvedCount = feedbackItems.filter(f => !f.resolved).length
+
+  // Recorder handlers shared by the desktop and mobile studios — both emit the
+  // same video entry shape, so this wiring (anchor merge + ids) is identical.
+  const closeRecorder = () => setRecorder({ open: false, anchor: '' })
+  const saveRecording = entry => {
+    setMasterVideos([...(masterCv.videos || []), { ...entry, anchor: recorder.anchor }])
+    setRecorder({ open: false, anchor: '' })
+  }
+
+  // ── Layout elements built once, arranged twice (desktop columns vs. mobile
+  //    accordion). Every prop list is written a single time. ──────────────────
+  const agentsEl = (
+    <AgentsBar
+      cv={viewCv}
+      lang={uiLang}
+      reviewLang={contentLang}
+      onFeedback={items => setActiveFeedback(prev => [...items, ...prev])}
+    />
+  )
+
+  const chatBarEl = chatUndo ? (
+    <div className="chat-change-bar">
+      <span className="chat-change-bar-label">
+        <span className="chat-change-bar-mark">✎</span>
+        {changedPaths.size > 0
+          ? (uiLang === 'no'
+              ? `Chat oppdaterte ${changedPaths.size} felt`
+              : `Chat updated ${changedPaths.size} field${changedPaths.size !== 1 ? 's' : ''}`)
+          : (uiLang === 'no' ? 'Chat oppdaterte CV-en' : 'Chat updated your CV')}
+      </span>
+      <div className="chat-change-bar-actions">
+        <button className="chat-change-bar-btn" onClick={undoChatChange}>
+          {uiLang === 'no' ? '↶ Angre' : '↶ Undo'}
+        </button>
+        <button className="chat-change-bar-btn chat-change-bar-btn--ghost" onClick={dismissChatChange}>
+          {uiLang === 'no' ? 'Lukk' : 'Dismiss'}
+        </button>
+      </div>
+    </div>
+  ) : null
+
+  const leftEl = activeVariant ? (
+    <TailoringReview
+      master={masterCv}
+      variant={activeVariant}
+      lang={contentLang}
+      uiLang={uiLang}
+      onToggleExclude={handleToggleExclude}
+      onToggleSkillTag={handleToggleSkillTag}
+      onSummaryChange={handleVariantSummary}
+      onExpDescChange={handleVariantExpDesc}
+      onReorder={handleReorder}
+      onToggleRedact={handleToggleRedact}
+    />
+  ) : (
+    <LeftSidebar
+      lang={uiLang}
+      feedbackItems={feedbackItems}
+      onFeedbackChange={setActiveFeedback}
+      onSectionHover={setHoveredSection}
+    />
+  )
+
+  const editorEl = (
+    <div className={`cv-page${activeVariant ? ' cv-page--variant' : ''}`}>
+      <CVEditor
+        cv={viewCv}
+        lang={contentLang}
+        meta={activeVariant ? {} : meta}
+        onFieldEdit={handleFieldEdit}
+        onAccept={handleAccept}
+        onDismiss={handleDismiss}
+        onStructural={handleStructural}
+        onVideosChange={setMasterVideos}
+        onRecord={openRecorder}
+        hoveredSection={hoveredSection}
+        commentCounts={commentCounts}
+        changedPaths={changedPaths}
+        onChangeSeen={markChangeSeen}
+        branding={branding}
+        uiLang={uiLang}
+        includeBranding={includeBranding}
+        includeImage={includeImage}
+        onToggleBranding={setIncludeBranding}
+        onToggleImage={setIncludeImage}
+        onEditBranding={() => setBrandingOpen(true)}
+        onSetProfilePicture={setProfilePicture}
+      />
+    </div>
+  )
+
+  const rightEl = (
+    <RightSidebar
+      lang={uiLang}
+      contentLang={contentLang}
+      cv={masterCv}
+      videos={masterCv.videos || []}
+      branding={exportBranding}
+      filename={filename}
+      onRecord={openRecorder}
+      onVideosChange={setMasterVideos}
+    />
+  )
+
+  const exportEl = (
+    <ExportFooter
+      cvByLang={viewByLang}
+      contentLang={contentLang}
+      uiLang={uiLang}
+      filename={filename}
+      offer={offerByLang[contentLang]}
+      branding={exportBranding}
+      onPreview={() => setPreviewOpen(true)}
+      onContentLangChange={setContentLang}
+      onOpenOffer={() => setOfferOpen(true)}
+      recordShares={recordShares}
+      onRecordShareCreated={addRecordShare}
+      onSyncVideos={mergeVideosIntoDraft}
+    />
+  )
+
   return (
     <div className="app-layout">
       <MobileNotice uiLang={uiLang} />
@@ -651,108 +779,61 @@ export default function App() {
       />
 
       <main className="cv-main">
-        <AgentsBar
-          cv={viewCv}
-          lang={uiLang}
-          reviewLang={contentLang}
-          onFeedback={items => setActiveFeedback(prev => [...items, ...prev])}
-        />
+        {chatBarEl}
 
-        {chatUndo && (
-          <div className="chat-change-bar">
-            <span className="chat-change-bar-label">
-              <span className="chat-change-bar-mark">✎</span>
-              {changedPaths.size > 0
-                ? (uiLang === 'no'
-                    ? `Chat oppdaterte ${changedPaths.size} felt`
-                    : `Chat updated ${changedPaths.size} field${changedPaths.size !== 1 ? 's' : ''}`)
-                : (uiLang === 'no' ? 'Chat oppdaterte CV-en' : 'Chat updated your CV')}
-            </span>
-            <div className="chat-change-bar-actions">
-              <button className="chat-change-bar-btn" onClick={undoChatChange}>
-                {uiLang === 'no' ? '↶ Angre' : '↶ Undo'}
-              </button>
-              <button className="chat-change-bar-btn chat-change-bar-btn--ghost" onClick={dismissChatChange}>
-                {uiLang === 'no' ? 'Lukk' : 'Dismiss'}
-              </button>
+        {isMobile ? (
+          <>
+            {editorEl}
+            <div className="m-accordion">
+              <Collapsible title={uiLang === 'no' ? 'KI-gjennomgang' : 'AI Review'}>
+                {agentsEl}
+              </Collapsible>
+              <Collapsible
+                title={activeVariant
+                  ? (uiLang === 'no' ? 'Tilpasning' : 'Tailoring')
+                  : (uiLang === 'no' ? 'Kommentarer' : 'Comments')}
+                badge={activeVariant ? undefined : unresolvedCount}
+              >
+                {leftEl}
+              </Collapsible>
+              <Collapsible title={uiLang === 'no' ? 'Videoer' : 'Videos'}>
+                {rightEl}
+              </Collapsible>
+              <Collapsible title={uiLang === 'no' ? 'Eksporter' : 'Export'}>
+                {exportEl}
+              </Collapsible>
             </div>
-          </div>
+          </>
+        ) : (
+          <>
+            {agentsEl}
+            <div className="cv-columns">
+              {leftEl}
+              {editorEl}
+              {rightEl}
+            </div>
+          </>
         )}
 
-        <div className="cv-columns">
-          {activeVariant ? (
-            <TailoringReview
-              master={masterCv}
-              variant={activeVariant}
-              lang={contentLang}
-              uiLang={uiLang}
-              onToggleExclude={handleToggleExclude}
-              onToggleSkillTag={handleToggleSkillTag}
-              onSummaryChange={handleVariantSummary}
-              onExpDescChange={handleVariantExpDesc}
-              onReorder={handleReorder}
-              onToggleRedact={handleToggleRedact}
-            />
-          ) : (
-            <LeftSidebar
-              lang={uiLang}
-              feedbackItems={feedbackItems}
-              onFeedbackChange={setActiveFeedback}
-              onSectionHover={setHoveredSection}
-            />
-          )}
-
-          <div className={`cv-page${activeVariant ? ' cv-page--variant' : ''}`}>
-            <CVEditor
-              cv={viewCv}
-              lang={contentLang}
-              meta={activeVariant ? {} : meta}
-              onFieldEdit={handleFieldEdit}
-              onAccept={handleAccept}
-              onDismiss={handleDismiss}
-              onStructural={handleStructural}
-              onVideosChange={setMasterVideos}
-              onRecord={openRecorder}
-              hoveredSection={hoveredSection}
-              commentCounts={commentCounts}
-              changedPaths={changedPaths}
-              onChangeSeen={markChangeSeen}
-              branding={branding}
-              uiLang={uiLang}
-              includeBranding={includeBranding}
-              includeImage={includeImage}
-              onToggleBranding={setIncludeBranding}
-              onToggleImage={setIncludeImage}
-              onEditBranding={() => setBrandingOpen(true)}
-              onSetProfilePicture={setProfilePicture}
-            />
-          </div>
-
-          <RightSidebar
-            lang={uiLang}
-            contentLang={contentLang}
+        {recorder.open && (isMobile ? (
+          <MobileVideoStudio
             cv={masterCv}
-            videos={masterCv.videos || []}
+            lang={contentLang}
             branding={exportBranding}
             filename={filename}
-            onRecord={openRecorder}
-            onVideosChange={setMasterVideos}
+            onClose={closeRecorder}
+            onSave={saveRecording}
           />
-        </div>
-
-        {recorder.open && (
+        ) : (
           <VideoStudioModal
             cv={masterCv}
             lang={contentLang}
             branding={exportBranding}
             filename={filename}
-            onClose={() => setRecorder({ open: false, anchor: '' })}
-            onSave={entry => {
-              setMasterVideos([...(masterCv.videos || []), { ...entry, anchor: recorder.anchor }])
-              setRecorder({ open: false, anchor: '' })
-            }}
+            onClose={closeRecorder}
+            onSave={saveRecording}
           />
-        )}
+        ))}
 
         {/* In a tailored view the left sidebar is the tailoring panel, so agent
             feedback surfaces here, below the CV. */}
@@ -797,20 +878,7 @@ export default function App() {
         />
       )}
 
-      <ExportFooter
-        cvByLang={viewByLang}
-        contentLang={contentLang}
-        uiLang={uiLang}
-        filename={filename}
-        offer={offerByLang[contentLang]}
-        branding={exportBranding}
-        onPreview={() => setPreviewOpen(true)}
-        onContentLangChange={setContentLang}
-        onOpenOffer={() => setOfferOpen(true)}
-        recordShares={recordShares}
-        onRecordShareCreated={addRecordShare}
-        onSyncVideos={mergeVideosIntoDraft}
-      />
+      {!isMobile && exportEl}
     </div>
   )
 }

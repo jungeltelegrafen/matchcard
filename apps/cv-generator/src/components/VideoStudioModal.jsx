@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { renderPdfBlob } from '../utils/renderPdf'
 import { hostRecording } from '../utils/uploadVideo'
+import { MAX_SECONDS, fmt, pickMime, canRecordMp4, makeThumb } from '../utils/videoStudioCore'
 
 // pdfjs-dist is only needed for the CV-walkthrough composite mode. It's loaded
 // lazily so the Next.js share-page bundle (which only ever records screen/voice)
@@ -115,8 +116,6 @@ const T = {
         recTabTitle: '🔴 Grabando — abre esta pestaña para Detener' },
 }
 
-const MAX_SECONDS = 300 // hard cap so a recording can never run silently forever
-
 // A red-dot favicon shown while recording so the recorder tab stands out in the
 // tab bar even when it's inactive/narrow (where the title text is hidden). Safari
 // often ignores data-URI favicon changes, so we prefer an object URL (a "real"
@@ -137,48 +136,6 @@ function buildRecIcon() {
   } catch { _recIconData = '' }
 }
 function recIconHref() { buildRecIcon(); return _recIconObj || _recIconData || '' }
-
-function fmt(sec) {
-  const m = Math.floor(sec / 60), s = sec % 60
-  return `${m}:${String(s).padStart(2, '0')}`
-}
-
-// Prefer MP4 (H.264) — it plays on every modern browser incl. Safari, so a
-// raw-served R2 file works universally. Falls back to webm (Firefox, older
-// Chrome), which is the combo that can fail for Safari viewers.
-function pickMime() {
-  const opts = [
-    'video/mp4;codecs=h264,aac', 'video/mp4',
-    'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm',
-  ]
-  return opts.find(m => typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported(m)) || ''
-}
-
-// True when the browser can record MP4 (universal playback). When false
-// (notably Firefox), we warn that Safari viewers may not be able to watch.
-function canRecordMp4() {
-  return typeof MediaRecorder !== 'undefined' &&
-    (MediaRecorder.isTypeSupported('video/mp4;codecs=h264,aac') || MediaRecorder.isTypeSupported('video/mp4'))
-}
-
-// Grab a poster frame from a recorded clip → small JPEG data URL.
-function makeThumb(url) {
-  return new Promise(resolve => {
-    const v = document.createElement('video')
-    v.src = url; v.muted = true; v.playsInline = true
-    v.onloadeddata = () => { try { v.currentTime = Math.min(0.1, (v.duration || 1) / 2) } catch { resolve('') } }
-    v.onseeked = () => {
-      try {
-        const w = 320, ratio = v.videoHeight && v.videoWidth ? v.videoHeight / v.videoWidth : 0.5625
-        const c = document.createElement('canvas')
-        c.width = w; c.height = Math.round(w * ratio)
-        c.getContext('2d').drawImage(v, 0, 0, c.width, c.height)
-        resolve(c.toDataURL('image/jpeg', 0.6))
-      } catch { resolve('') }
-    }
-    v.onerror = () => resolve('')
-  })
-}
 
 export default function VideoStudioModal({ cv = {}, lang = 'en', branding, filename = 'cv', onClose, onSave }) {
   const t = T[lang] || T.en
