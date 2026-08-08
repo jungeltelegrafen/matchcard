@@ -4228,38 +4228,22 @@ textarea.cv-field {
 /* ═══════════════════════════════════════════════════════════════
    RESPONSIVE  (appended additively — no desktop selector above is touched)
    Two tiers:
-     • ≤1024px  tablet — keep the 3-column shape, stop it overflowing
-     • ≤640px   phone  — single column + accordion. App.jsx branches the DOM
-                         at MOBILE_QUERY = '(max-width: 640px)', so the JS
-                         layout switch and this CSS flip at the same width.
+     • ≤1300px  compact — single-column accordion body + Options-collapsed
+                          header + mobile recorder. App.jsx branches the DOM at
+                          MOBILE_QUERY = '(max-width: 1300px)', so the JS switch
+                          and this CSS flip at the same width.
+     • ≤640px   phone   — touch/iOS polish on top of the compact layout.
 ═══════════════════════════════════════════════════════════════ */
 
-/* ── Tablet / mid-range: graceful degrade of the desktop layout ── */
-@media (max-width: 1024px) {
-  .cv-columns { gap: 12px; padding: 16px 12px 0; }
-  .side-panel { width: 216px; }
-  .agents-bar-inner { flex-wrap: wrap; }
-  .abar-card { flex: 1 1 240px; }
-}
-
-/* ── Phone: single-column accordion layout ── */
-@media (max-width: 640px) {
-  /* Header — drop the absolute left/right zones, stack + wrap, title first */
-  .app-header { flex-direction: column; height: auto; padding: 10px 12px; gap: 8px; }
-  .header-left, .header-actions, .header-center {
-    position: static; transform: none; left: auto; right: auto; top: auto;
-  }
-  .header-center { order: -1; }
-  .header-left, .header-actions {
-    display: flex; flex-wrap: wrap; justify-content: center; align-items: center;
-    gap: 8px; width: 100%;
-  }
-  .header-version-menu { max-width: calc(100vw - 24px); }
-
+/* ── Compact (≤1300px): the desktop chrome (absolute-centred header + the
+      252+740+252 columns) no longer fits, so the body becomes a single column.
+      Pairs with the App.jsx accordion branch and the Options-collapsed header —
+      all gated on MOBILE_QUERY = '(max-width: 1300px)'. ── */
+@media (max-width: 1300px) {
   /* Body columns → single column */
-  .cv-columns { flex-direction: column; padding: 12px 12px 0; gap: 12px; }
-  .cv-page { max-width: 100%; }
-  .cv-editor { padding: 24px 18px 32px; min-height: auto; }
+  .cv-columns { flex-direction: column; padding: 14px 14px 0; gap: 12px; }
+  .cv-page { max-width: 100%; overflow-x: hidden; }
+  .cv-editor { padding: 40px 40px 48px; min-height: auto; overflow-x: hidden; }
 
   /* Side panels flow full-width and un-stick (they live inside accordions) */
   .side-panel {
@@ -4267,8 +4251,12 @@ textarea.cv-field {
   }
   .side-panel-header, .side-tabs { position: static; }
 
+  /* Agents bar wraps inside its accordion */
+  .agents-bar-inner { flex-wrap: wrap; }
+  .abar-card { flex: 1 1 240px; }
+
   /* Import intake → stacked */
-  .input-panel { padding: 14px; }
+  .input-panel { padding: 16px; }
   .input-panel-inner { max-width: 100%; }
   .input-top-row { grid-template-columns: 1fr; gap: 12px; }
 
@@ -4277,13 +4265,19 @@ textarea.cv-field {
     flex-wrap: wrap; text-align: left; gap: 8px; padding: 10px 12px;
   }
 
-  /* Export footer un-fixes — its content now lives in the Export accordion */
+  /* Export footer un-fixes — its content lives in the fixed Export bottom sheet */
   .export-footer { position: static; box-shadow: none; z-index: auto; }
   .export-actions-row { flex-wrap: wrap; gap: 8px; }
   .export-progress-row { flex-wrap: wrap; }
   .export-menu { max-width: 100vw; }
   /* Clear the always-present fixed Export bar at the bottom (collapsed height) */
   .cv-main { padding-bottom: 64px; }
+}
+
+/* ── Phone polish (≤640px): touch/iOS refinements on top of the compact layout ── */
+@media (max-width: 640px) {
+  .cv-columns { padding: 12px 12px 0; }
+  .cv-editor { padding: 22px 16px 30px; }
 
   /* Modals → full-screen sheets */
   .modal-overlay, .feedback-overlay { padding: 0; }
@@ -4321,6 +4315,50 @@ textarea.cv-field {
   .cv-lang-add-row { flex-wrap: wrap; }
   .cv-lang-input { width: 100%; }
 }
+
+/* ── Compact header: back + title + Options dropdown. Rendered by JS via the
+      .app-header--compact class (below MOBILE_QUERY), so no media query here. ── */
+.app-header--compact {
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  height: auto;
+  padding: 10px 12px;
+}
+.app-header--compact .header-center {
+  position: static; transform: none; left: auto; right: auto; top: auto;
+  flex: 1; align-items: center; min-width: 0;
+}
+.header-options-wrap { position: relative; flex-shrink: 0; }
+.header-options-btn {
+  display: flex; align-items: center; gap: 4px;
+  border: 1px solid var(--border); border-radius: 8px;
+  background: var(--surface); color: var(--primary);
+  font-family: inherit; font-size: 0.78rem; font-weight: 700;
+  padding: 8px 12px; cursor: pointer; white-space: nowrap;
+}
+.header-options-btn:hover { background: var(--bg); }
+.header-options-panel {
+  position: absolute; top: calc(100% + 8px); right: 0; z-index: 60;
+  display: flex; flex-direction: column; gap: 14px;
+  min-width: 244px; max-width: calc(100vw - 24px); max-height: 78vh; overflow-y: auto;
+  padding: 16px; background: var(--surface);
+  border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow);
+}
+.header-options-panel .header-toggle-group {
+  display: flex; flex-direction: column; align-items: stretch; gap: 5px; width: 100%;
+}
+.header-options-panel .header-pill,
+.header-options-panel .header-version-wrap { width: 100%; }
+.header-options-panel .header-version-btn,
+.header-options-panel .header-action-btn { width: 100%; max-width: none; justify-content: center; text-align: center; }
+/* Sub-dropdowns render inline within the (scrollable) panel — no absolute clip */
+.header-options-panel .header-version-menu {
+  position: static; box-shadow: none; border: 1px solid var(--border);
+  margin-top: 6px; max-width: 100%; min-width: 0;
+}
+.header-options-sep { height: 1px; background: var(--border); margin: 2px 0; }
 
 /* ── Mobile accordion shell (only rendered in the ≤640px App.jsx branch) ── */
 .m-accordion { display: flex; flex-direction: column; gap: 10px; padding: 12px; }
