@@ -208,9 +208,13 @@ export default function MobileVideoStudio({ cv = {}, lang = 'en', branding, onCl
     return () => { stop = true; cancelAnimationFrame(rafRef.current) }
   }, [mode, cameraLive, pagesRef])
 
-  // Cleanup: never leave the camera on.
+  // Lock background scroll while the full-screen recorder is open, and on unmount
+  // clean up: never leave the camera on.
   useEffect(() => {
+    const prevOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
     return () => {
+      document.body.style.overflow = prevOverflow
       clearInterval(timerRef.current); clearInterval(cdRef.current)
       cancelAnimationFrame(rafRef.current)
       stopStream()

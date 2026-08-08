@@ -2243,40 +2243,28 @@ textarea.cv-field {
 /* Small-screen notice — the editor isn't mobile-friendly yet. Hidden by default;
    only shown on phone / small-tablet widths. */
 .mobile-notice { display: none; }
-@media (max-width: 820px) {
+/* The CV generator is responsive now, so this is a slim dismissible hint (shown
+   once, phones only) rather than the old full-screen blocker. */
+.mobile-notice { display: none; }
+@media (max-width: 640px) {
   .mobile-notice {
     display: flex;
-    position: fixed;
-    inset: 0;
-    z-index: 5000;
-    background: rgba(22, 22, 28, 0.94);
     align-items: center;
-    justify-content: center;
-    padding: 24px;
+    gap: 10px;
+    padding: 8px 12px;
+    background: var(--accent-lt);
+    color: var(--primary);
+    font-size: 0.8rem;
+    line-height: 1.4;
+    border-bottom: 1px solid var(--border);
   }
 }
-.mobile-notice-card {
-  background: #fff;
-  border-radius: 16px;
-  padding: 30px 24px;
-  max-width: 360px;
-  width: 100%;
-  text-align: center;
-  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.4);
+.mobile-notice-text { flex: 1; }
+.mobile-notice-dismiss {
+  background: none; border: none; color: var(--muted);
+  font-size: 1.2rem; line-height: 1; cursor: pointer;
+  padding: 4px 6px; flex-shrink: 0;
 }
-.mobile-notice-icon { font-size: 2.6rem; line-height: 1; }
-.mobile-notice-title {
-  font-size: 1.15rem; font-weight: 700; margin: 12px 0 8px; color: #2B2B2B;
-}
-.mobile-notice-text {
-  font-size: 0.92rem; line-height: 1.55; color: #666; margin: 0 0 20px;
-}
-.mobile-notice-btn {
-  background: #2B2B2B; color: #fff; border: none; border-radius: 9px;
-  padding: 11px 20px; font-size: 0.92rem; font-weight: 600;
-  font-family: inherit; cursor: pointer;
-}
-.mobile-notice-btn:active { opacity: 0.85; }
 
 .abar-top {
   display: flex;
@@ -4315,6 +4303,13 @@ textarea.cv-field {
      the "+ project" popover on-screen */
   .cv-comp-level-dot { width: 22px; height: 22px; }
   .cv-comp-dropdown { max-width: calc(100vw - 24px); }
+
+  /* Enlarge the small × removers to a comfortable touch target (visual size
+     unchanged; just more hittable area). */
+  .cv-btn-remove-bullet, .cv-btn-remove-item, .cv-comp-chip-x {
+    min-width: 30px; min-height: 30px;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
 
   /* iOS Safari zooms the page when a focused input's font-size < 16px. Force
      16px on every form control on phones, and relax the few width-pinned inputs
