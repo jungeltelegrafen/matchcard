@@ -1,6 +1,5 @@
 import { saveAs } from 'file-saver'
 import { renderPdfBlob } from './renderPdf'
-import { buildDocxBlob } from '../renderers/docx/buildDocument'
 import { composeOffer, composeOfferHtml, offerForExport, offerSubject } from './offer'
 
 // The .eml body IS the consultant offer (Tilbudsformat) — the same content as the
@@ -84,6 +83,9 @@ async function getPdfBase64(cv, lang, branding) {
 }
 
 async function getDocxBase64(cv, lang, branding) {
+  // Dynamically imported so docx code-splits out of the main bundle (only
+  // fetched when an email attaches a Word file).
+  const { buildDocxBlob } = await import('../renderers/docx/buildDocument')
   const blob = await buildDocxBlob(cv, lang, branding)
   return blobToBase64(blob)
 }
