@@ -2,32 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { renderPdfBlob } from '../utils/renderPdf'
 import { hostRecording } from '../utils/uploadVideo'
-import { MAX_SECONDS, fmt, pickMime, canRecordMp4, makeThumb } from '../utils/videoStudioCore'
-
-// pdfjs-dist is only needed for the CV-walkthrough composite mode. It's loaded
-// lazily so the Next.js share-page bundle (which only ever records screen/voice)
-// can ignore it — its ESM worker breaks webpack's Terser pass. See next.config.js.
-let pdfjsPromise
-function loadPdfjs() {
-  pdfjsPromise ||= import('pdfjs-dist').then((pdfjsLib) => {
-    pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-      'pdfjs-dist/build/pdf.worker.min.mjs',
-      import.meta.url,
-    ).toString()
-    return pdfjsLib
-  })
-  return pdfjsPromise
-}
-
-function roundRect(ctx, x, y, w, h, r) {
-  ctx.beginPath()
-  ctx.moveTo(x + r, y)
-  ctx.arcTo(x + w, y, x + w, y + h, r)
-  ctx.arcTo(x + w, y + h, x, y + h, r)
-  ctx.arcTo(x, y + h, x, y, r)
-  ctx.arcTo(x, y, x + w, y, r)
-  ctx.closePath()
-}
+import { MAX_SECONDS, fmt, pickMime, canRecordMp4, makeThumb, loadPdfjs, drawComposite } from '../utils/videoStudioCore'
 
 const T = {
   en: { studio: 'Recording studio', yourCV: 'Your CV', defaultTitle: 'Screen walkthrough', script: 'Script', cues: 'Cues — only you see these',
@@ -319,65 +294,17 @@ export default function VideoStudioModal({ cv = {}, lang = 'en', branding, filen
     let stop = false
     const draw = () => {
       if (stop) return
-      const W = canvas.width, H = canvas.height
-      ctx.fillStyle = '#14110f'; ctx.fillRect(0, 0, W, H)
-      // ── Background ──
-      const pages = pagesRef.current
-      if (mode === 'cv' && pages.length && pages[0].width) {
-        // CV pages fit-to-WIDTH, stacked into one vertical strip, scrolled by
-        // scrollRef — so wheel scrolling runs through the ENTIRE CV (every page).
-        const s = W / pages[0].width
-        const gap = 14 // dark seam between stacked pages
-        let totalH = 0
-        for (const p of pages) totalH += p.height * s
-        totalH += gap * (pages.length - 1)
-        const maxScroll = Math.max(0, totalH - H)
-        scrollMaxRef.current = maxScroll
-        if (scrollRef.current > maxScroll) scrollRef.current = maxScroll
-        if (scrollRef.current < 0) scrollRef.current = 0
-        let yTop = -scrollRef.current
-        for (const p of pages) {
-          const ph = p.height * s
-          if (yTop + ph > 0 && yTop < H) {
-            ctx.fillStyle = '#fff'; ctx.fillRect(0, yTop, W, ph)
-            ctx.drawImage(p, 0, yTop, W, ph)
-          }
-          yTop += ph + gap
-        }
-        // Subtle scroll indicator on the right edge when there's more below/above.
-        if (maxScroll > 0) {
-          const trackY = 12, trackH = H - 24
-          const thumbH = Math.max(36, trackH * (H / totalH))
-          const thumbY = trackY + (trackH - thumbH) * (scrollRef.current / maxScroll)
-          ctx.fillStyle = 'rgba(20,17,15,0.12)'; roundRect(ctx, W - 9, trackY, 4, trackH, 2); ctx.fill()
-          ctx.fillStyle = 'rgba(201,123,75,0.75)'; roundRect(ctx, W - 9, thumbY, 4, thumbH, 2); ctx.fill()
-        }
-      }
-      const v = camVideoRef.current
-      if (v && v.readyState >= 2 && v.videoWidth) {
-        const pipW = Math.round(W * 0.26), pipH = Math.round(pipW * 9 / 16)
-        const px = W - pipW - 22, py = H - pipH - 22
-        const vr = v.videoWidth / v.videoHeight, pr = pipW / pipH
-        let sw, sh, sx, sy
-        if (vr > pr) { sh = v.videoHeight; sw = sh * pr; sx = (v.videoWidth - sw) / 2; sy = 0 }
-        else { sw = v.videoWidth; sh = sw / pr; sx = 0; sy = (v.videoHeight - sh) / 2 }
-        ctx.save(); roundRect(ctx, px, py, pipW, pipH, 14); ctx.clip()
-        ctx.drawImage(v, sx, sy, sw, sh, px, py, pipW, pipH)
-        ctx.restore()
-        ctx.strokeStyle = 'rgba(255,255,255,0.92)'; ctx.lineWidth = 3
-        roundRect(ctx, px, py, pipW, pipH, 14); ctx.stroke()
-      }
-      // Highlighted cursor (CV mode only — a shared screen already shows the
-      // real cursor) so viewers follow where the candidate points on the CV.
-      const cur = cursorRef.current
-      if (cur.active && mode === 'cv') {
-        ctx.beginPath(); ctx.arc(cur.x, cur.y, 27, 0, Math.PI * 2)
-        ctx.fillStyle = 'rgba(255,179,71,0.22)'; ctx.fill()
-        ctx.beginPath(); ctx.arc(cur.x, cur.y, 16, 0, Math.PI * 2)
-        ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(201,123,75,0.95)'; ctx.stroke()
-        ctx.beginPath(); ctx.arc(cur.x, cur.y, 5.5, 0, Math.PI * 2)
-        ctx.fillStyle = '#C97B4B'; ctx.fill()
-      }
+      const maxScroll = drawComposite(ctx, {
+        W: canvas.width, H: canvas.height,
+        pages: pagesRef.current,
+        scroll: scrollRef.current,
+        camVideo: camVideoRef.current,
+        showCursor: true,
+        cursor: cursorRef.current,
+      })
+      scrollMaxRef.current = maxScroll
+      if (scrollRef.current > maxScroll) scrollRef.current = maxScroll
+      if (scrollRef.current < 0) scrollRef.current = 0
       rafRef.current = requestAnimationFrame(draw)
     }
     draw()
